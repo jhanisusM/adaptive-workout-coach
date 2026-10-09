@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Adaptive Workout Coach — live demo</title>
+<meta name="description" content="Adaptive Workout Coach — a guided 30-minute workout app anyone can follow, even with no routine or experience. Live GitHub Pages demo.">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="page">
+
+  <div class="status-bar" id="statusBar">
+    <div class="status-state"><span class="status-dot" id="statusDot"></span><span id="statusText">Ready</span></div>
+    <div class="status-detail"><span id="statusDay">—</span><span id="statusCount">0 / 12</span></div>
+    <div class="status-track"><div class="status-fill" id="statusFill"></div></div>
+  </div>
+
+  <header class="intro">
+    <div>
+      <h1>30-minute workout</h1>
+      <p class="lede">A guided session using dumbbells and a resistance band. Just follow
+        along — no experience needed, work at your own pace.</p>
+      <p class="demo-badge">Live demo — progress is stored in this browser only.</p>
+    </div>
+    <div class="frequency"><span>Weekly rhythm</span><strong>3 sessions</strong></div>
+  </header>
+
+  <div class="safety"><strong>Train smart:</strong> stay inside a comfortable range — sharp
+    pain is a stop sign, skip the move. This demo is a workout companion, not medical advice.</div>
+
+  <section class="dashboard" aria-label="Session">
+    <div class="timer-panel">
+      <div class="panel-label">Session timer</div>
+      <div class="timer-row">
+        <div class="timer" id="timer">30:00</div>
+        <div class="timer-controls">
+          <button class="btn" id="btnStart">Start</button>
+          <button class="btn secondary" id="btnPause" hidden>Pause</button>
+          <button class="btn" id="btnResume" hidden>Resume</button>
+          <button class="btn danger" id="btnClear">Clear session</button>
+        </div>
+      </div>
+      <div class="session-date" id="sessionDate">No active session</div>
+    </div>
+    <div class="progress-panel">
+      <div class="panel-label">Progress</div>
+      <div class="progress-top"><span class="progress-count" id="progressCount">0 / 12</span></div>
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="progress-note" id="progressNote">Check off exercises as you finish them.</div>
+    </div>
+    <div class="clear-confirm" id="clearConfirm">
+      <span><strong>Clear the whole session?</strong> This wipes the timer, checkboxes, and progress.</span>
+      <span class="clear-actions">
+        <button class="btn danger" id="btnClearYes">Yes, clear it</button>
+        <button class="btn secondary" id="btnClearNo">Keep going</button>
+      </span>
+    </div>
+    <div class="session-message" id="sessionMessage"></div>
+  </section>
+
+  <div class="layout">
+    <main id="routine" aria-label="Routine"></main>
+    <aside class="sidebar">
+      <div class="side-card">
+        <h2>Weekly calendar</h2>
+        <p>Tap a gym day to open that day's session.</p>
+        <div class="cal-head">
+          <div><span class="cal-progress" id="calProgress">0 / 2</span><div class="muted small">gym days done this week</div></div>
+        </div>
+        <div class="week-grid" id="weekGrid"></div>
+        <div class="third-day">
+          <label class="muted small" for="thirdDay">Third gym day</label>
+          <select id="thirdDay">
+            <option value="none">None (Tue / Thu only)</option>
+            <option value="fri-morning">Friday morning</option>
+            <option value="fri-night">Friday night</option>
+            <option value="sat-morning">Saturday morning</option>
+          </select>
+        </div>
+      </div>
+      <div class="side-card">
+        <h2>How it's organized</h2>
+        <p id="blockNote"></p>
+      </div>
+      <div class="side-card">
+        <h2>Demo videos</h2>
+        <p>Form demos from verified creators, rotating where several exist.</p>
+        <div id="featuredDemos"></div>
+      </div>
+    </aside>
+  </div>
+
+  <footer class="footer-note">
+    <span>Adaptive Workout Coach — static GitHub Pages demo. No accounts, no tracking; everything is stored in your browser's local storage.</span>
+    <span><a href="https://github.com/jhanisusM/adaptive-workout-coach">View the source on GitHub</a></span>
+  </footer>
+
+</div>
+<script src="app.js"></script>
+</body>
+</html>

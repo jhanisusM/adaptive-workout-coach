@@ -1,9 +1,10 @@
 # Adaptive Workout Coach
 
-[▶ Demo / Run here](#quick-start)
+[▶ Demo / Run here](https://jhanisusM.github.io/adaptive-workout-coach/)
 
-> **Note:** this button currently jumps to the local quick-start below. After deploying
-> (e.g. Fly.io, Render, Railway, or any Node host), repoint it to your live demo URL.
+> **Note:** this button opens the live GitHub Pages demo — a static version of the app
+> that runs with no server. To enable it: repo Settings → Pages → Deploy from branch:
+> `main`, folder: `/docs`.
 
 **A guided 30-minute workout app anyone can follow — even if you have no routine,
 no plan, and no experience.** Adaptive Workout Coach walks you through every session
