@@ -1,0 +1,17 @@
+{
+  "dependencies": {
+    "better-sqlite3": "^12.2.0",
+    "express": "^4.21.2"
+  },
+  "description": "Adaptive Workout Coach \u2014 a guided 30-minute workout app anyone can follow, even with no routine or experience (Node.js + Express + SQLite). Server-backed session timer with full lifecycle (start/pause/resume/clear/complete/expiry), per-exercise checklists, demo videos, weekly gym calendar with 3x/week tracking, and a foundation/accessory exercise-block structure built to grow into personalized full-body training.",
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "UNLICENSED",
+  "main": "server.js",
+  "name": "adaptive-workout-coach",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "version": "1.0.0"
+}

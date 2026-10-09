@@ -1,0 +1,103 @@
+# Adaptive Workout Coach
+
+Adaptive Workout Coach is a private, self-hosted web app: a guided 30-minute
+workout anyone can follow, done three times per week — even with no routine,
+no plan, and no experience. It walks the user through 12 exercises with a
+server-backed session timer, per-exercise checklists, demo videos, and a
+weekly gym calendar. It is built to grow into a personalized full-body
+training companion.
+
+## Who it's for
+
+Anyone who wants a workout to simply follow: people with nothing else to do
+who want something structured, and people with no knowledge of how to train
+who want the guesswork removed. Every exercise tells the user exactly what to
+do, in what order, with big legible dose labels (sets x reps), muscle-group
+tags, and demo video links where verified demos exist. No expertise required.
+
+## What the app does
+
+- Runs a guided 30-minute workout session: warm-up (4 min), strength (18 min),
+  stability (5 min), cool-down (3 min) — 12 exercises built around dumbbells
+  and a resistance band.
+- Tracks each exercise with a checkbox, a large dose label, muscle-group tags,
+  and demo video links where verified demos exist (never invented).
+- Collapses finished sections (accordion cards) so a completed workout stays tidy.
+- Times the session with a server-authored deadline, so closing and reopening
+  the app resumes the running session with the correct time remaining.
+- Supports the full session lifecycle: start, pause, resume, clear, complete,
+  and timer expiry, with one source of truth on the server.
+- Provides a "Clear session" button with a confirmation step. A session ends
+  only on workout completion, timer expiry, or an explicit confirmed Clear --
+  never on back navigation or closing the app.
+- Shows a sticky status bar and progress bar so the user's place in the session
+  is always visible.
+- Shows a weekly gym calendar: two fixed gym days plus a configurable third
+  day (Friday morning, Friday night, or Saturday morning). Tapping a gym day
+  opens that day's session; completed days are logged toward a 3-per-week goal.
+
+## Vision
+
+The exercise catalog is split into a fixed "foundation block" (warm-up,
+stability, cool-down) and a rotating "accessory block" (currently loaded
+strength work). Future upper-body, back, and arm exercises will slot into the
+accessory block without redesigning the app, growing it into a personalized
+training companion with more routines and more muscle groups. To add
+exercises, edit data/exercises.js.
+
+## Tech stack
+
+- Node.js 18+ with Express (backend) and better-sqlite3 (SQLite database).
+- Static frontend in public/ (index.html, styles.css, app.js).
+- No accounts, no analytics, no tracking, no personal data. Session identity
+  is a random token in an HttpOnly cookie; the database file (data/app.db)
+  is gitignored.
+- Security rules: the server never trusts client-supplied timer or identity
+  values; sessions are scoped per viewer; session rows are deleted on
+  completion, expiry, and clear so none accumulate; remaining time is always
+  derived from a single server-authored deadline.
+
+## Project layout
+
+- server.js -- Express server: session API, calendar API, settings API.
+- data/exercises.js -- exercise catalog: sections, doses, muscle-group tags,
+  demo links, foundation/accessory block tags. This is where future exercises
+  are added.
+- data/app.db -- SQLite database, created automatically at first run.
+- public/index.html -- app shell (status bar, timer, routine, calendar).
+- public/styles.css -- styles, light/dark aware.
+- public/app.js -- frontend logic. Timer state is always read from the
+  server; the page never computes timer values locally.
+- README.md -- full documentation: features, session lifecycle, quick start,
+  API overview.
+- package.json -- dependencies (express, better-sqlite3) and start script.
+
+## How to run it
+
+Requirements: Node.js 18 or newer.
+
+1. npm install
+2. npm start
+3. Open http://localhost:3000
+
+Environment variables: PORT (default 3000), SESSION_MINUTES (default 30,
+useful for testing shorter sessions).
+
+## API summary
+
+- GET /api/state -- session (with server-computed remaining time),
+  exercises, settings.
+- POST /api/session/start -- idempotent start (resumes a paused session).
+- POST /api/session/pause -- server snapshots remaining time once.
+- POST /api/session/resume -- server re-anchors one fresh deadline.
+- POST /api/session/check -- check/uncheck an exercise; completes and logs
+  the workout when all are checked.
+- POST /api/session/clear -- requires { session_id, confirm: true }.
+- GET /api/calendar -- week view with gym days and completions.
+- PUT /api/settings -- set the flexible third gym day.
+
+## Safety
+
+This is a workout companion, not medical advice. The app tells users to train
+within a comfortable range, that sharp pain is a stop sign, and to follow
+their clinician's guidance when training around an injury or condition.

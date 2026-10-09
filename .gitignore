@@ -1,0 +1,22 @@
+# dependencies
+node_modules/
+
+# local database (created at runtime; never commit workout data)
+data/*.db
+data/*.db-journal
+data/*.db-wal
+data/*.db-shm
+
+# environment
+.env
+.env.local
+
+# logs
+npm-debug.log*
+*.log
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

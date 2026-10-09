@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="light dark" />
+  <title>Adaptive Workout Coach</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <main class="page">
+    <!-- Sticky session status bar -->
+    <section class="status-bar" id="statusBar" aria-label="Session status">
+      <div class="status-state"><span class="status-dot" aria-hidden="true"></span><strong id="statusText">Ready</strong></div>
+      <div class="status-detail">
+        <span id="statusProgress">0 of 12 exercises</span>
+        <span id="statusTimer">30:00 remaining</span>
+      </div>
+      <div class="status-track" aria-hidden="true"><div class="status-fill" id="statusFill"></div></div>
+    </section>
+
+    <header class="intro">
+      <div>
+        <h1>30-minute workout</h1>
+        <p class="lede">A guided session using dumbbells and a resistance band. Just follow
+          along — no experience needed, work at your own pace.</p>
+      </div>
+      <div class="frequency"><span>Weekly rhythm</span><strong>3 sessions</strong></div>
+    </header>
+
+    <aside class="safety" aria-label="Safety note">
+      <div><strong>Sharp pain is a stop sign.</strong> Skip the move and tell your PT.
+        This routine supports — not replaces — your clinician's guidance.</div>
+    </aside>
+
+    <nav class="tabs" aria-label="Views">
+      <button class="tab active" id="tabSession" type="button">Session</button>
+      <button class="tab" id="tabCalendar" type="button">Calendar</button>
+    </nav>
+
+    <!-- ============ SESSION VIEW ============ -->
+    <div id="viewSession">
+      <section class="dashboard" aria-label="Session controls">
+        <div class="timer-panel">
+          <div class="panel-label">Session timer</div>
+          <div class="timer-row">
+            <div class="timer" id="timer" role="timer" aria-live="polite">30:00</div>
+            <div class="timer-controls">
+              <button class="btn" id="timerToggle" type="button">Start</button>
+              <button class="btn danger" id="clearSession" type="button">Clear session</button>
+            </div>
+          </div>
+          <div class="session-date" id="sessionDate"></div>
+        </div>
+        <div class="progress-panel">
+          <div class="progress-top">
+            <div class="panel-label">Session progress</div>
+            <div class="progress-count" id="progressCount">0 / 12</div>
+          </div>
+          <div class="progress-track" aria-hidden="true"><div class="progress-fill" id="progressFill"></div></div>
+          <div class="progress-note" id="progressNote" aria-live="polite">Start with the warm-up and move at your own pace.</div>
+        </div>
+        <div class="clear-confirm" id="clearConfirm" role="region" aria-live="polite">
+          <span><strong>Clear this session?</strong> This resets the timer and every completed exercise.</span>
+          <span class="clear-actions">
+            <button class="btn secondary" id="keepSession" type="button">Keep session</button>
+            <button class="btn danger" id="confirmClear" type="button">Clear now</button>
+          </span>
+        </div>
+        <div class="session-message" id="sessionMessage" role="status"></div>
+      </section>
+
+      <div class="layout">
+        <div class="routine" id="routine"><!-- sections rendered by app.js --></div>
+        <aside class="sidebar" aria-label="Video demos">
+          <section class="side-card">
+            <h2>Watch these first</h2>
+            <p>Short reels covering several of the loaded movements.</p>
+            <div id="featuredDemos"></div>
+          </section>
+          <section class="side-card">
+            <h2>About this routine</h2>
+            <p id="blockNote"></p>
+          </section>
+        </aside>
+      </div>
+    </div>
+
+    <!-- ============ CALENDAR VIEW ============ -->
+    <div id="viewCalendar" hidden>
+      <section class="card">
+        <div class="cal-head">
+          <div>
+            <h2>This week</h2>
+            <p class="muted" id="calSummary"></p>
+          </div>
+          <div class="cal-progress" id="calProgress"></div>
+        </div>
+        <div class="week-grid" id="weekGrid"></div>
+        <div class="third-day">
+          <label for="thirdDaySelect"><strong>Third gym day</strong>
+            <span class="muted">Tue &amp; Thu are fixed. Pick your flexible third day:</span></label>
+          <select id="thirdDaySelect">
+            <option value="none">Not decided yet</option>
+            <option value="fri-morning">Friday morning</option>
+            <option value="fri-night">Friday night</option>
+            <option value="sat-morning">Saturday morning</option>
+          </select>
+        </div>
+        <p class="muted small">Tap a gym day to open that day's session.</p>
+      </section>
+    </div>
+
+    <footer class="footer-note">
+      <span>Dumbbells + resistance band · pain-free range · use a PT-cleared load</span>
+      <span>Session state is stored on the server and survives closing the app.</span>
+    </footer>
+  </main>
+  <script src="/app.js"></script>
+</body>
+</html>
