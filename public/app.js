@@ -321,7 +321,7 @@ function renderCalendar() {
   if (!cal) return;
   const grid = $('weekGrid');
   grid.innerHTML = '';
-  const dows = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const dows = ['Tue', 'Wed', 'Thu', 'Fri', 'Sat']; // Tue–Sat only: Sundays are for church, Mondays are rest
   cal.days.forEach((d, i) => {
     const el = document.createElement('div');
     el.className = 'day' + (d.gym ? ' gym' : '') + (d.date === localDateStr(Date.now()) ? ' today' : '');

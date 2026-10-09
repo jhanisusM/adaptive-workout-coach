@@ -148,7 +148,7 @@ h1 { font-size: clamp(2rem, 5vw, 3.6rem); letter-spacing: -.03em; margin: 0 0 10
 .muted { color: var(--muted); }
 .small { font-size: .82rem; }
 .cal-progress { font: 700 1.4rem/1 ui-monospace, Menlo, monospace; }
-.week-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-bottom: 18px; }
+.week-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 18px; }
 .day { border: 1px solid var(--line); border-radius: 10px; padding: 10px 6px; text-align: center; background: var(--bg); cursor: default; }
 .day.gym { background: var(--green-soft); border-color: var(--green); cursor: pointer; font-weight: 700; }
 .day.gym:hover { outline: 2px solid var(--green); }
@@ -167,7 +167,7 @@ h1 { font-size: clamp(2rem, 5vw, 3.6rem); letter-spacing: -.03em; margin: 0 0 10
   .timer-panel { border-right: 0; border-bottom: 1px solid var(--line); }
   .layout { grid-template-columns: 1fr; }
   .sidebar { position: static; }
-  .week-grid { grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 5px; }
+  .week-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 5px; }
   .day .dnum { font-size: 1rem; }
   .check-row { grid-template-columns: 26px minmax(0, 1fr); }
   .dose { grid-column: 2; justify-self: start; }

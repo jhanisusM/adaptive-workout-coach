@@ -277,14 +277,14 @@ function mondayOfWeek(anchorMs) {
 app.get('/api/calendar', (req, res) => {
   const monday = mondayOfWeek(Date.now());
   const days = [];
-  for (let i = 0; i < 7; i++) {
+  for (let i = 1; i <= 5; i++) { // Tue–Sat only: Monday is rest, Sunday is for church
     days.push(localDate(new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + i).getTime()));
   }
   const settingsRow = getSettings.get(req.viewer);
   const third = settingsRow ? settingsRow.third_day : 'none';
   const doneRows = db
     .prepare('SELECT DISTINCT date FROM completions WHERE viewer_token = ? AND date >= ? AND date <= ?')
-    .all(req.viewer, days[0], days[6]);
+    .all(req.viewer, days[0], days[4]);
   const doneDates = new Set(doneRows.map((r) => r.date));
 
   const dayObjs = days.map((date) => {

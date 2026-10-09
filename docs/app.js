@@ -114,7 +114,7 @@ const FEATURED_DEMOS = [
 /* ---------------- Constants & store ---------------- */
 const SESSION_MS = 30 * 60 * 1000;
 const LS_KEY = 'awc-demo-v1';
-const DOWS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const DOWS = ['Tue', 'Wed', 'Thu', 'Fri', 'Sat']; // Tue–Sat only: Sundays are for church, Mondays are rest
 
 function dayKey(d) {
   const p = n => String(n).padStart(2, '0');
@@ -354,20 +354,20 @@ function renderCalendar() {
   const today = dayKey(new Date());
   const gyms = gymDows();
   let html = '';
-  for (let i = 0; i < 7; i++) {
+  for (let i = 1; i <= 5; i++) { // Tue–Sat: Monday (i=0) is rest, Sunday (i=6) is for church
     const d = new Date(mon.getFullYear(), mon.getMonth(), mon.getDate() + i);
     const key = dayKey(d);
     const isGym = gyms.includes(d.getDay());
     const done = !!store.completions[key];
     const cls = 'day' + (isGym ? ' gym' : '') + (key === today ? ' today' : '') + (key === store.activeDay ? ' selected' : '');
     html += '<div class="' + cls + '"' + (isGym ? ' data-day="' + key + '" role="button" tabindex="0"' : '') + '>' +
-      '<span class="dow">' + DOWS[i] + '</span>' +
+      '<span class="dow">' + DOWS[i - 1] + '</span>' +
       '<span class="dnum">' + d.getDate() + '</span>' +
       '<span class="dmark">' + (done ? '✓ done' : '') + '</span></div>';
   }
   grid.innerHTML = html;
   const weekKeys = [];
-  for (let i = 0; i < 7; i++) {
+  for (let i = 1; i <= 5; i++) { // Tue–Sat only
     const d = new Date(mon.getFullYear(), mon.getMonth(), mon.getDate() + i);
     if (gyms.includes(d.getDay())) weekKeys.push(dayKey(d));
   }
