@@ -1,4 +1,7 @@
 'use strict';
+
+const { resolveVideo } = require('./video-library');
+
 /**
  * Exercise catalog: the single source of truth for the routine.
  *
@@ -10,9 +13,11 @@
  * muscle_groups: free-form tags used for filtering and for planning the
  * future full-body expansion.
  *
- * demos: Instagram demo reels. Only reels that were verified in the original
- * routine are listed here. Exercises with no verified demo intentionally
- * have an empty array. Never invent demo URLs.
+ * demo_ids: references into data/video-library.js. To swap an exercise's
+ * videos, change only its demo_ids list (or edit the library itself).
+ * Exercises with no verified demo intentionally have an empty array.
+ * Never invent demo URLs. At load time each demo_ids list is resolved to
+ * full video objects on `demos`, so downstream code keeps working unchanged.
  */
 
 const SECTIONS = [
@@ -31,11 +36,7 @@ const EXERCISES = [
     note: 'Lie flat. Slide each heel toward your butt, then pump the ankles.',
     dose: '2 min · 20 each',
     muscle_groups: ['calves', 'quads'],
-    demos: [
-      { creator: 'Dr. Priya Chauhan, physio', handle: '@dr.chauhanpriya___mpt_ortho', description: 'Top 9 knee exercises, including labeled ankle pumps and heel slides.', url: 'https://www.instagram.com/reel/DdTa_2ipxGG/' },
-      { creator: 'JAG Physical Therapy', handle: '@jagphysicaltherapy', description: 'Post-knee-replacement starters: seated heel slides, quad sets, and ankle pumps.', url: 'https://www.instagram.com/reel/Dbs_7ZBDeSv/' },
-      { creator: 'CRP Care Rehab Performance', handle: '@carerehabperformance', description: 'Early ACL rehab with ankle pumps, heel slides, and towel-press quad activation.', url: 'https://www.instagram.com/reel/DY1ytN1zRyd/' },
-    ],
+    demo_ids: ['v-chauhan-top9', 'v-jag-post-op', 'v-crp-acl'],
   },
   {
     id: 'quad-sets',
@@ -44,11 +45,7 @@ const EXERCISES = [
     note: 'Tighten your thigh and press the knee into the floor or mat.',
     dose: '15 × 5-sec hold',
     muscle_groups: ['quads'],
-    demos: [
-      { creator: 'JAG Physical Therapy', handle: '@jagphysicaltherapy', description: 'Quad sets with 10-second holds for 10 reps.', url: 'https://www.instagram.com/reel/Dbs_7ZBDeSv/' },
-      { creator: 'Dr. Priya Chauhan', handle: '@dr.chauhanpriya___mpt_ortho', description: 'Labeled quadriceps isometric demonstration.', url: 'https://www.instagram.com/reel/DdTa_2ipxGG/' },
-      { creator: 'Bob and Brad', handle: '@officialbobandbrad', description: 'Seated knee extensions and heel slides routine.', url: 'https://www.instagram.com/reel/DbdouOfxuuc/' },
-    ],
+    demo_ids: ['v-jag-quad-sets', 'v-chauhan-quad-iso', 'v-bobbrad-knee-ext'],
   },
 
   // ---- Strength (accessory block, loaded work) ----
@@ -59,7 +56,7 @@ const EXERCISES = [
     note: 'Hold one dumbbell at your chest. Use the bench as a depth target and keep every rep pain-free.',
     dose: '3 × 8–10',
     muscle_groups: ['quads', 'glutes'],
-    demos: [],
+    demo_ids: [],
   },
   {
     id: 'bulgarian-split-squat',
@@ -68,7 +65,7 @@ const EXERCISES = [
     note: 'Keep the front foot planted and use a comfortable range. Start light and add load only with good control.',
     dose: '3 × 8 each side',
     muscle_groups: ['quads', 'glutes'],
-    demos: [],
+    demo_ids: [],
   },
   {
     id: 'step-ups',
@@ -77,9 +74,7 @@ const EXERCISES = [
     note: 'Drive through the working foot and lower slowly without dropping from the step.',
     dose: '3 × 8 each side',
     muscle_groups: ['quads', 'glutes'],
-    demos: [
-      { creator: 'Connor Clayton / thekneehaber', handle: '@thekneehaber', description: 'Controlled step-up form in an isometric and strength sequence.', url: 'https://www.instagram.com/reel/DcQvZ7ZMLAB/' },
-    ],
+    demo_ids: ['v-kneehaber-stepup'],
   },
   {
     id: 'db-romanian-deadlift',
@@ -88,7 +83,7 @@ const EXERCISES = [
     note: 'Hinge at the hips with soft knees, a long spine, and the dumbbells close to your legs.',
     dose: '3 × 10',
     muscle_groups: ['hamstrings', 'glutes'],
-    demos: [],
+    demo_ids: [],
   },
   {
     id: 'single-leg-rdl',
@@ -97,11 +92,7 @@ const EXERCISES = [
     note: 'Keep the hips level and use a light dumbbell or support as needed for balance.',
     dose: '3 × 8 each side',
     muscle_groups: ['hamstrings', 'glutes'],
-    demos: [
-      { creator: 'DJ Kim', handle: '@djkim.yoga', description: 'Single-leg RDL in five essential knee exercises.', url: 'https://www.instagram.com/reel/DTb3fy5kUi2/' },
-      { creator: 'Pauli Reitman', handle: '@paulinareitman', description: 'Gym-based single-leg RDLs: 8 per side for 3 sets.', url: 'https://www.instagram.com/reel/DdUoESqphzG/' },
-      { creator: 'E3 Rehab', handle: '@e3rehab', description: 'Single-leg RDL and three-way RDL progressions.', url: 'https://www.instagram.com/reel/DZNUZX3SkJS/' },
-    ],
+    demo_ids: ['v-djkim-slrdl', 'v-pauli-slrdl', 'v-e3-slrdl'],
   },
   {
     id: 'straight-leg-raises',
@@ -110,7 +101,7 @@ const EXERCISES = [
     note: 'Lie flat, keep the working knee straight, and lift the heel slowly.',
     dose: '3 × 10 each leg',
     muscle_groups: ['quads'],
-    demos: [],
+    demo_ids: [],
   },
   {
     id: 'glute-bridges',
@@ -119,7 +110,7 @@ const EXERCISES = [
     note: 'Both feet down.',
     dose: '3 × 12',
     muscle_groups: ['glutes'],
-    demos: [],
+    demo_ids: [],
   },
 
   // ---- Stability (foundation block) ----
@@ -130,9 +121,7 @@ const EXERCISES = [
     note: 'Anchor the band behind both knees and sit back into the hold. For more load, hold a dumbbell goblet-style.',
     dose: '3 × 30 sec',
     muscle_groups: ['quads'],
-    demos: [
-      { creator: 'Connor Clayton / thekneehaber', handle: '@thekneehaber', description: 'Spanish squat setup and hold alongside other knee-strength drills.', url: 'https://www.instagram.com/reel/DcQvZ7ZMLAB/' },
-    ],
+    demo_ids: ['v-kneehaber-spanish'],
   },
   {
     id: 'split-squat-hold',
@@ -141,9 +130,7 @@ const EXERCISES = [
     note: 'Hold a comfortable split-squat depth with the front foot fully planted and the torso tall.',
     dose: '~30 sec each side',
     muscle_groups: ['quads', 'glutes'],
-    demos: [
-      { creator: 'Connor Clayton / thekneehaber', handle: '@thekneehaber', description: 'Split-squat hold position in a knee-strength sequence.', url: 'https://www.instagram.com/reel/DcQvZ7ZMLAB/' },
-    ],
+    demo_ids: ['v-kneehaber-split'],
   },
   {
     id: 'single-leg-balance-supported',
@@ -152,7 +139,7 @@ const EXERCISES = [
     note: 'Hand on wall.',
     dose: '3 × 20 sec each side',
     muscle_groups: ['stability'],
-    demos: [],
+    demo_ids: [],
   },
 
   // ---- Cool-down (foundation block) ----
@@ -163,10 +150,7 @@ const EXERCISES = [
     note: 'Ease into the stretch; no bouncing.',
     dose: '30 sec each',
     muscle_groups: ['hamstrings'],
-    demos: [
-      { creator: 'Bob and Brad', handle: '@officialbobandbrad', description: 'Seated hamstring stretch for knee pain.', url: 'https://www.instagram.com/reel/DawDBQtgc70/' },
-      { creator: 'WeShape', handle: '', description: 'Stretch series including a hamstring stretch.', url: 'https://www.instagram.com/reel/DXh11z9AicL/' },
-    ],
+    demo_ids: ['v-bobbrad-hamstring', 'v-weshape-stretch'],
   },
   {
     id: 'calf-stretch',
@@ -175,11 +159,7 @@ const EXERCISES = [
     note: 'Keep the back heel grounded.',
     dose: '30 sec each',
     muscle_groups: ['calves'],
-    demos: [
-      { creator: 'Sommer Riermaier', handle: '', description: 'Wall calf stretch demo explaining how tight calves affect the ankles and knees.', url: 'https://www.instagram.com/reel/DdoYCndzQ0L/' },
-      { creator: 'Dan Hoopes, MD, orthopedic surgeon', handle: '', description: 'Why most people do the wall calf stretch wrong, plus correct form.', url: 'https://www.instagram.com/reel/DbHm60QMxqG/' },
-      { creator: 'Bob and Brad', handle: '@officialbobandbrad', description: 'Calf stretch demonstration.', url: 'https://www.instagram.com/reel/Da8K1oiBHiQ/' },
-    ],
+    demo_ids: ['v-sommer-calf', 'v-hoopes-calf', 'v-bobbrad-calf'],
   },
   {
     id: 'backward-walk',
@@ -188,18 +168,22 @@ const EXERCISES = [
     note: 'Use a clear, level path and move with control.',
     dose: '1 min',
     muscle_groups: ['quads', 'calves'],
-    demos: [
-      { creator: 'Matthew Maloney', handle: '@aclwonders', description: 'Backward treadmill walking in a knee-pain routine.', url: 'https://www.instagram.com/reel/DUlTcAoDmRm/' },
-      { creator: 'Ben Patrick', handle: '@kneesovertoesguy', description: 'Backward treadmill walking for knee rebuilding.', url: 'https://www.instagram.com/reel/DYcmt2QOnV7/' },
-    ],
+    demo_ids: ['v-maloney-backward', 'v-benpatrick-backward'],
   },
 ];
 
-const FEATURED_DEMOS = [
-  { creator: 'DJ Kim', handle: '@djkim.yoga', description: 'Single-leg RDL form within a concise knee-strength sequence.', url: 'https://www.instagram.com/reel/DTb3fy5kUi2/' },
-  { creator: 'thekneehaber', handle: '@thekneehaber', description: 'Spanish squat, split squat, and step-up form in one concise reel.', url: 'https://www.instagram.com/reel/DcQvZ7ZMLAB/' },
-  { creator: 'Pauli Reitman', handle: '@paulinareitman', description: 'Glute and leg session showing single-leg RDLs at 8 reps × 3 sets each side.', url: 'https://www.instagram.com/reel/DdUoESqphzG/' },
-];
+/* Featured demos: ids into the video library, resolved to full video
+ * objects below. To rotate the featured set, change only these ids. */
+const FEATURED_DEMO_IDS = ['v-djkim-featured', 'v-kneehaber-featured', 'v-pauli-featured'];
+const FEATURED_DEMOS = FEATURED_DEMO_IDS.map(resolveVideo);
+
+/* Resolve every exercise's demo_ids into full video objects from the
+ * video library. `demos` keeps working for all downstream code (server
+ * responses, phase resolution, clients), while the catalog itself only
+ * carries ids. Swapping videos never requires touching this file. */
+for (const ex of EXERCISES) {
+  ex.demos = ex.demo_ids.map(resolveVideo);
+}
 
 /* ---------------- Phases (PT-approved 3-phase program) ----------------
  *
@@ -210,7 +194,8 @@ const FEATURED_DEMOS = [
  * catalog dose (dose) or the catalog note (note). Use note_append to ADD a
  * phase-specific coaching cue after the catalog note instead of replacing it.
  * Demo URLs are never invented here: exercises resolve their demos from the
- * catalog above, and new exercises intentionally have an empty demos array.
+ * video library via demo_ids, and new exercises intentionally have an empty
+ * demo_ids array.
  */
 
 const SESSIONS_PER_PHASE = 9;
