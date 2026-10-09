@@ -13,7 +13,7 @@
     <section class="status-bar" id="statusBar" aria-label="Session status">
       <div class="status-state"><span class="status-dot" aria-hidden="true"></span><strong id="statusText">Ready</strong></div>
       <div class="status-detail">
-        <span id="statusProgress">0 of 12 exercises</span>
+        <span id="statusProgress">0 of 8 exercises</span>
         <span id="statusTimer">30:00 remaining</span>
       </div>
       <div class="status-track" aria-hidden="true"><div class="status-fill" id="statusFill"></div></div>
@@ -22,16 +22,35 @@
     <header class="intro">
       <div>
         <h1>30-minute workout</h1>
-        <p class="lede">A guided session using dumbbells and a resistance band. Just follow
-          along — no experience needed, work at your own pace.</p>
+        <p class="lede">A PT-approved 3-phase program: reactivate, reload, return. Pick your
+          phase and follow along at your own pace.</p>
       </div>
       <div class="frequency"><span>Weekly rhythm</span><strong>3 sessions</strong></div>
     </header>
 
     <aside class="safety" aria-label="Safety note">
       <div><strong>Sharp pain is a stop sign.</strong> Skip the move and tell your PT.
-        This routine supports — not replaces — your clinician's guidance.</div>
+        This routine supports, not replaces, your clinician's guidance.</div>
     </aside>
+
+    <!-- ============ PROGRAM PHASE ============ -->
+    <section class="card phase-card" aria-label="Program phase">
+      <div class="panel-label">Your program</div>
+      <h2 id="phaseTitle">Phase 1: Reactivate</h2>
+      <p class="muted" id="phaseGoal"></p>
+      <div class="phase-picker" id="phasePicker" role="group" aria-label="Choose your phase">
+        <button type="button" class="phase-btn" data-phase="1"><strong>Phase 1</strong><span>Reactivate</span></button>
+        <button type="button" class="phase-btn" data-phase="2"><strong>Phase 2</strong><span>Reload</span></button>
+        <button type="button" class="phase-btn" data-phase="3"><strong>Phase 3</strong><span>Return</span></button>
+      </div>
+      <div class="phase-progress" id="phaseProgress" aria-live="polite"></div>
+      <div class="checklist" id="checklistWrap">
+        <h3 id="checklistTitle">Before advancing, confirm all three</h3>
+        <div id="checklistItems"></div>
+        <button class="btn" id="advanceBtn" type="button">Advance to Phase 2</button>
+      </div>
+      <p class="muted small">Changing phase starts a fresh session. The advance button unlocks once the checklist is complete.</p>
+    </section>
 
     <nav class="tabs" aria-label="Views">
       <button class="tab active" id="tabSession" type="button">Session</button>
@@ -55,7 +74,7 @@
         <div class="progress-panel">
           <div class="progress-top">
             <div class="panel-label">Session progress</div>
-            <div class="progress-count" id="progressCount">0 / 12</div>
+            <div class="progress-count" id="progressCount">0 / 8</div>
           </div>
           <div class="progress-track" aria-hidden="true"><div class="progress-fill" id="progressFill"></div></div>
           <div class="progress-note" id="progressNote" aria-live="polite">Start with the warm-up and move at your own pace.</div>

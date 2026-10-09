@@ -1,5 +1,5 @@
 'use strict';
-/* Adaptive Workout Coach — frontend.
+/* Adaptive Workout Coach: frontend.
  *
  * The server is the single source of truth for session state. The timer you
  * see is always the SERVER's remaining time: this page polls /api/state and
@@ -50,19 +50,27 @@ function exerciseById(id) {
 }
 
 function totalExercises() {
-  return state.data.exercises.length;
+  return (state.data.program || []).length;
 }
 
 function checkedCount() {
   const s = state.data.session;
-  return s ? Object.keys(s.checks || {}).length : 0;
+  if (!s) return 0;
+  const program = state.data.program || [];
+  return program.filter((e) => s.checks[e.id]).length;
 }
 
 function renderRoutine() {
   const root = $('routine');
   root.innerHTML = '';
-  state.data.sections.forEach((sec, i) => {
-    const exercises = state.data.exercises.filter((e) => e.section === sec.id);
+  const program = state.data.program || [];
+  let stepNo = 0;
+  state.data.sections.forEach((sec) => {
+    const exercises = program
+      .filter((e) => e.section === sec.id)
+      .sort((a, b) => a.order - b.order);
+    if (!exercises.length) return;
+    stepNo += 1;
     const section = document.createElement('section');
     section.className = 'section';
     section.dataset.section = sec.id;
@@ -72,7 +80,7 @@ function renderRoutine() {
     head.className = 'section-head';
     head.setAttribute('aria-expanded', 'true');
     head.innerHTML =
-      `<span class="section-title"><span class="step-no">${String(i + 1).padStart(2, '0')}</span>` +
+      `<span class="section-title"><span class="step-no">${String(stepNo).padStart(2, '0')}</span>` +
       `<span class="section-heading">${sec.title}</span>` +
       `<span class="block-tag">${sec.block === 'foundation' ? 'foundation block' : 'accessory block'}</span></span>` +
       `<span class="duration">${sec.duration}</span>`;
@@ -218,7 +226,7 @@ function renderStatus() {
   $('progressNote').textContent =
     allDone ? 'Session complete. Nice, controlled work.'
     : done === 0 ? 'Start with the warm-up and move at your own pace.'
-    : `${pct}% complete — keep every rep smooth and pain-free.`;
+    : `${pct}% complete. Keep every rep smooth and pain-free.`;
 
   const d = state.sessionDate || localDateStr(Date.now());
   $('sessionDate').textContent = `Session for ${prettyDate(d)}`;
@@ -253,7 +261,7 @@ async function refreshSession() {
   renderStatus();
   updateSections();
   if (data.session && data.session.expired && prevChecks) {
-    showMessage('Time is up — session ended. Start a new one whenever you are ready.');
+    showMessage('Time is up. Session ended. Start a new one whenever you are ready.');
   }
 }
 
@@ -285,8 +293,9 @@ async function onCheck(exerciseId, checked) {
     if (res.completed) {
       state.data.session = null;
       document.querySelectorAll('input[type="checkbox"][data-exercise]').forEach((b) => { b.checked = false; });
-      showMessage('Workout complete — logged to your calendar. Nice, controlled work.');
+      showMessage('Workout complete. Logged to your calendar and your phase progress.');
       await loadCalendar();
+      await refreshProgramBits();
     } else {
       state.data.session = res.session;
       const box = document.querySelector(`input[data-exercise="${exerciseId}"]`);
@@ -361,6 +370,100 @@ function switchTab(which) {
   $('viewCalendar').hidden = session;
 }
 
+/* ---------------- phase program ---------------- */
+
+const PHASE_NAMES = { 1: 'Reactivate', 2: 'Reload', 3: 'Return' };
+
+function renderPhase() {
+  const d = state.data;
+  if (!d.phase) return;
+  $('phaseTitle').textContent = `Phase ${d.phase.id}: ${d.phase.name} (${d.phase.weeks})`;
+  $('phaseGoal').textContent = d.phase.goal;
+  document.querySelectorAll('#phasePicker .phase-btn').forEach((b) => {
+    b.classList.toggle('active', Number(b.dataset.phase) === d.phase.id);
+  });
+
+  $('phaseProgress').innerHTML = [1, 2, 3].map((id) => {
+    const p = (d.progression && d.progression[id]) || { completed: 0, target: 9 };
+    const done = p.completed >= p.target;
+    return `<div class="phase-row"><span>Phase ${id}: ${PHASE_NAMES[id]}</span>` +
+      `<span class="${done ? 'done' : ''}">${Math.min(p.completed, p.target)} / ${p.target} sessions</span></div>`;
+  }).join('');
+
+  const wrap = $('checklistWrap');
+  if (d.phase.id >= 3) {
+    wrap.hidden = true;
+  } else {
+    wrap.hidden = false;
+    $('checklistTitle').textContent = `Before advancing to Phase ${d.phase.id + 1}, confirm all three`;
+    const box = $('checklistItems');
+    box.innerHTML = '';
+    d.checklist.items.forEach((item) => {
+      const label = document.createElement('label');
+      label.className = 'check-item';
+      const input = document.createElement('input');
+      input.type = 'checkbox';
+      input.checked = d.checklist.confirmed[item.id] === true;
+      input.addEventListener('change', () => onChecklist(item.id, input.checked));
+      label.appendChild(input);
+      label.appendChild(document.createTextNode(item.label));
+      box.appendChild(label);
+    });
+    const ready = d.checklist.items.every((i) => d.checklist.confirmed[i.id] === true);
+    const btn = $('advanceBtn');
+    btn.disabled = !ready;
+    btn.textContent = `Advance to Phase ${d.phase.id + 1}`;
+  }
+}
+
+/** Apply a program update payload (from PUT /api/program or POST
+ *  /api/program/advance) and re-render the session view. */
+function applyProgramUpdate(res) {
+  state.data.session = res.session || null;
+  state.data.phase = res.phase;
+  state.data.program = res.program;
+  state.data.progression = res.progression;
+  state.data.checklist = res.checklist;
+  if (state.data.settings) state.data.settings.phase = res.phase.id;
+  renderRoutine();
+  renderStatus();
+  renderPhase();
+}
+
+async function onPhasePick(phaseId) {
+  try {
+    const res = await api('/api/program', 'PUT', { phase: phaseId });
+    applyProgramUpdate(res);
+    showMessage(`Phase ${phaseId} selected. Your session starts fresh when you press Start.`);
+  } catch (e) { showMessage(e.message); }
+}
+
+async function onChecklist(itemId, confirmed) {
+  try {
+    const res = await api('/api/checklist', 'POST', { item_id: itemId, confirmed });
+    state.data.checklist = res.checklist;
+    renderPhase();
+  } catch (e) { showMessage(e.message); }
+}
+
+async function onAdvance() {
+  try {
+    const res = await api('/api/program/advance', 'POST', {});
+    applyProgramUpdate(res);
+    showMessage(`Advanced to Phase ${res.phase.id}: ${res.phase.name}.`);
+  } catch (e) { showMessage(e.message); }
+}
+
+/** Re-read the phase, progression, and checklist after a workout completes. */
+async function refreshProgramBits() {
+  const data = await api('/api/state');
+  state.data.phase = data.phase;
+  state.data.program = data.program;
+  state.data.progression = data.progression;
+  state.data.checklist = data.checklist;
+  renderPhase();
+}
+
 /* ---------------- init ---------------- */
 
 async function init() {
@@ -370,10 +473,15 @@ async function init() {
   renderRoutine();
   renderFeaturedDemos();
   renderStatus();
+  renderPhase();
   await loadCalendar();
   startPolling();
 
   $('timerToggle').addEventListener('click', onToggle);
+  document.querySelectorAll('#phasePicker .phase-btn').forEach((b) => {
+    b.addEventListener('click', () => onPhasePick(Number(b.dataset.phase)));
+  });
+  $('advanceBtn').addEventListener('click', onAdvance);
   $('clearSession').addEventListener('click', () => {
     if (!state.data.session) { showMessage('No active session to clear.'); return; }
     $('clearConfirm').classList.add('show');
@@ -394,7 +502,7 @@ async function init() {
     } catch (err) { showMessage(err.message); }
   });
 
-  // Re-sync with the server whenever the app becomes visible again — this is
+  // Re-sync with the server whenever the app becomes visible again. This is
   // what makes a session survive closing and reopening.
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) refreshSession().catch(() => {});

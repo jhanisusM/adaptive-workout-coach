@@ -1,5 +1,5 @@
 'use strict';
-/* Adaptive Workout Coach — static GitHub Pages demo.
+/* Adaptive Workout Coach: static GitHub Pages demo.
  *
  * Client-side reimplementation of the session engine. Everything is stored in
  * localStorage under a single key. The timer uses ONE stored deadline:
@@ -64,6 +64,14 @@ const EXERCISES = [
       { creator: 'Pauli Reitman', handle: '@paulinareitman', description: 'Gym-based single-leg RDLs: 8 per side for 3 sets.', url: 'https://www.instagram.com/reel/DdUoESqphzG/' },
       { creator: 'E3 Rehab', handle: '@e3rehab', description: 'Single-leg RDL and three-way RDL progressions.', url: 'https://www.instagram.com/reel/DZNUZX3SkJS/' },
     ] },
+  { id: 'straight-leg-raises', section: 'strength',
+    name: 'Straight leg raises',
+    note: 'Lie flat, keep the working knee straight, and lift the heel slowly.',
+    dose: '3 × 10 each leg', muscle_groups: ['quads'], demos: [] },
+  { id: 'glute-bridges', section: 'strength',
+    name: 'Glute bridges',
+    note: 'Both feet down.',
+    dose: '3 × 12', muscle_groups: ['glutes'], demos: [] },
   { id: 'spanish-squat-hold', section: 'stability',
     name: 'Spanish squat hold with band',
     note: 'Anchor the band behind both knees and sit back into the hold. For more load, hold a dumbbell goblet-style.',
@@ -78,6 +86,10 @@ const EXERCISES = [
     demos: [
       { creator: 'Connor Clayton / thekneehaber', handle: '@thekneehaber', description: 'Split-squat hold position in a knee-strength sequence.', url: 'https://www.instagram.com/reel/DcQvZ7ZMLAB/' },
     ] },
+  { id: 'single-leg-balance-supported', section: 'stability',
+    name: 'Single-leg balance (supported)',
+    note: 'Hand on wall.',
+    dose: '3 × 20 sec each side', muscle_groups: ['stability'], demos: [] },
   { id: 'hamstring-stretch', section: 'cooldown',
     name: 'Hamstring stretch',
     note: 'Ease into the stretch; no bouncing.',
@@ -110,6 +122,107 @@ const FEATURED_DEMOS = [
   { creator: 'thekneehaber', handle: '@thekneehaber', description: 'Spanish squat, split squat, and step-up form in one concise reel.', url: 'https://www.instagram.com/reel/DcQvZ7ZMLAB/' },
   { creator: 'Pauli Reitman', handle: '@paulinareitman', description: 'Glute and leg session showing single-leg RDLs at 8 reps × 3 sets each side.', url: 'https://www.instagram.com/reel/DdUoESqphzG/' },
 ];
+
+/* ---------------- Phases (PT-approved 3-phase program, mirrors data/exercises.js) ----------------
+ *
+ * 3 phases x ~3 weeks each, 3 sessions per week (9 sessions per phase).
+ * Each phase lists its exercises in order; a phase entry can override the
+ * catalog dose (dose), replace the catalog note (note), or append a
+ * phase-specific coaching cue after the catalog note (note_append).
+ * Demo URLs are never invented: exercises resolve demos from the catalog
+ * above, and new exercises intentionally have an empty demos array.
+ */
+const SESSIONS_PER_PHASE = 9;
+
+const PHASES = [
+  {
+    id: 1,
+    name: 'Reactivate',
+    weeks: 'Weeks 1-3',
+    goal: 'Quad activation, range of motion, balance. No loaded knee bending.',
+    exercises: [
+      { exercise_id: 'ankle-pumps-heel-slides' },
+      { exercise_id: 'quad-sets' },
+      { exercise_id: 'straight-leg-raises' },
+      { exercise_id: 'glute-bridges' },
+      { exercise_id: 'single-leg-balance-supported' },
+      { exercise_id: 'hamstring-stretch' },
+      { exercise_id: 'calf-stretch' },
+      { exercise_id: 'backward-walk', note_append: 'Slow. Only once normal forward walk feels steady.' },
+    ],
+  },
+  {
+    id: 2,
+    name: 'Reload',
+    weeks: 'Weeks 4-6',
+    goal: 'Reintroduce loaded patterns. Bilateral before unilateral.',
+    exercises: [
+      { exercise_id: 'ankle-pumps-heel-slides' },
+      { exercise_id: 'quad-sets' },
+      { exercise_id: 'goblet-squat', dose: '3 × 8', note_append: 'Light load. Phase 2 dose.' },
+      { exercise_id: 'step-ups', dose: '3 × 8 each side', note_append: 'Low step, bodyweight to light dumbbells.' },
+      { exercise_id: 'db-romanian-deadlift', dose: '3 × 10', note_append: 'Light load.' },
+      { exercise_id: 'spanish-squat-hold', dose: '3 × 20 sec' },
+      { exercise_id: 'split-squat-hold', dose: '~20 sec each side' },
+      { exercise_id: 'single-leg-rdl', dose: '3 × 6 each side', note_append: 'Bodyweight with wall support.' },
+      { exercise_id: 'hamstring-stretch' },
+      { exercise_id: 'calf-stretch' },
+      { exercise_id: 'backward-walk' },
+    ],
+  },
+  {
+    id: 3,
+    name: 'Return',
+    weeks: 'Weeks 7-9',
+    goal: 'The full routine. Bulgarian split squats enter here.',
+    exercises: [
+      { exercise_id: 'ankle-pumps-heel-slides' },
+      { exercise_id: 'quad-sets' },
+      { exercise_id: 'goblet-squat' },
+      { exercise_id: 'bulgarian-split-squat' },
+      { exercise_id: 'step-ups' },
+      { exercise_id: 'db-romanian-deadlift' },
+      { exercise_id: 'single-leg-rdl' },
+      { exercise_id: 'spanish-squat-hold' },
+      { exercise_id: 'split-squat-hold' },
+      { exercise_id: 'hamstring-stretch' },
+      { exercise_id: 'calf-stretch' },
+      { exercise_id: 'backward-walk' },
+    ],
+  },
+];
+
+/* Advancement checklist: the user must confirm every item before the
+ * "advance to the next phase" action is allowed. */
+const ADVANCEMENT_CHECKLIST = [
+  { id: 'no-swelling', label: 'No swelling after sessions' },
+  { id: 'pain-ok', label: 'Pain 2/10 or less during, zero the next morning' },
+  { id: 'good-control', label: 'Every set completed with good control' },
+];
+
+const EXERCISE_BY_ID = new Map(EXERCISES.map(e => [e.id, e]));
+
+/* Resolve a phase into its concrete program: the phase's ordered exercises
+ * with catalog fields merged and phase-specific doses/notes applied. */
+function resolvePhase(phaseId) {
+  const phase = PHASES.find(p => p.id === phaseId);
+  if (!phase) throw new Error('unknown phase: ' + phaseId);
+  const exercises = phase.exercises.map((entry, i) => {
+    const base = EXERCISE_BY_ID.get(entry.exercise_id);
+    if (!base) throw new Error('unknown exercise in phase ' + phaseId + ': ' + entry.exercise_id);
+    let note = entry.note !== undefined ? entry.note : base.note;
+    if (entry.note_append) note = note + ' ' + entry.note_append;
+    return {
+      id: base.id, section: base.section, name: base.name, note,
+      dose: entry.dose !== undefined ? entry.dose : base.dose,
+      muscle_groups: base.muscle_groups, demos: base.demos, order: i,
+    };
+  });
+  return {
+    id: phase.id, name: phase.name, weeks: phase.weeks, goal: phase.goal,
+    sessions_target: SESSIONS_PER_PHASE, exercises,
+  };
+}
 
 /* ---------------- Constants & store ---------------- */
 const SESSION_MS = 30 * 60 * 1000;
@@ -144,13 +257,16 @@ function defaultStore() {
     thirdDay: 'none',   // none | fri-morning | fri-night | sat-morning
     completions: {},    // { 'YYYY-MM-DD': true }
     activeDay: dayKey(new Date()),
+    phase: 1,           // current program phase (1 | 2 | 3)
+    phaseSessions: { 1: 0, 2: 0, 3: 0 }, // completed sessions per phase
+    checklist: {},      // { '1': { itemId: true }, '2': {...}, '3': {...} }
   };
 }
 function loadStore() {
   try {
     const raw = localStorage.getItem(LS_KEY);
     if (raw) return Object.assign(defaultStore(), JSON.parse(raw));
-  } catch (e) { /* storage unavailable — run memory-only */ }
+  } catch (e) { /* storage unavailable: run memory-only */ }
   return defaultStore();
 }
 const store = loadStore();
@@ -173,10 +289,16 @@ function remainingMs() {
   const s = store.session;
   if (!s) return SESSION_MS;
   if (s.state === 'paused') return Math.max(0, s.remainingMs || 0);
-  return Math.max(0, s.deadline - Date.now()); // single stored deadline — one subtraction
+  return Math.max(0, s.deadline - Date.now()); // single stored deadline: one subtraction
 }
-function checkedCount() { return EXERCISES.filter(e => store.checks[e.id]).length; }
-function allChecked() { return EXERCISES.every(e => store.checks[e.id]); }
+function currentPhaseId() {
+  return PHASES.some(p => p.id === store.phase) ? store.phase : 1;
+}
+function currentProgram() {
+  return resolvePhase(currentPhaseId()).exercises;
+}
+function checkedCount() { return currentProgram().filter(e => store.checks[e.id]).length; }
+function allChecked() { return currentProgram().every(e => store.checks[e.id]); }
 function gymDows() {
   const days = [2, 4]; // Tue, Thu (JS: 0=Sun)
   if (store.thirdDay === 'fri-morning' || store.thirdDay === 'fri-night') days.push(5);
@@ -208,7 +330,7 @@ function startSession() {
   };
   save();
   renderAll();
-  showMessage('Session started — 30:00 on the clock.');
+  showMessage('Session started: 30:00 on the clock.');
 }
 
 function pauseSession() {
@@ -239,17 +361,19 @@ function endSession(message) {
 }
 
 function expireSession() {
-  endSession('Time expired — session ended.');
+  endSession('Time expired. Session ended.');
 }
 
 function completeWorkout() {
   const day = store.session ? store.session.day : store.activeDay;
+  const p = currentPhaseId();
   store.completions[day] = true;
+  store.phaseSessions[p] = (store.phaseSessions[p] || 0) + 1; // count toward the phase's 9-session target
   store.session = null;
   store.checks = {};
   save();
   renderAll();
-  showMessage('Workout complete — logged for ' + prettyDay(day) + '. Nice work.');
+  showMessage('Workout complete: logged for ' + prettyDay(day) + '. Nice work.');
 }
 
 function toggleCheck(id) {
@@ -264,7 +388,37 @@ function requestClear() { $('clearConfirm').classList.add('show'); }
 function cancelClear() { $('clearConfirm').classList.remove('show'); }
 function confirmClear() {
   cancelClear();
-  endSession('Session cleared — timer, checkboxes, and progress reset.');
+  endSession('Session cleared: timer, checkboxes, and progress reset.');
+}
+
+/* ---------------- Phase actions ---------------- */
+function checklistConfirmed(phaseId) {
+  const c = store.checklist[String(phaseId)] || {};
+  return ADVANCEMENT_CHECKLIST.map(i => ({ id: i.id, label: i.label, confirmed: c[i.id] === true }));
+}
+function setPhase(n) {
+  store.phase = n;
+  store.session = null; // a new program starts fresh: old checks belong to a different exercise list
+  store.checks = {};
+  save();
+  renderAll();
+}
+function toggleChecklistItem(id, confirmed) {
+  const key = String(currentPhaseId());
+  const cur = Object.assign({}, store.checklist[key] || {});
+  if (confirmed) cur[id] = true;
+  else delete cur[id];
+  store.checklist[key] = cur;
+  save();
+  renderPhase();
+}
+function advancePhase() {
+  const p = currentPhaseId();
+  if (p >= 3) return;
+  const ready = checklistConfirmed(p).every(i => i.confirmed);
+  if (!ready) { showMessage('Confirm all three checklist items first.'); return; }
+  setPhase(p + 1);
+  showMessage('Advanced to Phase ' + (p + 1) + '.');
 }
 
 /* ---------------- Rendering ---------------- */
@@ -274,9 +428,9 @@ function renderStatus() {
   const bar = $('statusBar'), s = store.session;
   bar.classList.toggle('active', !!(s && s.state === 'running'));
   bar.classList.toggle('complete', !!(s && s.state === 'paused'));
-  const n = checkedCount();
-  $('statusCount').textContent = n + ' / ' + EXERCISES.length;
-  $('statusFill').style.width = (n / EXERCISES.length * 100) + '%';
+  const n = checkedCount(), total = currentProgram().length;
+  $('statusCount').textContent = n + ' / ' + total;
+  $('statusFill').style.width = (n / total * 100) + '%';
   $('statusDay').textContent = prettyDay(s ? s.day : store.activeDay);
   if (!s) $('statusText').textContent = 'Ready';
   else if (s.state === 'paused') $('statusText').textContent = 'Paused';
@@ -291,17 +445,17 @@ function renderTimer() {
   $('btnPause').hidden = !(s && s.state === 'running');
   $('btnResume').hidden = !(s && s.state === 'paused');
   $('sessionDate').textContent = s
-    ? 'Session: ' + prettyDay(s.day) + ' — ' + (s.state === 'paused' ? 'paused' : 'in progress')
-    : 'No active session — pick a gym day and press Start.';
+    ? 'Session: ' + prettyDay(s.day) + ' (' + (s.state === 'paused' ? 'paused' : 'in progress') + ')'
+    : 'No active session: pick a gym day and press Start.';
 }
 
 function renderProgress() {
-  const n = checkedCount();
-  $('progressCount').textContent = n + ' / ' + EXERCISES.length;
-  $('progressFill').style.width = (n / EXERCISES.length * 100) + '%';
+  const n = checkedCount(), total = currentProgram().length;
+  $('progressCount').textContent = n + ' / ' + total;
+  $('progressFill').style.width = (n / total * 100) + '%';
   $('progressNote').textContent = n === 0
     ? 'Check off exercises as you finish them.'
-    : n === EXERCISES.length ? 'All done!' : (EXERCISES.length - n) + ' to go.';
+    : n === total ? 'All done!' : (total - n) + ' to go.';
 }
 
 function demoHtml(ex) {
@@ -324,8 +478,12 @@ function demoHtml(ex) {
 
 function renderSections() {
   const root = $('routine');
-  root.innerHTML = SECTIONS.map((sec, i) => {
-    const exs = EXERCISES.filter(e => e.section === sec.id);
+  const program = currentProgram();
+  let stepNo = 0;
+  root.innerHTML = SECTIONS.map(sec => {
+    const exs = program.filter(e => e.section === sec.id).sort((a, b) => a.order - b.order);
+    if (!exs.length) return '';
+    stepNo += 1;
     const done = exs.every(e => store.checks[e.id]);
     const collapsed = !!store.collapsed[sec.id];
     const rows = exs.map(e => {
@@ -340,7 +498,7 @@ function renderSections() {
     }).join('');
     return '<section class="section' + (collapsed ? ' collapsed' : '') + (done ? ' complete' : '') + '">' +
       '<button class="section-head" data-section="' + esc(sec.id) + '">' +
-      '<span class="section-title"><span class="step-no">' + String(i + 1).padStart(2, '0') + '</span>' +
+      '<span class="section-title"><span class="step-no">' + String(stepNo).padStart(2, '0') + '</span>' +
       '<h3 class="section-heading">' + esc(sec.title) + '</h3>' +
       '<span class="block-tag">' + (sec.block === 'foundation' ? 'foundation block' : 'accessory block') + '</span></span>' +
       '<span class="duration">' + esc(sec.duration) + '</span></button>' +
@@ -388,7 +546,48 @@ function renderFeatured() {
     'the accessory block as the program grows.';
 }
 
+/* ---------------- Phase UI ---------------- */
+const PHASE_NAMES = { 1: 'Reactivate', 2: 'Reload', 3: 'Return' };
+
+function renderPhase() {
+  const p = currentPhaseId();
+  const phase = PHASES.find(x => x.id === p);
+  $('phaseTitle').textContent = 'Phase ' + p + ': ' + phase.name + ' (' + phase.weeks + ')';
+  $('phaseGoal').textContent = phase.goal;
+  document.querySelectorAll('#phasePicker .phase-btn').forEach(b => {
+    b.classList.toggle('active', Number(b.getAttribute('data-phase')) === p);
+  });
+
+  let prog = '';
+  for (let id = 1; id <= 3; id++) {
+    const done = store.phaseSessions[id] || 0;
+    const target = SESSIONS_PER_PHASE;
+    const reached = done >= target;
+    prog += '<div class="phase-row"><span>Phase ' + id + ': ' + PHASE_NAMES[id] + '</span>' +
+      '<span class="' + (reached ? 'done' : '') + '">' + Math.min(done, target) + ' / ' + target + ' sessions</span></div>';
+  }
+  $('phaseProgress').innerHTML = prog;
+
+  const wrap = $('checklistWrap');
+  if (p >= 3) {
+    wrap.hidden = true;
+  } else {
+    wrap.hidden = false;
+    $('checklistTitle').textContent = 'Before advancing to Phase ' + (p + 1) + ', confirm all three';
+    const items = checklistConfirmed(p);
+    $('checklistItems').innerHTML = items.map(it =>
+      '<label class="check-item"><input type="checkbox" data-checklist-item="' + it.id + '"' +
+      (it.confirmed ? ' checked' : '') + '><span>' + esc(it.label) + '</span></label>'
+    ).join('');
+    const ready = items.every(it => it.confirmed);
+    const btn = $('advanceBtn');
+    btn.disabled = !ready;
+    btn.textContent = 'Advance to Phase ' + (p + 1);
+  }
+}
+
 function renderAll() {
+  renderPhase();
   renderStatus();
   renderTimer();
   renderProgress();
@@ -403,7 +602,7 @@ function tick() {
   const left = s.deadline - Date.now(); // the one and only subtraction
   if (left <= 0) { expireSession(); return; }
   $('timer').textContent = fmtTime(left);
-  $('statusText').textContent = 'Running — ' + fmtTime(left) + ' left';
+  $('statusText').textContent = 'Running: ' + fmtTime(left) + ' left';
 }
 
 /* ---------------- Events (delegated) ---------------- */
@@ -434,11 +633,24 @@ document.addEventListener('click', ev => {
     store.activeDay = day.getAttribute('data-day');
     save(); renderCalendar(); renderStatus(); renderTimer();
     $('routine').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    return;
+  }
+  const phaseBtn = ev.target.closest('[data-phase]');
+  if (phaseBtn) {
+    setPhase(Number(phaseBtn.getAttribute('data-phase')));
+    showMessage('Phase selected. Your session starts fresh when you press Start.');
+    return;
+  }
+  if (ev.target.id === 'advanceBtn') {
+    advancePhase();
+    return;
   }
 });
 document.addEventListener('change', ev => {
   const box = ev.target.closest('[data-check]');
   if (box) { toggleCheck(box.getAttribute('data-check')); return; }
+  const item = ev.target.closest('[data-checklist-item]');
+  if (item) { toggleChecklistItem(item.getAttribute('data-checklist-item'), item.checked); return; }
   if (ev.target.id === 'thirdDay') {
     store.thirdDay = ev.target.value;
     save(); renderCalendar();

@@ -1,6 +1,6 @@
 'use strict';
 /**
- * Adaptive Workout Coach — server.
+ * Adaptive Workout Coach: server.
  *
  * Session design (single source of truth, all server-side):
  * - The server authors ONE deadline per running session (deadline_ms).
@@ -13,7 +13,7 @@
  *   server ignores any such fields outright.
  * - Each browser gets its own random viewer token in an HttpOnly cookie.
  *   Every session row is keyed by that token, so sessions are scoped per
- *   viewer — no cross-user access is possible.
+ *   viewer: no cross-user access is possible.
  * - A session ends only on: workout completion (all exercises checked),
  *   timer expiry, or an explicit confirmed Clear. Completion/expiry/clear
  *   all delete the active session row, so no orphaned sessions accumulate.
@@ -24,7 +24,7 @@ const Database = require('better-sqlite3');
 const crypto = require('crypto');
 const path = require('path');
 const fs = require('fs');
-const { SECTIONS, EXERCISES, FEATURED_DEMOS } = require('./data/exercises');
+const { SECTIONS, EXERCISES, FEATURED_DEMOS, PHASES, ADVANCEMENT_CHECKLIST, SESSIONS_PER_PHASE, resolvePhase } = require('./data/exercises');
 
 const PORT = Number(process.env.PORT || 3000);
 const SESSION_MINUTES = Number(process.env.SESSION_MINUTES || 30); // override for testing
@@ -60,6 +60,23 @@ CREATE TABLE IF NOT EXISTS settings (
   third_day    TEXT NOT NULL DEFAULT 'none'  -- 'none' | 'fri-morning' | 'sat-morning' | 'fri-night'
 );
 `);
+
+/* Schema migrations for the phase rebuild (idempotent). */
+function columnExists(table, column) {
+  return db
+    .prepare(`PRAGMA table_info(${table})`)
+    .all()
+    .some((c) => c.name === column);
+}
+if (!columnExists('settings', 'phase')) {
+  db.exec('ALTER TABLE settings ADD COLUMN phase INTEGER NOT NULL DEFAULT 1');
+}
+if (!columnExists('settings', 'checklist_json')) {
+  db.exec(`ALTER TABLE settings ADD COLUMN checklist_json TEXT NOT NULL DEFAULT '{}'`);
+}
+if (!columnExists('completions', 'phase')) {
+  db.exec('ALTER TABLE completions ADD COLUMN phase INTEGER');
+}
 
 const EXERCISE_IDS = new Set(EXERCISES.map((e) => e.id));
 const THIRD_DAY_OPTIONS = ['none', 'fri-morning', 'sat-morning', 'fri-night'];
@@ -108,12 +125,22 @@ const updateChecks = db.prepare(
 );
 const deleteActive = db.prepare('DELETE FROM active_session WHERE viewer_token = ?');
 const insertCompletion = db.prepare(
-  'INSERT INTO completions (viewer_token, date, completed_at_ms, kind) VALUES (?, ?, ?, ?)'
+  'INSERT INTO completions (viewer_token, date, completed_at_ms, kind, phase) VALUES (?, ?, ?, ?, ?)'
 );
-const getSettings = db.prepare('SELECT third_day FROM settings WHERE viewer_token = ?');
+const getSettings = db.prepare('SELECT third_day, phase, checklist_json FROM settings WHERE viewer_token = ?');
+const ensureSettings = db.prepare(
+  'INSERT INTO settings (viewer_token) VALUES (?) ON CONFLICT(viewer_token) DO NOTHING'
+);
 const upsertSettings = db.prepare(
   `INSERT INTO settings (viewer_token, third_day) VALUES (?, ?)
    ON CONFLICT(viewer_token) DO UPDATE SET third_day = excluded.third_day`
+);
+const updatePhase = db.prepare('UPDATE settings SET phase = ? WHERE viewer_token = ?');
+const updateChecklist = db.prepare('UPDATE settings SET checklist_json = ? WHERE viewer_token = ?');
+const countPhaseCompletions = db.prepare(
+  `SELECT COUNT(*) AS n FROM completions
+   WHERE viewer_token = ? AND kind = 'workout'
+     AND (phase = ? OR (phase IS NULL AND ? = 3))`
 );
 
 /* ---------- helpers ---------- */
@@ -133,9 +160,63 @@ function parseChecks(json) {
   }
 }
 
+/* ---------- phase program ---------- */
+
+function viewerPhase(viewer) {
+  ensureSettings.run(viewer);
+  const row = getSettings.get(viewer);
+  const p = Number(row.phase);
+  return PHASES.some((ph) => ph.id === p) ? p : 1;
+}
+
+function parseChecklistJson(json) {
+  try {
+    const obj = JSON.parse(json);
+    return obj && typeof obj === 'object' ? obj : {};
+  } catch {
+    return {};
+  }
+}
+
+/** Advancement checklist state for one phase: the fixed items plus the
+ *  viewer's confirmed answers for the given phase. */
+function checklistFor(viewer, phaseId) {
+  ensureSettings.run(viewer);
+  const row = getSettings.get(viewer);
+  const all = parseChecklistJson(row.checklist_json);
+  const confirmed = all[String(phaseId)] || {};
+  return { items: ADVANCEMENT_CHECKLIST, confirmed };
+}
+
+/** Per-phase progression: completed workout sessions vs the 9-session
+ *  target (3 weeks x 3 sessions). Completions logged before the phase
+ *  rebuild are treated as phase 3, the full routine. */
+function progressionFor(viewer) {
+  const out = {};
+  for (const ph of PHASES) {
+    const row = countPhaseCompletions.get(viewer, ph.id, ph.id);
+    out[ph.id] = { completed: row.n, target: SESSIONS_PER_PHASE };
+  }
+  return out;
+}
+
+function phasePayload(phaseId) {
+  const program = resolvePhase(phaseId);
+  return {
+    phase: {
+      id: program.id,
+      name: program.name,
+      weeks: program.weeks,
+      goal: program.goal,
+      sessions_target: program.sessions_target,
+    },
+    program: program.exercises,
+  };
+}
+
 /**
  * Serialize the active session. Remaining time is DERIVED from the single
- * server-authored deadline — it is never stored as a ticking value, so a
+ * server-authored deadline: it is never stored as a ticking value, so a
  * reopen can only ever read the truth once.
  *
  * If the deadline has passed, the session is ended atomically: one completion
@@ -150,8 +231,9 @@ function serializeSession(viewer) {
     row.status === 'paused' ? row.paused_remaining_ms : Math.max(0, row.deadline_ms - now);
 
   if (remaining <= 0) {
+    const phaseId = viewerPhase(viewer);
     const finish = db.transaction(() => {
-      insertCompletion.run(viewer, localDate(now), now, 'time');
+      insertCompletion.run(viewer, localDate(now), now, 'time', phaseId);
       deleteActive.run(viewer);
     });
     finish();
@@ -180,12 +262,16 @@ function serializeSession(viewer) {
 
 app.get('/api/state', (req, res) => {
   const settingsRow = getSettings.get(req.viewer);
+  const phaseId = viewerPhase(req.viewer);
   res.json({
     session: serializeSession(req.viewer),
     sections: SECTIONS,
     exercises: EXERCISES,
+    ...phasePayload(phaseId),
+    progression: progressionFor(req.viewer),
+    checklist: checklistFor(req.viewer, phaseId),
     featured_demos: FEATURED_DEMOS,
-    settings: { third_day: settingsRow ? settingsRow.third_day : 'none' },
+    settings: { third_day: settingsRow ? settingsRow.third_day : 'none', phase: phaseId },
     session_minutes: SESSION_MINUTES,
   });
 });
@@ -240,10 +326,14 @@ app.post('/api/session/check', (req, res) => {
   if (checked) checks[exercise_id] = true;
   else delete checks[exercise_id];
 
-  if (Object.keys(checks).length >= EXERCISES.length) {
-    // Workout complete: log once, remove the session — it cannot linger.
+  // Completion is measured against the current phase's exercise list, and
+  // the completion is recorded with that phase for progression tracking.
+  const phaseId = viewerPhase(req.viewer);
+  const programLength = resolvePhase(phaseId).exercises.length;
+  if (Object.keys(checks).length >= programLength) {
+    // Workout complete: log once, remove the session. It cannot linger.
     const finish = db.transaction(() => {
-      insertCompletion.run(req.viewer, localDate(now), now, 'workout');
+      insertCompletion.run(req.viewer, localDate(now), now, 'workout', phaseId);
       deleteActive.run(req.viewer);
     });
     finish();
@@ -255,7 +345,7 @@ app.post('/api/session/check', (req, res) => {
 
 app.post('/api/session/clear', (req, res) => {
   // Explicit confirmation is required, and the session id must match the
-  // server's own active session — a forged or foreign id clears nothing.
+  // server's own active session. A forged or foreign id clears nothing.
   const { session_id, confirm } = req.body || {};
   if (confirm !== true) return res.status(400).json({ error: 'confirmation required' });
   const row = getActive.get(req.viewer);
@@ -313,6 +403,77 @@ app.put('/api/settings', (req, res) => {
   }
   upsertSettings.run(req.viewer, third_day);
   res.json({ third_day });
+});
+
+/* ---------- phase program ---------- */
+
+/** Set the current phase. Switching phases starts the new program fresh:
+ *  any active session is cleared because its checks belong to a different
+ *  exercise list. */
+app.put('/api/program', (req, res) => {
+  const { phase } = req.body || {};
+  const phaseId = Number(phase);
+  if (!PHASES.some((p) => p.id === phaseId)) {
+    return res.status(400).json({ error: 'invalid phase' });
+  }
+  const current = viewerPhase(req.viewer);
+  if (phaseId !== current) {
+    const change = db.transaction(() => {
+      updatePhase.run(phaseId, req.viewer);
+      deleteActive.run(req.viewer);
+    });
+    change();
+  }
+  res.json({
+    ...phasePayload(phaseId),
+    progression: progressionFor(req.viewer),
+    checklist: checklistFor(req.viewer, phaseId),
+    session: serializeSession(req.viewer),
+  });
+});
+
+/** Confirm (or unconfirm) one advancement-checklist item for the current phase. */
+app.post('/api/checklist', (req, res) => {
+  const { item_id, confirmed } = req.body || {};
+  if (!ADVANCEMENT_CHECKLIST.some((i) => i.id === item_id) || typeof confirmed !== 'boolean') {
+    return res.status(400).json({ error: 'invalid checklist item' });
+  }
+  const phaseId = viewerPhase(req.viewer);
+  ensureSettings.run(req.viewer);
+  const all = parseChecklistJson(getSettings.get(req.viewer).checklist_json);
+  const key = String(phaseId);
+  const cur = Object.assign({}, all[key] || {});
+  if (confirmed) cur[item_id] = true;
+  else delete cur[item_id];
+  all[key] = cur;
+  updateChecklist.run(JSON.stringify(all), req.viewer);
+  res.json({ checklist: checklistFor(req.viewer, phaseId) });
+});
+
+/** Advance to the next phase. Gated on the full advancement checklist for
+ *  the current phase; the server enforces this even if the client does not. */
+app.post('/api/program/advance', (req, res) => {
+  const phaseId = viewerPhase(req.viewer);
+  if (phaseId >= PHASES.length) {
+    return res.status(400).json({ error: 'already at the final phase' });
+  }
+  const { items, confirmed } = checklistFor(req.viewer, phaseId);
+  const ready = items.every((i) => confirmed[i.id] === true);
+  if (!ready) {
+    return res.status(400).json({ error: 'advancement checklist incomplete' });
+  }
+  const next = phaseId + 1;
+  const change = db.transaction(() => {
+    updatePhase.run(next, req.viewer);
+    deleteActive.run(req.viewer);
+  });
+  change();
+  res.json({
+    ...phasePayload(next),
+    progression: progressionFor(req.viewer),
+    checklist: checklistFor(req.viewer, next),
+    session: serializeSession(req.viewer),
+  });
 });
 
 /* ---------- static frontend ---------- */

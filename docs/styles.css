@@ -1,4 +1,4 @@
-/* Adaptive Workout Coach — static demo stylesheet (GitHub Pages) */
+/* Adaptive Workout Coach: static demo stylesheet (GitHub Pages) */
 :root {
   --bg: #f4f7f5;
   --paper: #ffffff;
@@ -142,6 +142,28 @@ h1 { font-size: clamp(2rem, 5vw, 3.6rem); letter-spacing: -.03em; margin: 0 0 10
 
 .cal-head { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 16px; }
 .cal-progress { font: 700 1.4rem/1 ui-monospace, Menlo, monospace; }
+
+/* Program phase card */
+.card { background: var(--paper); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow); padding: 22px; }
+.muted { color: var(--muted); }
+.small { font-size: .82rem; }
+.phase-card { margin-bottom: 20px; }
+.phase-card h2 { margin: 4px 0 6px; font-size: 1.3rem; }
+.phase-card .muted { margin: 0 0 4px; }
+.phase-picker { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 14px 0; }
+.phase-btn { border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 10px; padding: 10px 8px; cursor: pointer; display: grid; gap: 2px; text-align: center; font: inherit; }
+.phase-btn strong { font-size: .85rem; }
+.phase-btn span { font-size: .75rem; color: var(--muted); }
+.phase-btn.active { border-color: var(--green); background: var(--green-soft); }
+.phase-progress { display: grid; gap: 6px; margin-bottom: 14px; font-size: .88rem; }
+.phase-row { display: flex; justify-content: space-between; gap: 10px; }
+.phase-row .done { color: var(--green); font-weight: 700; }
+.checklist { border-top: 1px solid var(--line); padding-top: 14px; }
+.checklist h3 { margin: 0 0 6px; font-size: .95rem; }
+.check-item { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; cursor: pointer; font-size: .9rem; }
+.check-item input { width: 22px; height: 22px; margin-top: 1px; accent-color: var(--green); flex: 0 0 auto; }
+#advanceBtn { margin-top: 10px; }
+#advanceBtn:disabled { opacity: .5; cursor: not-allowed; }
 .week-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 18px; }
 .day { border: 1px solid var(--line); border-radius: 10px; padding: 10px 6px; text-align: center; background: var(--bg); cursor: default; }
 .day.gym { background: var(--green-soft); border-color: var(--green); cursor: pointer; font-weight: 700; }

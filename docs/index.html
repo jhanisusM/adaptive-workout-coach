@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Adaptive Workout Coach — live demo</title>
-<meta name="description" content="Adaptive Workout Coach — a guided 30-minute workout app anyone can follow, even with no routine or experience. Live GitHub Pages demo.">
+<title>Adaptive Workout Coach: live demo</title>
+<meta name="description" content="Adaptive Workout Coach: a guided 30-minute workout app anyone can follow, even with no routine or experience. Live GitHub Pages demo.">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -12,22 +12,40 @@
 
   <div class="status-bar" id="statusBar">
     <div class="status-state"><span class="status-dot" id="statusDot"></span><span id="statusText">Ready</span></div>
-    <div class="status-detail"><span id="statusDay">—</span><span id="statusCount">0 / 12</span></div>
+    <div class="status-detail"><span id="statusDay">&ndash;</span><span id="statusCount">0 / 8</span></div>
     <div class="status-track"><div class="status-fill" id="statusFill"></div></div>
   </div>
 
   <header class="intro">
     <div>
       <h1>30-minute workout</h1>
-      <p class="lede">A guided session using dumbbells and a resistance band. Just follow
-        along — no experience needed, work at your own pace.</p>
-      <p class="demo-badge">Live demo — progress is stored in this browser only.</p>
+      <p class="lede">A PT-approved 3-phase program: reactivate, reload, return. Pick your
+        phase and follow along at your own pace.</p>
+      <p class="demo-badge">Live demo: progress is stored in this browser only.</p>
     </div>
     <div class="frequency"><span>Weekly rhythm</span><strong>3 sessions</strong></div>
   </header>
 
-  <div class="safety"><strong>Train smart:</strong> stay inside a comfortable range — sharp
+  <div class="safety"><strong>Train smart:</strong> stay inside a comfortable range. Sharp
     pain is a stop sign, skip the move. This demo is a workout companion, not medical advice.</div>
+
+  <section class="card phase-card" aria-label="Program phase">
+    <div class="panel-label">Your program</div>
+    <h2 id="phaseTitle">Phase 1: Reactivate</h2>
+    <p class="muted" id="phaseGoal"></p>
+    <div class="phase-picker" id="phasePicker" role="group" aria-label="Choose your phase">
+      <button type="button" class="phase-btn" data-phase="1"><strong>Phase 1</strong><span>Reactivate</span></button>
+      <button type="button" class="phase-btn" data-phase="2"><strong>Phase 2</strong><span>Reload</span></button>
+      <button type="button" class="phase-btn" data-phase="3"><strong>Phase 3</strong><span>Return</span></button>
+    </div>
+    <div class="phase-progress" id="phaseProgress" aria-live="polite"></div>
+    <div class="checklist" id="checklistWrap">
+      <h3 id="checklistTitle">Before advancing, confirm all three</h3>
+      <div id="checklistItems"></div>
+      <button class="btn" id="advanceBtn" type="button">Advance to Phase 2</button>
+    </div>
+    <p class="muted small">Changing phase starts a fresh session. The advance button unlocks once the checklist is complete.</p>
+  </section>
 
   <section class="dashboard" aria-label="Session">
     <div class="timer-panel">
@@ -45,7 +63,7 @@
     </div>
     <div class="progress-panel">
       <div class="panel-label">Progress</div>
-      <div class="progress-top"><span class="progress-count" id="progressCount">0 / 12</span></div>
+      <div class="progress-top"><span class="progress-count" id="progressCount">0 / 8</span></div>
       <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
       <div class="progress-note" id="progressNote">Check off exercises as you finish them.</div>
     </div>
@@ -92,7 +110,7 @@
   </div>
 
   <footer class="footer-note">
-    <span>Adaptive Workout Coach — static GitHub Pages demo. No accounts, no tracking; everything is stored in your browser's local storage.</span>
+    <span>Adaptive Workout Coach: static GitHub Pages demo. No accounts, no tracking; everything is stored in your browser's local storage.</span>
     <span><a href="https://github.com/jhanisusM/adaptive-workout-coach">View the source on GitHub</a></span>
   </footer>
 
