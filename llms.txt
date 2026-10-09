@@ -1,100 +1,60 @@
 # Adaptive Workout Coach
 
-Adaptive Workout Coach is a private, self-hosted web app: a guided 30-minute
-workout anyone can follow, done three times per week — even with no routine,
-no plan, and no experience. It walks the user through 12 exercises with a
-server-backed session timer, per-exercise checklists, demo videos, and a
-weekly gym calendar. It is built to grow into a personalized full-body
-training companion.
+Adaptive Workout Coach is a lightweight guided workout app: pure HTML, CSS,
+and JavaScript, no build step, no server, no accounts. It runs as a static
+site (GitHub Pages serves the docs/ folder). Open the URL and follow the
+30-minute session, three times per week — even with no routine, no plan, and
+no experience. Every exercise tells the user exactly what to do, in what
+order, with big legible dose labels (sets x reps), muscle-group tags, and
+demo video links where verified demos exist. No expertise required.
 
-## Who it's for
+## The program
 
-Anyone who wants a workout to simply follow: people with nothing else to do
-who want something structured, and people with no knowledge of how to train
-who want the guesswork removed. Every exercise tells the user exactly what to
-do, in what order, with big legible dose labels (sets x reps), muscle-group
-tags, and demo video links where verified demos exist. No expertise required.
+A PT-approved 3-phase program, about 3 weeks per phase, 3 sessions per week.
+Phase 1 "Reactivate" (8 exercises): quad activation, range of motion,
+balance, no loaded knee bending. Phase 2 "Reload" (11 exercises): light
+loaded patterns, bilateral before unilateral. Phase 3 "Return" (12
+exercises): the full routine including Bulgarian split squats. A phase picker
+selects the current phase; progression tracks sessions toward 9 per phase;
+phase-ups require confirming an advancement checklist (no swelling after
+sessions, pain 2/10 or less during with zero pain the next morning, every set
+with good control).
 
 ## What the app does
 
-- Runs a guided 30-minute workout session: warm-up (4 min), strength (18 min),
-  stability (5 min), cool-down (3 min) — 12 exercises built around dumbbells
-  and a resistance band.
-- Tracks each exercise with a checkbox, a large dose label, muscle-group tags,
-  and demo video links where verified demos exist (never invented).
-- Collapses finished sections (accordion cards) so a completed workout stays tidy.
-- Times the session with a server-authored deadline, so closing and reopening
-  the app resumes the running session with the correct time remaining.
-- Supports the full session lifecycle: start, pause, resume, clear, complete,
-  and timer expiry, with one source of truth on the server.
-- Provides a "Clear session" button with a confirmation step. A session ends
-  only on workout completion, timer expiry, or an explicit confirmed Clear --
-  never on back navigation or closing the app.
-- Shows a sticky status bar and progress bar so the user's place in the session
-  is always visible.
-- Shows a weekly gym calendar: two fixed gym days plus a configurable third
-  day (Friday morning, Friday night, or Saturday morning). Tapping a gym day
-  opens that day's session; completed days are logged toward a 3-per-week goal.
-
-## Vision
-
-The exercise catalog is split into a fixed "foundation block" (warm-up,
-stability, cool-down) and a rotating "accessory block" (currently loaded
-strength work). Future upper-body, back, and arm exercises will slot into the
-accessory block without redesigning the app, growing it into a personalized
-training companion with more routines and more muscle groups. To add
-exercises, edit data/exercises.js.
-
-## Tech stack
-
-- Node.js 18+ with Express (backend) and better-sqlite3 (SQLite database).
-- Static frontend in public/ (index.html, styles.css, app.js).
-- No accounts, no analytics, no tracking, no personal data. Session identity
-  is a random token in an HttpOnly cookie; the database file (data/app.db)
-  is gitignored.
-- Security rules: the server never trusts client-supplied timer or identity
-  values; sessions are scoped per viewer; session rows are deleted on
-  completion, expiry, and clear so none accumulate; remaining time is always
-  derived from a single server-authored deadline.
+- Runs a guided 30-minute workout with a single stored timer deadline, so
+  closing and reopening the browser resumes with the correct time left.
+- Full session lifecycle: start, pause, resume, clear (with confirmation),
+  complete, timer expiry.
+- Per-exercise checklists, accordion sections, progress bar, sticky status
+  bar, big dose labels.
+- Tue-Sat gym calendar (Sundays are for church, Mondays are rest) with a
+  configurable third gym day; completed days log toward the 3-per-week goal.
+- Demo videos come from a topic-organized video library
+  (docs/video-library.js). To swap an exercise's videos, edit only that file.
+  Demo URLs are only added when verified, never invented.
+- All progress is stored in the browser's localStorage. No accounts, no
+  analytics, no tracking, no personal data.
 
 ## Project layout
 
-- server.js -- Express server: session API, calendar API, settings API.
-- data/exercises.js -- exercise catalog: sections, doses, muscle-group tags,
-  demo links, foundation/accessory block tags. This is where future exercises
-  are added.
-- data/app.db -- SQLite database, created automatically at first run.
-- public/index.html -- app shell (status bar, timer, routine, calendar).
-- public/styles.css -- styles, light/dark aware.
-- public/app.js -- frontend logic. Timer state is always read from the
-  server; the page never computes timer values locally.
-- README.md -- full documentation: features, session lifecycle, quick start,
-  API overview.
-- package.json -- dependencies (express, better-sqlite3) and start script.
+- docs/index.html -- app shell (status bar, timer, routine, calendar,
+  phase picker, checklist).
+- docs/styles.css -- styles, native CSS, light/dark aware.
+- docs/app.js -- all app logic: phases, timer, calendar, checklist,
+  progression. Progress persists in localStorage.
+- docs/video-library.js -- topic-organized demo video library. This is the
+  file to edit when swapping videos.
+- README.md -- full documentation.
+- llms.txt -- this file.
 
 ## How to run it
 
-Requirements: Node.js 18 or newer.
+Live: https://jhanisusM.github.io/adaptive-workout-coach/ (GitHub Pages,
+deploys from docs/ on every push to main).
 
-1. npm install
-2. npm start
-3. Open http://localhost:3000
-
-Environment variables: PORT (default 3000), SESSION_MINUTES (default 30,
-useful for testing shorter sessions).
-
-## API summary
-
-- GET /api/state -- session (with server-computed remaining time),
-  exercises, settings.
-- POST /api/session/start -- idempotent start (resumes a paused session).
-- POST /api/session/pause -- server snapshots remaining time once.
-- POST /api/session/resume -- server re-anchors one fresh deadline.
-- POST /api/session/check -- check/uncheck an exercise; completes and logs
-  the workout when all are checked.
-- POST /api/session/clear -- requires { session_id, confirm: true }.
-- GET /api/calendar -- week view with gym days and completions.
-- PUT /api/settings -- set the flexible third gym day.
+Locally: serve the docs/ folder with any static file server, e.g.
+`cd docs && python3 -m http.server 8000`, then open http://localhost:8000.
 
 ## Safety
 
