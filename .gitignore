@@ -7,3 +7,6 @@ Thumbs.db
 # logs
 npm-debug.log*
 *.log
+
+# dev-only test tooling (never shipped to docs/)
+node_modules/

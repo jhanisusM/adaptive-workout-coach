@@ -1,0 +1,11 @@
+{
+  "name": "adaptive-workout-coach",
+  "private": true,
+  "description": "Static workout coach. The site in docs/ has no runtime dependencies.",
+  "scripts": {
+    "test": "node --test"
+  },
+  "devDependencies": {
+    "jsdom": "^26.1.0"
+  }
+}

@@ -99,12 +99,13 @@ const EXERCISES = [
 /* Featured demos: ids into the video library. To rotate the featured set,
  * change only these ids. */
 const FEATURED_DEMO_IDS = ['v-djkim-featured', 'v-kneehaber-featured', 'v-pauli-featured'];
-const FEATURED_DEMOS = FEATURED_DEMO_IDS.map(resolveVideo);
+const FEATURED_DEMOS = resolveDemoList(FEATURED_DEMO_IDS);
 
 /* Resolve every exercise's demo_ids into full video objects from the video
- * library (video-library.js must be loaded before this file). `demos`
- * keeps working for all rendering code below. */
-EXERCISES.forEach(function (ex) { ex.demos = ex.demo_ids.map(resolveVideo); });
+ * library (video-library.js must be loaded before this file). Unknown ids
+ * are skipped so one bad id cannot blank the page. `demos` keeps working
+ * for all rendering code below. */
+EXERCISES.forEach(function (ex) { ex.demos = resolveDemoList(ex.demo_ids); });
 
 /* ---------------- Phases (PT-approved 3-phase program, mirrors data/exercises.js) ----------------
  *
@@ -211,7 +212,19 @@ function resolvePhase(phaseId) {
 /* ---------------- Constants & store ---------------- */
 const SESSION_MS = 30 * 60 * 1000;
 const LS_KEY = 'awc-demo-v1';
-const DOWS = ['Tue', 'Wed', 'Thu', 'Fri', 'Sat']; // Tue–Sat only: Sundays are for church, Mondays are rest
+const STORE_VERSION = 2;
+const NOTICE_CORRUPT = 'Saved data could not be read, so progress was reset to a fresh start.';
+const NOTICE_PARTIAL = 'Some saved data was unreadable and was reset. The rest of your progress was kept.';
+const THIRD_DAYS = ['none', 'fri-morning', 'fri-night', 'sat-morning'];
+const DOWS = ['Tue', 'Wed', 'Thu', 'Fri', 'Sat']; // Tue-Sat only: Sundays are for church, Mondays are rest
+
+let bootNotice = null;
+let bootDirty = false;
+let renderedDayKey = null;
+let pendingPhase = null;
+let pendingPhaseMessage = null;
+let booted = false;
+let messageTimer = null;
 
 function dayKey(d) {
   const p = n => String(n).padStart(2, '0');
@@ -220,6 +233,10 @@ function dayKey(d) {
 function parseDay(key) {
   const parts = key.split('-').map(Number);
   return new Date(parts[0], parts[1] - 1, parts[2]);
+}
+function isDayKey(key) {
+  if (typeof key !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(key)) return false;
+  return dayKey(parseDay(key)) === key;
 }
 function prettyDay(key) {
   const d = parseDay(key);
@@ -232,27 +249,408 @@ function mondayOf(date) {
   d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
   return d;
 }
+function isPlainObject(value) {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) return false;
+  const proto = Object.getPrototypeOf(value);
+  return proto === Object.prototype || proto === null;
+}
+function isGymDow(dow, thirdDay) {
+  if (dow === 2 || dow === 4) return true; // Tue, Thu
+  if (thirdDay === 'fri-morning' || thirdDay === 'fri-night') return dow === 5;
+  if (thirdDay === 'sat-morning') return dow === 6;
+  return false;
+}
+function isGymDay(date, thirdDay) {
+  return isGymDow(date.getDay(), thirdDay);
+}
+function isGymDayKey(key, thirdDay) {
+  return isDayKey(key) && isGymDay(parseDay(key), thirdDay);
+}
+function nextGymDay(fromDate, thirdDay) {
+  const d = new Date(fromDate.getFullYear(), fromDate.getMonth(), fromDate.getDate());
+  for (let i = 0; i < 14; i++) {
+    if (isGymDay(d, thirdDay)) return dayKey(d);
+    d.setDate(d.getDate() + 1);
+  }
+  return dayKey(fromDate);
+}
+function weekDayKeys(today) {
+  const todayDate = today instanceof Date ? today : new Date(today);
+  const mon = mondayOf(todayDate);
+  const keys = [];
+  for (let i = 1; i <= 5; i++) {
+    const d = new Date(mon.getFullYear(), mon.getMonth(), mon.getDate() + i);
+    keys.push(dayKey(d));
+  }
+  return keys;
+}
+/* Keep a day that is still in the visible Tue-Sat week. Otherwise use today
+ * when it is a gym day, or the next gym day. */
+function resolveActiveDay(activeDay, today, thirdDay) {
+  const todayDate = today instanceof Date ? today : new Date(today);
+  if (isDayKey(activeDay) && weekDayKeys(todayDate).indexOf(activeDay) !== -1) return activeDay;
+  if (isGymDay(todayDate, thirdDay)) return dayKey(todayDate);
+  return nextGymDay(todayDate, thirdDay);
+}
+function rolloverActiveDay(state, now) {
+  const today = now instanceof Date ? now : new Date(now);
+  const next = resolveActiveDay(state.activeDay, today, state.thirdDay);
+  const changed = next !== state.activeDay;
+  if (changed) state.activeDay = next;
+  return { changed: changed, activeDay: state.activeDay, todayKey: dayKey(today) };
+}
+function thirdDaySelection(state, thirdDay, today) {
+  const nextThird = THIRD_DAYS.indexOf(thirdDay) === -1 ? state.thirdDay : thirdDay;
+  let activeDay = state.activeDay;
+  if (!sessionIsActive(state.session) && !isGymDayKey(activeDay, nextThird)) {
+    activeDay = resolveActiveDay(null, today, nextThird);
+  }
+  return { thirdDay: nextThird, activeDay: activeDay };
+}
+function normalizePhase(phase) {
+  const n = Number(phase);
+  return PHASES.some(p => p.id === n) ? n : 1;
+}
+function sessionIsActive(session) {
+  return !!(session && (session.state === 'running' || session.state === 'paused' || session.state === 'expired'));
+}
+function shouldExpireOnLoad(session, now) {
+  return !!(session && session.state === 'running' && typeof session.deadline === 'number' && session.deadline - now <= 0);
+}
+function expireIfDue(state, now) {
+  const s = state.session;
+  if (!shouldExpireOnLoad(s, now)) return false;
+  state.session = {
+    state: 'expired',
+    startedAt: typeof s.startedAt === 'number' ? s.startedAt : s.deadline - SESSION_MS,
+    deadline: s.deadline,
+    remainingMs: 0,
+    day: s.day,
+  };
+  return true;
+}
+function remainingMs(session, now) {
+  const s = session === undefined ? store.session : session;
+  const t = typeof now === 'number' ? now : Date.now();
+  if (!s) return SESSION_MS;
+  if (s.state === 'paused' || s.state === 'expired') return Math.max(0, s.remainingMs || 0);
+  return Math.max(0, s.deadline - t);
+}
+function canStartSession(state) {
+  const session = state.session;
+  if (session && session.state === 'paused') return { ok: true, action: 'resume' };
+  if (session && session.state === 'running') return { ok: false, reason: 'already-running' };
+  if (session && session.state === 'expired') return { ok: false, reason: 'expired' };
+  if (!isGymDayKey(state.activeDay, state.thirdDay)) return { ok: false, reason: 'not-gym-day' };
+  return { ok: true, action: 'start' };
+}
+function programExerciseIds(phaseId) {
+  return resolvePhase(normalizePhase(phaseId)).exercises.map(e => e.id);
+}
+function toggleCheckState(state, id) {
+  if (!sessionIsActive(state.session)) return { ok: false, reason: 'no-session' };
+  if (!isPlainObject(state.checks)) state.checks = {};
+  if (state.checks[id]) delete state.checks[id];
+  else state.checks[id] = true;
+  const allDone = programExerciseIds(state.phase).every(eid => !!state.checks[eid]);
+  return { ok: true, allChecked: allDone };
+}
+/* Log the session day once. Refuses a missing session or a non-gym day.
+ * Does not mutate state when it refuses. */
+function applyCompletion(state) {
+  const session = state.session;
+  if (!sessionIsActive(session)) return { ok: false, reason: 'no-session' };
+  const day = session.day;
+  if (!isGymDayKey(day, state.thirdDay)) return { ok: false, reason: 'not-gym-day', day: day };
+  const phase = normalizePhase(state.phase);
+  if (!isPlainObject(state.completions)) state.completions = {};
+  if (!isPlainObject(state.phaseSessions)) state.phaseSessions = { 1: 0, 2: 0, 3: 0 };
+  const already = !!state.completions[day];
+  state.completions[day] = true;
+  if (!already) state.phaseSessions[phase] = (Number(state.phaseSessions[phase]) || 0) + 1;
+  state.session = null;
+  state.checks = {};
+  return { ok: true, already: already, day: day, phase: phase };
+}
+function phaseChangeDecision(state, nextPhase) {
+  const current = normalizePhase(state.phase);
+  const next = Number(nextPhase);
+  if (!PHASES.some(p => p.id === next)) return { action: 'noop' };
+  if (next === current) return { action: 'noop' };
+  if (sessionIsActive(state.session)) return { action: 'confirm', phase: next };
+  return { action: 'apply', phase: next };
+}
+function applyPhaseChange(state, nextPhase) {
+  const next = Number(nextPhase);
+  if (!PHASES.some(p => p.id === next)) return state;
+  state.phase = next;
+  state.session = null;
+  state.checks = {};
+  return state;
+}
+function checklistReady(checklist, phaseId) {
+  const c = (checklist && checklist[String(phaseId)]) || {};
+  return ADVANCEMENT_CHECKLIST.every(item => c[item.id] === true);
+}
 
-function defaultStore() {
+function defaultStore(now) {
+  const today = now instanceof Date ? now : new Date();
   return {
-    session: null,      // { state:'running'|'paused', startedAt, deadline, remainingMs, day }
-    checks: {},         // { exerciseId: true }
-    collapsed: {},      // { sectionId: true }
-    thirdDay: 'none',   // none | fri-morning | fri-night | sat-morning
-    completions: {},    // { 'YYYY-MM-DD': true }
-    activeDay: dayKey(new Date()),
-    phase: 1,           // current program phase (1 | 2 | 3)
-    phaseSessions: { 1: 0, 2: 0, 3: 0 }, // completed sessions per phase
-    checklist: {},      // { '1': { itemId: true }, '2': {...}, '3': {...} }
+    version: STORE_VERSION,
+    session: null,
+    checks: {},
+    collapsed: {},
+    thirdDay: 'none',
+    completions: {},
+    activeDay: dayKey(today),
+    phase: 1,
+    phaseSessions: { 1: 0, 2: 0, 3: 0 },
+    checklist: {},
+    unlockedPhase: 1,
+    symptoms: {},
+    clearance: null,
+    history: [],
   };
 }
+
+function sanitizePhase(raw, present) {
+  if (!present) return { value: 1, repaired: false };
+  const n = Number(raw);
+  if (n === 1 || n === 2 || n === 3) return { value: n, repaired: false };
+  return { value: 1, repaired: true };
+}
+function sanitizePhaseSessions(raw, present) {
+  const out = { 1: 0, 2: 0, 3: 0 };
+  if (!present) return { value: out, repaired: false, changed: true };
+  if (!isPlainObject(raw)) return { value: out, repaired: true, changed: true };
+  let repaired = false;
+  let changed = false;
+  [1, 2, 3].forEach(id => {
+    if (!Object.prototype.hasOwnProperty.call(raw, String(id))) { changed = true; return; }
+    const original = raw[id];
+    const n = Number(original);
+    const numeric = typeof original === 'number' || (typeof original === 'string' && original.trim() !== '');
+    if (!numeric || !Number.isFinite(n)) {
+      repaired = true;
+      changed = true;
+      return;
+    }
+    let count = Math.floor(n);
+    if (count < 0) count = 0;
+    if (count > SESSIONS_PER_PHASE) count = SESSIONS_PER_PHASE;
+    if (count !== n || count !== original) changed = true;
+    out[id] = count;
+  });
+  Object.keys(raw).forEach(key => {
+    if (key !== '1' && key !== '2' && key !== '3') changed = true;
+  });
+  return { value: out, repaired: repaired, changed: changed };
+}
+function sanitizeFlagMap(raw, present) {
+  if (!present) return { value: {}, repaired: false };
+  if (!isPlainObject(raw)) return { value: {}, repaired: true };
+  const out = {};
+  Object.keys(raw).forEach(key => { if (raw[key]) out[key] = true; });
+  return { value: out, repaired: false };
+}
+function sanitizeCompletions(raw, present) {
+  if (!present) return { value: {}, repaired: false };
+  if (!isPlainObject(raw)) return { value: {}, repaired: true };
+  const out = {};
+  let repaired = false;
+  Object.keys(raw).forEach(key => {
+    if (!raw[key]) return;
+    if (!isDayKey(key)) { repaired = true; return; }
+    out[key] = true;
+  });
+  return { value: out, repaired: repaired };
+}
+function sanitizeChecklist(raw, present) {
+  if (!present) return { value: {}, repaired: false };
+  if (!isPlainObject(raw)) return { value: {}, repaired: true };
+  const out = {};
+  let repaired = false;
+  Object.keys(raw).forEach(phaseKey => {
+    const bucket = raw[phaseKey];
+    if (!isPlainObject(bucket)) { repaired = true; return; }
+    const clean = {};
+    Object.keys(bucket).forEach(item => { if (bucket[item]) clean[item] = true; });
+    out[phaseKey] = clean;
+  });
+  return { value: out, repaired: repaired };
+}
+function sanitizeActiveDay(raw, present, today) {
+  if (!present) return { value: dayKey(today), repaired: false };
+  if (!isDayKey(raw)) return { value: dayKey(today), repaired: true };
+  return { value: raw, repaired: false };
+}
+function sanitizeThirdDay(raw, present) {
+  if (!present) return { value: 'none', repaired: false };
+  if (THIRD_DAYS.indexOf(raw) === -1) return { value: 'none', repaired: true };
+  return { value: raw, repaired: false };
+}
+function sanitizeSession(raw, present) {
+  if (!present || raw == null) return { value: null, repaired: false };
+  if (!isPlainObject(raw)) return { value: null, repaired: true };
+  const state = raw.state;
+  if (state !== 'running' && state !== 'paused' && state !== 'expired') return { value: null, repaired: true };
+  if (typeof raw.deadline !== 'number' || !Number.isFinite(raw.deadline)) return { value: null, repaired: true };
+  if (!isDayKey(raw.day)) return { value: null, repaired: true };
+  let remaining = null;
+  let repaired = false;
+  if (Object.prototype.hasOwnProperty.call(raw, 'remainingMs') && raw.remainingMs != null) {
+    if (typeof raw.remainingMs === 'number' && Number.isFinite(raw.remainingMs)) remaining = raw.remainingMs;
+    else repaired = true;
+  }
+  const startedAt = (typeof raw.startedAt === 'number' && Number.isFinite(raw.startedAt))
+    ? raw.startedAt
+    : raw.deadline - SESSION_MS;
+  return {
+    value: { state: state, startedAt: startedAt, deadline: raw.deadline, remainingMs: remaining, day: raw.day },
+    repaired: repaired,
+  };
+}
+function sanitizeJsonObject(raw, present, fallback, nullIsValid) {
+  if (!present) return { value: fallback, repaired: false };
+  if (raw == null) return { value: fallback, repaired: !nullIsValid };
+  if (!isPlainObject(raw)) return { value: fallback, repaired: true };
+  try { return { value: JSON.parse(JSON.stringify(raw)), repaired: false }; }
+  catch (e) { return { value: fallback, repaired: true }; }
+}
+function sanitizeHistory(raw, present) {
+  if (!present || raw == null) return { value: [], repaired: false };
+  if (!Array.isArray(raw)) return { value: [], repaired: true };
+  try { return { value: JSON.parse(JSON.stringify(raw)), repaired: false }; }
+  catch (e) { return { value: [], repaired: true }; }
+}
+function hasOwn(raw, key) {
+  return Object.prototype.hasOwnProperty.call(raw, key);
+}
+
+/* v1 (no version) -> v2. Validates each field, keeps good progress, and
+ * grandfathers unlockedPhase at the current phase. Counts above 9 are capped.
+ * Corrupt roots become a fresh store plus a one-time notice. */
+function migrate(raw, now) {
+  const today = now instanceof Date ? now : new Date();
+  if (!isPlainObject(raw)) {
+    return { state: defaultStore(today), changed: true, notice: NOTICE_CORRUPT };
+  }
+  let repaired = false;
+  let changed = raw.version !== STORE_VERSION;
+
+  const phaseInfo = sanitizePhase(raw.phase, hasOwn(raw, 'phase'));
+  if (phaseInfo.repaired) repaired = true;
+  if (!hasOwn(raw, 'phase') || phaseInfo.repaired) changed = true;
+  const phase = phaseInfo.value;
+
+  let unlocked = phase;
+  if (!hasOwn(raw, 'unlockedPhase')) changed = true;
+  else {
+    const n = Number(raw.unlockedPhase);
+    if (n === 1 || n === 2 || n === 3) unlocked = n;
+    else { repaired = true; changed = true; }
+  }
+  if (unlocked < phase) { unlocked = phase; changed = true; }
+
+  const sessionsInfo = sanitizePhaseSessions(raw.phaseSessions, hasOwn(raw, 'phaseSessions'));
+  if (sessionsInfo.repaired) repaired = true;
+  if (sessionsInfo.changed) changed = true;
+
+  const checksInfo = sanitizeFlagMap(raw.checks, hasOwn(raw, 'checks'));
+  const collapsedInfo = sanitizeFlagMap(raw.collapsed, hasOwn(raw, 'collapsed'));
+  const completionsInfo = sanitizeCompletions(raw.completions, hasOwn(raw, 'completions'));
+  const checklistInfo = sanitizeChecklist(raw.checklist, hasOwn(raw, 'checklist'));
+  const dayInfo = sanitizeActiveDay(raw.activeDay, hasOwn(raw, 'activeDay'), today);
+  const thirdInfo = sanitizeThirdDay(raw.thirdDay, hasOwn(raw, 'thirdDay'));
+  const sessionInfo = sanitizeSession(raw.session, hasOwn(raw, 'session'));
+  const symptomsInfo = sanitizeJsonObject(raw.symptoms, hasOwn(raw, 'symptoms'), {}, false);
+  const clearanceInfo = sanitizeJsonObject(raw.clearance, hasOwn(raw, 'clearance'), null, true);
+  const historyInfo = sanitizeHistory(raw.history, hasOwn(raw, 'history'));
+
+  [checksInfo, collapsedInfo, completionsInfo, checklistInfo, dayInfo, thirdInfo, sessionInfo, symptomsInfo, clearanceInfo, historyInfo].forEach(info => {
+    if (info.repaired) repaired = true;
+  });
+  if (!hasOwn(raw, 'checks') || !hasOwn(raw, 'collapsed') || !hasOwn(raw, 'completions') ||
+      !hasOwn(raw, 'checklist') || !hasOwn(raw, 'activeDay') || !hasOwn(raw, 'thirdDay') ||
+      !hasOwn(raw, 'session') || !hasOwn(raw, 'symptoms') || !hasOwn(raw, 'clearance') ||
+      !hasOwn(raw, 'history')) {
+    changed = true;
+  }
+
+  if (repaired) changed = true;
+  return {
+    state: {
+      version: STORE_VERSION,
+      session: sessionInfo.value,
+      checks: checksInfo.value,
+      collapsed: collapsedInfo.value,
+      thirdDay: thirdInfo.value,
+      completions: completionsInfo.value,
+      activeDay: dayInfo.value,
+      phase: phase,
+      phaseSessions: sessionsInfo.value,
+      checklist: checklistInfo.value,
+      unlockedPhase: unlocked,
+      symptoms: symptomsInfo.value,
+      clearance: clearanceInfo.value,
+      history: historyInfo.value,
+    },
+    changed: changed,
+    notice: repaired ? NOTICE_PARTIAL : null,
+  };
+}
+
+function loadStoreFromRaw(rawString, now) {
+  if (rawString == null || rawString === '') {
+    return { state: defaultStore(now), changed: false, notice: null };
+  }
+  try {
+    return migrate(JSON.parse(rawString), now);
+  } catch (e) {
+    return { state: defaultStore(now), changed: true, notice: NOTICE_CORRUPT };
+  }
+}
+
 function loadStore() {
   try {
-    const raw = localStorage.getItem(LS_KEY);
-    if (raw) return Object.assign(defaultStore(), JSON.parse(raw));
-  } catch (e) { /* storage unavailable: run memory-only */ }
-  return defaultStore();
+    if (typeof localStorage === 'undefined' || !localStorage) return defaultStore();
+    const result = loadStoreFromRaw(localStorage.getItem(LS_KEY), new Date());
+    bootNotice = result.notice;
+    bootDirty = result.changed;
+    return result.state;
+  } catch (e) {
+    return defaultStore();
+  }
 }
+
+function getResolveVideo() {
+  if (typeof resolveVideo === 'function') return resolveVideo;
+  if (typeof require === 'function') {
+    try {
+      const lib = require('./video-library.js');
+      if (lib && typeof lib.resolveVideo === 'function') return lib.resolveVideo;
+    } catch (err) { /* library missing: demos stay empty */ }
+  }
+  return function () { return null; };
+}
+/* Unknown or throwing ids are skipped. One bad id must not blank the page. */
+function resolveDemoList(ids, resolve) {
+  const fn = resolve || getResolveVideo();
+  const out = [];
+  const list = Array.isArray(ids) ? ids : [];
+  list.forEach(id => {
+    let video = null;
+    try { video = fn(id); }
+    catch (err) {
+      if (typeof console !== 'undefined' && console && typeof console.warn === 'function') {
+        console.warn(err && err.message ? err.message : 'unknown video id: ' + id);
+      }
+    }
+    if (video && typeof video === 'object' && video.url) out.push(video);
+  });
+  return out;
+}
+
 const store = loadStore();
 function save() {
   try { localStorage.setItem(LS_KEY, JSON.stringify(store)); } catch (e) { /* ignore */ }
@@ -269,28 +667,25 @@ function fmtTime(ms) {
   const s = Math.ceil(ms / 1000);
   return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
 }
-function remainingMs() {
-  const s = store.session;
-  if (!s) return SESSION_MS;
-  if (s.state === 'paused') return Math.max(0, s.remainingMs || 0);
-  return Math.max(0, s.deadline - Date.now()); // single stored deadline: one subtraction
-}
 function currentPhaseId() {
-  return PHASES.some(p => p.id === store.phase) ? store.phase : 1;
+  return normalizePhase(store.phase);
 }
 function currentProgram() {
   return resolvePhase(currentPhaseId()).exercises;
 }
-function checkedCount() { return currentProgram().filter(e => store.checks[e.id]).length; }
-function allChecked() { return currentProgram().every(e => store.checks[e.id]); }
+function checkedCount() {
+  return currentProgram().filter(e => store.checks[e.id]).length;
+}
+function allChecked() {
+  return currentProgram().every(e => store.checks[e.id]);
+}
 function gymDows() {
-  const days = [2, 4]; // Tue, Thu (JS: 0=Sun)
-  if (store.thirdDay === 'fri-morning' || store.thirdDay === 'fri-night') days.push(5);
-  else if (store.thirdDay === 'sat-morning') days.push(6);
+  const days = [];
+  for (let dow = 0; dow < 7; dow++) {
+    if (isGymDow(dow, store.thirdDay)) days.push(dow);
+  }
   return days;
 }
-
-let messageTimer = null;
 function showMessage(text) {
   const el = $('sessionMessage');
   el.textContent = text;
@@ -301,14 +696,20 @@ function showMessage(text) {
 
 /* ---------------- Session lifecycle ---------------- */
 function startSession() {
-  const s = store.session;
-  if (s && s.state === 'paused') { resumeSession(); return; }
-  if (s && s.state === 'running') return;
+  const decision = canStartSession(store);
+  if (!decision.ok) {
+    if (decision.reason === 'not-gym-day') {
+      showMessage('Pick a gym day before starting. This program trains Tuesday, Thursday, and your optional third day.');
+    }
+    return;
+  }
+  if (decision.action === 'resume') { resumeSession(); return; }
+  if (decision.action !== 'start') return;
   const now = Date.now();
   store.session = {
     state: 'running',
     startedAt: now,
-    deadline: now + SESSION_MS, // written ONCE; reopen only reads it
+    deadline: now + SESSION_MS,
     remainingMs: null,
     day: store.activeDay,
   };
@@ -320,7 +721,7 @@ function startSession() {
 function pauseSession() {
   const s = store.session;
   if (!s || s.state !== 'running') return;
-  s.remainingMs = Math.max(0, s.deadline - Date.now()); // snapshot once
+  s.remainingMs = Math.max(0, s.deadline - Date.now());
   s.state = 'paused';
   save();
   renderAll();
@@ -329,7 +730,7 @@ function pauseSession() {
 function resumeSession() {
   const s = store.session;
   if (!s || s.state !== 'paused') return;
-  s.deadline = Date.now() + Math.max(0, s.remainingMs || 0); // re-anchor once
+  s.deadline = Date.now() + Math.max(0, s.remainingMs || 0);
   s.remainingMs = null;
   s.state = 'running';
   save();
@@ -339,33 +740,60 @@ function resumeSession() {
 function endSession(message) {
   store.session = null;
   store.checks = {};
+  pendingPhase = null;
+  pendingPhaseMessage = null;
   save();
   renderAll();
   if (message) showMessage(message);
 }
 
-function expireSession() {
-  endSession('Time expired. Session ended.');
+function offerExpiryChoice() {
+  if (!expireIfDue(store, Date.now())) return false;
+  save();
+  renderAll();
+  const expiryText = 'Time is up. Log this workout anyway, or discard it.';
+  if (bootNotice) {
+    showMessage(bootNotice + ' ' + expiryText);
+    bootNotice = null;
+  } else {
+    showMessage(expiryText);
+  }
+  return true;
+}
+
+function discardExpired() {
+  endSession('Session discarded. Nothing was logged.');
 }
 
 function completeWorkout() {
-  const day = store.session ? store.session.day : store.activeDay;
-  const p = currentPhaseId();
-  store.completions[day] = true;
-  store.phaseSessions[p] = (store.phaseSessions[p] || 0) + 1; // count toward the phase's 9-session target
-  store.session = null;
-  store.checks = {};
+  const result = applyCompletion(store);
+  if (!result.ok) {
+    if (result.reason === 'no-session') {
+      showMessage('Start a session before logging a workout.');
+    } else if (result.reason === 'not-gym-day') {
+      const when = isDayKey(result.day) ? prettyDay(result.day) : 'that day';
+      showMessage('Nothing was logged. This program does not train on ' + when + '.');
+    }
+    renderAll();
+    return;
+  }
+  pendingPhase = null;
+  pendingPhaseMessage = null;
   save();
   renderAll();
-  showMessage('Workout complete: logged for ' + prettyDay(day) + '. Nice work.');
+  if (result.already) showMessage('Already logged for ' + prettyDay(result.day) + '. This day counts once.');
+  else showMessage('Workout complete: logged for ' + prettyDay(result.day) + '. Nice work.');
 }
 
 function toggleCheck(id) {
-  if (store.checks[id]) delete store.checks[id];
-  else store.checks[id] = true;
+  const result = toggleCheckState(store, id);
+  if (!result.ok) {
+    showMessage('Start a session before checking off exercises.');
+    renderAll();
+    return;
+  }
   save();
-  if (allChecked()) completeWorkout();
-  else renderAll();
+  renderAll();
 }
 
 function requestClear() { $('clearConfirm').classList.add('show'); }
@@ -380,12 +808,38 @@ function checklistConfirmed(phaseId) {
   const c = store.checklist[String(phaseId)] || {};
   return ADVANCEMENT_CHECKLIST.map(i => ({ id: i.id, label: i.label, confirmed: c[i.id] === true }));
 }
-function setPhase(n) {
-  store.phase = n;
-  store.session = null; // a new program starts fresh: old checks belong to a different exercise list
-  store.checks = {};
+function requestPhaseChange(n, successMessage) {
+  const decision = phaseChangeDecision(store, n);
+  if (decision.action === 'noop') {
+    pendingPhase = null;
+    pendingPhaseMessage = null;
+    renderPrompts();
+    return;
+  }
+  if (decision.action === 'confirm') {
+    pendingPhase = decision.phase;
+    pendingPhaseMessage = successMessage || null;
+    renderPrompts();
+    return;
+  }
+  commitPhase(decision.phase, successMessage);
+}
+function commitPhase(n, successMessage) {
+  applyPhaseChange(store, n);
+  pendingPhase = null;
+  pendingPhaseMessage = null;
   save();
   renderAll();
+  showMessage(successMessage || 'Phase selected. Your session starts fresh when you press Start.');
+}
+function confirmPhaseChange() {
+  if (pendingPhase == null) return;
+  commitPhase(pendingPhase, pendingPhaseMessage);
+}
+function cancelPhaseChange() {
+  pendingPhase = null;
+  pendingPhaseMessage = null;
+  renderPrompts();
 }
 function toggleChecklistItem(id, confirmed) {
   const key = String(currentPhaseId());
@@ -399,14 +853,15 @@ function toggleChecklistItem(id, confirmed) {
 function advancePhase() {
   const p = currentPhaseId();
   if (p >= 3) return;
-  const ready = checklistConfirmed(p).every(i => i.confirmed);
-  if (!ready) { showMessage('Confirm all three checklist items first.'); return; }
-  setPhase(p + 1);
-  showMessage('Advanced to Phase ' + (p + 1) + '.');
+  if (!checklistReady(store.checklist, p)) {
+    showMessage('Confirm all three checklist items first.');
+    return;
+  }
+  requestPhaseChange(p + 1, 'Advanced to Phase ' + (p + 1) + '.');
 }
 
 /* ---------------- Rendering ---------------- */
-const demoIdx = {}; // in-memory rotator position per exercise
+const demoIdx = {};
 
 function renderStatus() {
   const bar = $('statusBar'), s = store.session;
@@ -414,55 +869,75 @@ function renderStatus() {
   bar.classList.toggle('complete', !!(s && s.state === 'paused'));
   const n = checkedCount(), total = currentProgram().length;
   $('statusCount').textContent = n + ' / ' + total;
-  $('statusFill').style.width = (n / total * 100) + '%';
+  $('statusFill').style.width = (total ? n / total * 100 : 0) + '%';
   $('statusDay').textContent = prettyDay(s ? s.day : store.activeDay);
   if (!s) $('statusText').textContent = 'Ready';
   else if (s.state === 'paused') $('statusText').textContent = 'Paused';
+  else if (s.state === 'expired') $('statusText').textContent = 'Time is up';
 }
 
 function renderTimer() {
   const s = store.session, t = $('timer');
-  t.classList.remove('done');
+  const expired = !!(s && s.state === 'expired');
+  t.classList.toggle('done', expired);
   if (!s) t.textContent = fmtTime(SESSION_MS);
-  else t.textContent = fmtTime(remainingMs());
+  else t.textContent = fmtTime(remainingMs(s, Date.now()));
+  const active = sessionIsActive(s);
   $('btnStart').hidden = !!s;
   $('btnPause').hidden = !(s && s.state === 'running');
   $('btnResume').hidden = !(s && s.state === 'paused');
+  $('btnFinish').hidden = !active || expired;
+  let detail = 'in progress';
+  if (s && s.state === 'paused') detail = 'paused';
+  else if (expired) detail = 'time is up';
   $('sessionDate').textContent = s
-    ? 'Session: ' + prettyDay(s.day) + ' (' + (s.state === 'paused' ? 'paused' : 'in progress') + ')'
+    ? 'Session: ' + prettyDay(s.day) + ' (' + detail + ')'
     : 'No active session: pick a gym day and press Start.';
 }
 
 function renderProgress() {
   const n = checkedCount(), total = currentProgram().length;
+  const active = sessionIsActive(store.session);
   $('progressCount').textContent = n + ' / ' + total;
-  $('progressFill').style.width = (n / total * 100) + '%';
-  $('progressNote').textContent = n === 0
-    ? 'Check off exercises as you finish them.'
-    : n === total ? 'All done!' : (total - n) + ' to go.';
+  $('progressFill').style.width = (total ? n / total * 100 : 0) + '%';
+  if (!active) $('progressNote').textContent = 'Start a session to check off exercises.';
+  else if (n === 0) $('progressNote').textContent = 'Check off exercises as you finish them.';
+  else if (n === total) $('progressNote').textContent = 'All done. Press Finish workout to log this day.';
+  else $('progressNote').textContent = (total - n) + ' to go.';
+}
+
+function renderPrompts() {
+  const s = store.session;
+  const active = sessionIsActive(s);
+  const expired = !!(s && s.state === 'expired');
+  $('finishConfirm').classList.toggle('show', active && allChecked() && !expired);
+  $('expiryConfirm').classList.toggle('show', expired);
+  $('phaseConfirm').classList.toggle('show', pendingPhase != null);
 }
 
 function demoHtml(ex) {
   if (!ex.demos || !ex.demos.length) return '';
   const i = demoIdx[ex.id] || 0;
   const d = ex.demos[i];
+  if (!d || !d.url) return '';
   let nav = '';
   if (ex.demos.length > 1) {
     nav = '<div class="demo-nav">' +
-      '<button class="demo-arrow" data-demo-prev="' + esc(ex.id) + '" aria-label="Previous demo">‹</button>' +
+      '<button class="demo-arrow" data-demo-prev="' + esc(ex.id) + '" aria-label="Previous demo">\u2039</button>' +
       '<span class="demo-pos">' + (i + 1) + ' of ' + ex.demos.length + '</span>' +
-      '<button class="demo-arrow" data-demo-next="' + esc(ex.id) + '" aria-label="Next demo">›</button></div>';
+      '<button class="demo-arrow" data-demo-next="' + esc(ex.id) + '" aria-label="Next demo">\u203a</button></div>';
   }
   const handle = d.handle ? ' ' + esc(d.handle) : '';
   return '<div class="demo" id="demo-' + esc(ex.id) + '">' +
     '<a class="demo-link" href="' + esc(d.url) + '" target="_blank" rel="noopener">' +
-    '▶ Demo: ' + esc(d.creator) + handle +
+    '\u25b6 Demo: ' + esc(d.creator) + handle +
     '<span class="demo-desc">' + esc(d.description) + '</span></a>' + nav + '</div>';
 }
 
 function renderSections() {
   const root = $('routine');
   const program = currentProgram();
+  const canCheck = sessionIsActive(store.session);
   let stepNo = 0;
   root.innerHTML = SECTIONS.map(sec => {
     const exs = program.filter(e => e.section === sec.id).sort((a, b) => a.order - b.order);
@@ -473,7 +948,7 @@ function renderSections() {
     const rows = exs.map(e => {
       const tags = e.muscle_groups.map(t => '<span class="muscle-tag">' + esc(t) + '</span>').join('');
       return '<li class="exercise"><label class="check-row">' +
-        '<input type="checkbox" data-check="' + esc(e.id) + '"' + (store.checks[e.id] ? ' checked' : '') + '>' +
+        '<input type="checkbox" data-check="' + esc(e.id) + '"' + (store.checks[e.id] ? ' checked' : '') + (canCheck ? '' : ' disabled') + '>' +
         '<span><span class="exercise-name">' + esc(e.name) + '</span>' +
         '<span class="exercise-note">' + esc(e.note) + '</span>' +
         '<span class="muscle-tags">' + tags + '</span></span>' +
@@ -496,7 +971,7 @@ function renderCalendar() {
   const today = dayKey(new Date());
   const gyms = gymDows();
   let html = '';
-  for (let i = 1; i <= 5; i++) { // Tue–Sat: Monday (i=0) is rest, Sunday (i=6) is for church
+  for (let i = 1; i <= 5; i++) { // Tue-Sat: Monday (i=0) is rest, Sunday (i=6) is for church
     const d = new Date(mon.getFullYear(), mon.getMonth(), mon.getDate() + i);
     const key = dayKey(d);
     const isGym = gyms.includes(d.getDay());
@@ -505,11 +980,11 @@ function renderCalendar() {
     html += '<div class="' + cls + '"' + (isGym ? ' data-day="' + key + '" role="button" tabindex="0"' : '') + '>' +
       '<span class="dow">' + DOWS[i - 1] + '</span>' +
       '<span class="dnum">' + d.getDate() + '</span>' +
-      '<span class="dmark">' + (done ? '✓ done' : '') + '</span></div>';
+      '<span class="dmark">' + (done ? '\u2713 done' : '') + '</span></div>';
   }
   grid.innerHTML = html;
   const weekKeys = [];
-  for (let i = 1; i <= 5; i++) { // Tue–Sat only
+  for (let i = 1; i <= 5; i++) {
     const d = new Date(mon.getFullYear(), mon.getMonth(), mon.getDate() + i);
     if (gyms.includes(d.getDay())) weekKeys.push(dayKey(d));
   }
@@ -519,9 +994,9 @@ function renderCalendar() {
 }
 
 function renderFeatured() {
-  $('featuredDemos').innerHTML = FEATURED_DEMOS.map(d =>
+  $('featuredDemos').innerHTML = FEATURED_DEMOS.filter(d => d && d.url).map(d =>
     '<a class="demo-card" href="' + esc(d.url) + '" target="_blank" rel="noopener">' +
-    '<div class="demo-title">▶ ' + esc(d.creator) + (d.handle ? ' ' + esc(d.handle) : '') + '</div>' +
+    '<div class="demo-title">\u25b6 ' + esc(d.creator) + (d.handle ? ' ' + esc(d.handle) : '') + '</div>' +
     '<div class="demo-desc2">' + esc(d.description) + '</div></a>'
   ).join('');
   $('blockNote').textContent =
@@ -531,8 +1006,6 @@ function renderFeatured() {
 }
 
 /* ---------------- Phase UI ---------------- */
-const PHASE_NAMES = { 1: 'Reactivate', 2: 'Reload', 3: 'Return' };
-
 function renderPhase() {
   const p = currentPhaseId();
   const phase = PHASES.find(x => x.id === p);
@@ -547,7 +1020,8 @@ function renderPhase() {
     const done = store.phaseSessions[id] || 0;
     const target = SESSIONS_PER_PHASE;
     const reached = done >= target;
-    prog += '<div class="phase-row"><span>Phase ' + id + ': ' + PHASE_NAMES[id] + '</span>' +
+    const phaseName = PHASES.find(x => x.id === id).name;
+    prog += '<div class="phase-row"><span>Phase ' + id + ': ' + phaseName + '</span>' +
       '<span class="' + (reached ? 'done' : '') + '">' + Math.min(done, target) + ' / ' + target + ' sessions</span></div>';
   }
   $('phaseProgress').innerHTML = prog;
@@ -575,22 +1049,33 @@ function renderAll() {
   renderStatus();
   renderTimer();
   renderProgress();
+  renderPrompts();
   renderSections();
   renderCalendar();
 }
 
 /* ---------------- Tick ---------------- */
 function tick() {
+  const now = Date.now();
+  const todayKey = dayKey(new Date(now));
+  if (renderedDayKey !== todayKey) {
+    renderedDayKey = todayKey;
+    const rolled = rolloverActiveDay(store, new Date(now));
+    if (rolled.changed) save();
+    renderCalendar();
+    renderStatus();
+    renderTimer();
+  }
   const s = store.session;
   if (!s || s.state !== 'running') return;
-  const left = s.deadline - Date.now(); // the one and only subtraction
-  if (left <= 0) { expireSession(); return; }
+  const left = s.deadline - now;
+  if (left <= 0) { offerExpiryChoice(); return; }
   $('timer').textContent = fmtTime(left);
   $('statusText').textContent = 'Running: ' + fmtTime(left) + ' left';
 }
 
 /* ---------------- Events (delegated) ---------------- */
-document.addEventListener('click', ev => {
+function onClick(ev) {
   const secBtn = ev.target.closest('[data-section]');
   if (secBtn) {
     const id = secBtn.getAttribute('data-section');
@@ -616,54 +1101,119 @@ document.addEventListener('click', ev => {
   if (day) {
     store.activeDay = day.getAttribute('data-day');
     save(); renderCalendar(); renderStatus(); renderTimer();
-    $('routine').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const routine = $('routine');
+    if (routine && typeof routine.scrollIntoView === 'function') {
+      try { routine.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+      catch (e) { /* ignore */ }
+    }
     return;
   }
   const phaseBtn = ev.target.closest('[data-phase]');
   if (phaseBtn) {
-    setPhase(Number(phaseBtn.getAttribute('data-phase')));
-    showMessage('Phase selected. Your session starts fresh when you press Start.');
+    requestPhaseChange(Number(phaseBtn.getAttribute('data-phase')));
     return;
   }
   if (ev.target.id === 'advanceBtn') {
     advancePhase();
-    return;
   }
-});
-document.addEventListener('change', ev => {
+}
+function onChange(ev) {
   const box = ev.target.closest('[data-check]');
   if (box) { toggleCheck(box.getAttribute('data-check')); return; }
   const item = ev.target.closest('[data-checklist-item]');
   if (item) { toggleChecklistItem(item.getAttribute('data-checklist-item'), item.checked); return; }
   if (ev.target.id === 'thirdDay') {
-    store.thirdDay = ev.target.value;
-    save(); renderCalendar();
+    const picked = thirdDaySelection(store, ev.target.value, new Date());
+    store.thirdDay = picked.thirdDay;
+    store.activeDay = picked.activeDay;
+    save();
+    renderCalendar();
+    renderStatus();
+    renderTimer();
   }
-});
-document.addEventListener('keydown', ev => {
+}
+function onKey(ev) {
   if (ev.key === 'Enter' || ev.key === ' ') {
     const day = ev.target.closest && ev.target.closest('[data-day]');
     if (day) { ev.preventDefault(); day.click(); }
   }
-});
-
-$('btnStart').addEventListener('click', startSession);
-$('btnPause').addEventListener('click', pauseSession);
-$('btnResume').addEventListener('click', resumeSession);
-$('btnClear').addEventListener('click', requestClear);
-$('btnClearYes').addEventListener('click', confirmClear);
-$('btnClearNo').addEventListener('click', cancelClear);
+}
+function bindUi() {
+  document.addEventListener('click', onClick);
+  document.addEventListener('change', onChange);
+  document.addEventListener('keydown', onKey);
+  $('btnStart').addEventListener('click', startSession);
+  $('btnPause').addEventListener('click', pauseSession);
+  $('btnResume').addEventListener('click', resumeSession);
+  $('btnFinish').addEventListener('click', completeWorkout);
+  $('btnFinishNow').addEventListener('click', completeWorkout);
+  $('btnClear').addEventListener('click', requestClear);
+  $('btnClearYes').addEventListener('click', confirmClear);
+  $('btnClearNo').addEventListener('click', cancelClear);
+  $('btnExpireLog').addEventListener('click', completeWorkout);
+  $('btnExpireDiscard').addEventListener('click', discardExpired);
+  $('btnPhaseYes').addEventListener('click', confirmPhaseChange);
+  $('btnPhaseNo').addEventListener('click', cancelPhaseChange);
+}
 
 /* ---------------- Init ---------------- */
-(function init() {
-  // If a session was running when the browser closed, reconcile once:
-  // the stored deadline is the single source of truth.
-  const s = store.session;
-  if (s && s.state === 'running' && s.deadline - Date.now() <= 0) {
-    expireSession();
-  } else {
-    renderFeatured();
+function boot() {
+  if (typeof document === 'undefined') return;
+  if (booted) return;
+  booted = true;
+  bindUi();
+  const today = new Date();
+  renderedDayKey = dayKey(today);
+  const rolled = rolloverActiveDay(store, today);
+  if (rolled.changed) bootDirty = true;
+  if (bootDirty) save();
+  // Featured demos and the organization note render even when a stored
+  // session has already expired. Expiry used to return before this call.
+  renderFeatured();
+  if (!offerExpiryChoice()) {
     renderAll();
+    if (bootNotice) showMessage(bootNotice);
   }
+  bootNotice = null;
   setInterval(tick, 250);
-})();
+}
+boot();
+
+if (typeof module !== 'undefined') {
+  module.exports = {
+    SESSION_MS: SESSION_MS,
+    SESSIONS_PER_PHASE: SESSIONS_PER_PHASE,
+    STORE_VERSION: STORE_VERSION,
+    LS_KEY: LS_KEY,
+    NOTICE_CORRUPT: NOTICE_CORRUPT,
+    NOTICE_PARTIAL: NOTICE_PARTIAL,
+    resolvePhase: resolvePhase,
+    resolveDemoList: resolveDemoList,
+    remainingMs: remainingMs,
+    migrate: migrate,
+    loadStoreFromRaw: loadStoreFromRaw,
+    defaultStore: defaultStore,
+    dayKey: dayKey,
+    parseDay: parseDay,
+    isDayKey: isDayKey,
+    prettyDay: prettyDay,
+    mondayOf: mondayOf,
+    isGymDay: isGymDay,
+    isGymDayKey: isGymDayKey,
+    nextGymDay: nextGymDay,
+    weekDayKeys: weekDayKeys,
+    resolveActiveDay: resolveActiveDay,
+    rolloverActiveDay: rolloverActiveDay,
+    thirdDaySelection: thirdDaySelection,
+    sessionIsActive: sessionIsActive,
+    shouldExpireOnLoad: shouldExpireOnLoad,
+    expireIfDue: expireIfDue,
+    canStartSession: canStartSession,
+    toggleCheckState: toggleCheckState,
+    applyCompletion: applyCompletion,
+    phaseChangeDecision: phaseChangeDecision,
+    applyPhaseChange: applyPhaseChange,
+    checklistReady: checklistReady,
+    normalizePhase: normalizePhase,
+  };
+}

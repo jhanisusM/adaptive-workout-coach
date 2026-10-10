@@ -89,6 +89,14 @@ h1 { font-size: clamp(2rem, 5vw, 3.6rem); letter-spacing: -.03em; margin: 0 0 10
 .session-message { display: none; grid-column: 1 / -1; padding: 10px 20px; background: var(--blue-soft); font-size: .86rem; border-top: 1px solid var(--line); }
 .session-message.show { display: block; }
 
+.prompt-bar { display: none; align-items: center; justify-content: space-between; gap: 14px; padding: 14px 16px; border-radius: 12px; font-size: .88rem; margin-top: 12px; }
+.prompt-bar.show { display: flex; }
+.prompt-bar.danger { background: var(--red-soft); }
+.prompt-bar.ok { background: var(--green-soft); }
+.prompt-bar.warn { background: var(--amber-soft); }
+.prompt-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.dashboard .prompt-bar { grid-column: 1 / -1; margin: 0; border-radius: 0; border-top: 1px solid var(--line); }
+
 .progress-top { display: flex; justify-content: space-between; align-items: baseline; }
 .progress-count { font: 700 1.15rem/1 ui-monospace, Menlo, monospace; }
 .progress-track { height: 8px; background: var(--line); border-radius: 99px; overflow: hidden; margin: 12px 0 10px; }
@@ -117,6 +125,8 @@ h1 { font-size: clamp(2rem, 5vw, 3.6rem); letter-spacing: -.03em; margin: 0 0 10
 .check-row input::after { content: ""; width: 6px; height: 11px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg) scale(0); }
 .check-row input:checked { background: var(--green); border-color: var(--green); }
 .check-row input:checked::after { transform: rotate(45deg) scale(1); }
+.check-row input:disabled { cursor: not-allowed; opacity: .55; }
+.check-row:has(input:disabled) { cursor: not-allowed; }
 .exercise-name { display: block; font-weight: 700; line-height: 1.35; }
 .exercise-note { display: block; color: var(--muted); font-size: .86rem; margin-top: 3px; line-height: 1.5; }
 .muscle-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
@@ -192,4 +202,5 @@ h1 { font-size: clamp(2rem, 5vw, 3.6rem); letter-spacing: -.03em; margin: 0 0 10
   .status-detail { justify-content: space-between; }
   .status-track { grid-column: 1; }
   .clear-confirm { flex-direction: column; align-items: stretch; }
+  .prompt-bar { flex-direction: column; align-items: stretch; }
 }

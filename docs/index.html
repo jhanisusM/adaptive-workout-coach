@@ -44,7 +44,14 @@
       <div id="checklistItems"></div>
       <button class="btn" id="advanceBtn" type="button">Advance to Phase 2</button>
     </div>
-    <p class="muted small">Changing phase starts a fresh session. The advance button unlocks once the checklist is complete.</p>
+    <p class="muted small">Changing phase ends a running session. If one is in progress, you will be asked to confirm. The advance button unlocks once the checklist is complete.</p>
+    <div class="prompt-bar danger" id="phaseConfirm">
+      <span><strong>Change phase?</strong> This ends the current session and clears its checkboxes.</span>
+      <span class="prompt-actions">
+        <button class="btn danger" id="btnPhaseYes" type="button">Yes, change phase</button>
+        <button class="btn secondary" id="btnPhaseNo" type="button">Keep this phase</button>
+      </span>
+    </div>
   </section>
 
   <section class="dashboard" aria-label="Session">
@@ -53,10 +60,11 @@
       <div class="timer-row">
         <div class="timer" id="timer">30:00</div>
         <div class="timer-controls">
-          <button class="btn" id="btnStart">Start</button>
-          <button class="btn secondary" id="btnPause" hidden>Pause</button>
-          <button class="btn" id="btnResume" hidden>Resume</button>
-          <button class="btn danger" id="btnClear">Clear session</button>
+          <button class="btn" id="btnStart" type="button">Start</button>
+          <button class="btn secondary" id="btnPause" type="button" hidden>Pause</button>
+          <button class="btn" id="btnResume" type="button" hidden>Resume</button>
+          <button class="btn" id="btnFinish" type="button" hidden>Finish workout</button>
+          <button class="btn danger" id="btnClear" type="button">Clear session</button>
         </div>
       </div>
       <div class="session-date" id="sessionDate">No active session</div>
@@ -72,6 +80,19 @@
       <span class="clear-actions">
         <button class="btn danger" id="btnClearYes">Yes, clear it</button>
         <button class="btn secondary" id="btnClearNo">Keep going</button>
+      </span>
+    </div>
+    <div class="prompt-bar ok" id="finishConfirm">
+      <span><strong>All exercises checked.</strong> Finish the workout to log this day.</span>
+      <span class="prompt-actions">
+        <button class="btn" id="btnFinishNow" type="button">Finish workout</button>
+      </span>
+    </div>
+    <div class="prompt-bar warn" id="expiryConfirm">
+      <span><strong>Time is up.</strong> Your checkboxes are still here. Log this workout anyway, or discard it?</span>
+      <span class="prompt-actions">
+        <button class="btn" id="btnExpireLog" type="button">Log anyway</button>
+        <button class="btn danger" id="btnExpireDiscard" type="button">Discard</button>
       </span>
     </div>
     <div class="session-message" id="sessionMessage"></div>

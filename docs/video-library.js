@@ -233,15 +233,28 @@ var VIDEO_LIBRARY = {
 var VIDEO_BY_ID = {};
 VIDEO_LIBRARY.videos.forEach(function (v) { VIDEO_BY_ID[v.id] = v; });
 
-/* Resolve a video id to its full video object. Throws on unknown ids so a
- * typo fails loudly instead of rendering a broken demo link. */
+/* Resolve a video id to its full video object. Unknown ids warn and return
+ * null so one bad id is skipped instead of blanking the page. */
 function resolveVideo(id) {
   var v = VIDEO_BY_ID[id];
-  if (!v) throw new Error('unknown video id: ' + id);
+  if (!v) {
+    if (typeof console !== 'undefined' && console && typeof console.warn === 'function') {
+      console.warn('unknown video id: ' + id);
+    }
+    return null;
+  }
   return v;
 }
 
 /* All videos for one topic, in library order. */
 function videosForTopic(topicId) {
   return VIDEO_LIBRARY.videos.filter(function (v) { return v.topic === topicId; });
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    VIDEO_LIBRARY: VIDEO_LIBRARY,
+    resolveVideo: resolveVideo,
+    videosForTopic: videosForTopic,
+  };
 }
