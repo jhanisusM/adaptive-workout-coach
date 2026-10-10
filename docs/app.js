@@ -220,6 +220,8 @@ const DOWS = ['Tue', 'Wed', 'Thu', 'Fri', 'Sat']; // Tue-Sat only: Sundays are f
 
 let bootNotice = null;
 let bootDirty = false;
+let bootRaw = null;
+let bootNeedsBackup = false;
 let renderedDayKey = null;
 let pendingPhase = null;
 let pendingPhaseMessage = null;
@@ -437,7 +439,6 @@ function sanitizePhaseSessions(raw, present) {
     }
     let count = Math.floor(n);
     if (count < 0) count = 0;
-    if (count > SESSIONS_PER_PHASE) count = SESSIONS_PER_PHASE;
     if (count !== n || count !== original) changed = true;
     out[id] = count;
   });
@@ -528,8 +529,9 @@ function hasOwn(raw, key) {
 }
 
 /* v1 (no version) -> v2. Validates each field, keeps good progress, and
- * grandfathers unlockedPhase at the current phase. Counts above 9 are capped.
- * Corrupt roots become a fresh store plus a one-time notice. */
+ * grandfathers unlockedPhase at the current phase. Session counts are kept
+ * as stored, including totals above 9. Corrupt roots become a fresh store
+ * plus a one-time notice. */
 function migrate(raw, now) {
   const today = now instanceof Date ? now : new Date();
   if (!isPlainObject(raw)) {
@@ -611,12 +613,32 @@ function loadStoreFromRaw(rawString, now) {
   }
 }
 
+function rawBackupKey(now) {
+  const stamp = typeof now === 'number' ? now : Date.now();
+  return LS_KEY + '.bak-' + stamp;
+}
+/* Copy the original saved string before the first write that replaces it. */
+function backupRawBeforeSave(storage, rawString, now) {
+  const key = rawBackupKey(now);
+  storage.setItem(key, rawString);
+  return key;
+}
+/* The on-screen target and any later goal check stop at 9. Storage does not. */
+function cappedSessionCount(count) {
+  const n = Number(count);
+  if (!Number.isFinite(n) || n <= 0) return 0;
+  return Math.min(SESSIONS_PER_PHASE, Math.floor(n));
+}
+
 function loadStore() {
   try {
     if (typeof localStorage === 'undefined' || !localStorage) return defaultStore();
-    const result = loadStoreFromRaw(localStorage.getItem(LS_KEY), new Date());
+    const raw = localStorage.getItem(LS_KEY);
+    bootRaw = raw;
+    const result = loadStoreFromRaw(raw, new Date());
     bootNotice = result.notice;
     bootDirty = result.changed;
+    bootNeedsBackup = !!result.notice && raw != null && raw !== '';
     return result.state;
   } catch (e) {
     return defaultStore();
@@ -1018,11 +1040,12 @@ function renderPhase() {
   let prog = '';
   for (let id = 1; id <= 3; id++) {
     const done = store.phaseSessions[id] || 0;
+    const shown = cappedSessionCount(done);
     const target = SESSIONS_PER_PHASE;
-    const reached = done >= target;
+    const reached = shown >= target;
     const phaseName = PHASES.find(x => x.id === id).name;
     prog += '<div class="phase-row"><span>Phase ' + id + ': ' + phaseName + '</span>' +
-      '<span class="' + (reached ? 'done' : '') + '">' + Math.min(done, target) + ' / ' + target + ' sessions</span></div>';
+      '<span class="' + (reached ? 'done' : '') + '">' + shown + ' / ' + target + ' sessions</span></div>';
   }
   $('phaseProgress').innerHTML = prog;
 
@@ -1166,7 +1189,14 @@ function boot() {
   renderedDayKey = dayKey(today);
   const rolled = rolloverActiveDay(store, today);
   if (rolled.changed) bootDirty = true;
-  if (bootDirty) save();
+  if (bootDirty) {
+    if (bootNeedsBackup) {
+      try { backupRawBeforeSave(localStorage, bootRaw, Date.now()); }
+      catch (e) { bootDirty = false; }
+    }
+    if (bootDirty) save();
+    bootNeedsBackup = false;
+  }
   // Featured demos and the organization note render even when a stored
   // session has already expired. Expiry used to return before this call.
   renderFeatured();
@@ -1215,5 +1245,8 @@ if (typeof module !== 'undefined') {
     applyPhaseChange: applyPhaseChange,
     checklistReady: checklistReady,
     normalizePhase: normalizePhase,
+    cappedSessionCount: cappedSessionCount,
+    rawBackupKey: rawBackupKey,
+    backupRawBeforeSave: backupRawBeforeSave,
   };
 }

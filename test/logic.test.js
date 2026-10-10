@@ -229,8 +229,8 @@ test('saved v1 progress survives migration and a second load is stable', () => {
   assert.deepEqual(second.state, first.state);
 });
 
-test('migration caps inflated counts, repairs bad fields, and replaces corrupt JSON', () => {
-  const capped = app.migrate({
+test('migration keeps counts above 9 and caps only the displayed goal', () => {
+  const kept = app.migrate({
     phase: 1,
     phaseSessions: { 1: 40, 2: 0, 3: 3 },
     completions: { '2026-10-06': true },
@@ -241,9 +241,13 @@ test('migration caps inflated counts, repairs bad fields, and replaces corrupt J
     activeDay: '2026-10-06',
     checklist: {},
   }, TUE);
-  assert.equal(capped.state.phaseSessions[1], 9);
-  assert.equal(capped.state.completions['2026-10-06'], true);
-  assert.equal(capped.notice, null);
+  assert.equal(kept.state.phaseSessions[1], 40);
+  assert.equal(kept.state.phaseSessions[3], 3);
+  assert.equal(kept.state.completions['2026-10-06'], true);
+  assert.equal(kept.notice, null);
+  assert.equal(app.cappedSessionCount(40), 9);
+  assert.equal(app.cappedSessionCount(3), 3);
+  assert.equal(app.cappedSessionCount(0), 0);
 
   const partial = app.migrate({
     phase: 3,

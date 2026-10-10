@@ -2,61 +2,65 @@
 
 What the app in `docs/` does today. The page is static HTML, CSS, and JavaScript with no build step. Progress is stored in this browser under the key `awc-demo-v1` (schema version 2).
 
+Status is one of: planned, in progress, done, removed.
+
 Run the tests with `npm test` (dev-only; nothing from `node_modules` is shipped to `docs/`).
 
 ## Program and phases
 
-| Feature | Status | Location |
-| --- | --- | --- |
-| Three phases: Reactivate, Reload, Return | Works | `docs/app.js` `PHASES`, `docs/index.html` `#phasePicker` |
-| Phase doses and notes override the catalog | Works | `resolvePhase` |
-| Advancement checklist (three confirmations) | Works. The picker can still open any phase; gating is not enforced | `advancePhase`, `#checklistWrap` |
-| Tapping the current phase does nothing | Works | `requestPhaseChange` |
-| Switching phase while a session is active asks first | Works | `#phaseConfirm` |
+| Feature | Status | Location | Notes |
+| --- | --- | --- | --- |
+| Three phases: Reactivate, Reload, Return | done | `docs/app.js` `PHASES`, `docs/index.html` `#phasePicker` | |
+| Phase doses and notes override the catalog | done | `resolvePhase` | |
+| Advancement checklist of three confirmations | done | `advancePhase`, `#checklistWrap` | The advance button stays disabled until all three are confirmed. |
+| Phase-advancement gating | planned | `advancePhase`, `#phasePicker` | The picker can still open any phase. `unlockedPhase` is stored so a later gate can keep the current phase. |
+| Tapping the current phase does nothing | done | `requestPhaseChange` | |
+| Switching phase while a session is active asks first | done | `#phaseConfirm` | |
 
 ## Session and timer
 
-| Feature | Status | Location |
-| --- | --- | --- |
-| 30 minute timer with one stored deadline | Works. Reopening subtracts elapsed time once | `remainingMs`, `startSession` |
-| Start, pause, resume, clear (clear asks first) | Works | `#btnStart`, `#btnPause`, `#btnResume`, `#btnClear` |
-| Check off exercises only during a session | Works. Boxes stay disabled until a session starts | `toggleCheckState`, `renderSections` |
-| Finish workout button logs the day | Works. Also offered when every box is ticked. Ticking the last box does not log by itself | `#btnFinish`, `#finishConfirm` |
-| Each gym day counts at most once | Works | `applyCompletion` |
-| Rest days are not logged | Works. Start is refused, and Finish does not write a completion | `canStartSession`, `isGymDayKey` |
-| Timer expiry keeps checkboxes and asks | Works. Log anyway or discard | `expireIfDue`, `#expiryConfirm` |
+| Feature | Status | Location | Notes |
+| --- | --- | --- | --- |
+| 30 minute timer with one stored deadline | done | `remainingMs`, `startSession` | Reopening subtracts elapsed time once. |
+| Start, pause, resume, and clear | done | `#btnStart`, `#btnPause`, `#btnResume`, `#btnClear` | Clear asks first. |
+| Check off exercises only during a session | done | `toggleCheckState`, `renderSections` | Boxes stay disabled until a session starts. |
+| Finish workout button logs the day | done | `#btnFinish`, `#finishConfirm` | Also offered when every box is ticked. Ticking the last box does not log by itself. |
+| Each gym day counts at most once | done | `applyCompletion` | |
+| Rest days are not logged | done | `canStartSession`, `isGymDayKey` | Start is refused, and Finish does not write a completion. |
+| Timer expiry keeps checkboxes and asks | done | `expireIfDue`, `#expiryConfirm` | Log anyway or discard. |
 
 ## Checklist
 
-| Feature | Status | Location |
-| --- | --- | --- |
-| Per-exercise checkboxes, doses, notes, muscle tags | Works | `renderSections` |
-| Accordion sections | Works | `[data-section]` |
-| Progress bar and sticky status | Works | `#progressFill`, `#statusBar` |
+| Feature | Status | Location | Notes |
+| --- | --- | --- | --- |
+| Per-exercise checkboxes, doses, notes, and muscle tags | done | `renderSections` | |
+| Accordion sections | done | `[data-section]` | |
+| Progress bar and sticky status | done | `#progressFill`, `#statusBar` | |
 
 ## Calendar
 
-| Feature | Status | Location |
-| --- | --- | --- |
-| Tue-Sat week, Sundays and Mondays off | Works | `renderCalendar` |
-| Optional third gym day (Friday morning, Friday night, or Saturday morning) | Works. Friday morning and Friday night both make Friday a gym day | `#thirdDay` |
-| Tap a gym day to select it | Works | `[data-day]` |
-| Stale selected day from another week resets on load and when the date changes | Works | `resolveActiveDay`, `tick` |
+| Feature | Status | Location | Notes |
+| --- | --- | --- | --- |
+| Tue-Sat week, with Sundays and Mondays off | done | `renderCalendar` | |
+| Optional third gym day | done | `#thirdDay` | Friday morning and Friday night both make Friday a gym day. |
+| Tap a gym day to select it | done | `[data-day]` | |
+| Stale selected day from another week resets | done | `resolveActiveDay`, `tick` | Runs on load and when the date changes. |
 
 ## Demo videos
 
-| Feature | Status | Location |
-| --- | --- | --- |
-| Per-exercise demos from the video library | Works | `docs/video-library.js`, `demo_ids` |
-| Featured demos and "How it's organized" | Works, including when a stored session has already expired | `renderFeatured` |
-| Unknown video id | Skipped with a console warning. The page still loads | `resolveVideo`, `resolveDemoList` |
+| Feature | Status | Location | Notes |
+| --- | --- | --- | --- |
+| Per-exercise demos from the video library | done | `docs/video-library.js`, `demo_ids` | |
+| Featured demos and "How it's organized" | done | `renderFeatured` | Also renders when a stored session has already expired. |
+| Unknown video id is skipped | done | `resolveVideo`, `resolveDemoList` | A console warning is logged and the page still loads. |
 
 ## Storage
 
-| Feature | Status | Location |
-| --- | --- | --- |
-| localStorage key `awc-demo-v1` | Works. The key name is unchanged so existing browsers keep their data | `LS_KEY` |
-| Version 2 migration | Works. Missing or older saves are validated, written back, and keep phase, checklist, completions, and session deadline | `migrate` |
-| Current phase is grandfathered on `unlockedPhase` | Stored for a later gate. The picker does not use it yet | `migrate` |
-| Counts above 9 per phase | Stored as 9. The day-by-day completion map is kept as-is | `sanitizePhaseSessions` |
-| Corrupt JSON or a broken field | Fresh defaults, or that field reset, plus a one-time message. The page is not left blank | `loadStoreFromRaw` |
+| Feature | Status | Location | Notes |
+| --- | --- | --- | --- |
+| localStorage key `awc-demo-v1` | done | `LS_KEY` | The key name is unchanged so existing browsers keep their data. |
+| Version 2 migration | done | `migrate` | Missing or older saves are validated and written back. Phase, checklist, completions, and session deadline are kept. |
+| Current phase stored on `unlockedPhase` | done | `migrate` | Set to the current phase on older saves. The picker does not read it yet. |
+| Session counts above the 9-session target | done | `sanitizePhaseSessions`, `cappedSessionCount` | The stored count is kept. The progress line and the goal check show at most 9. |
+| Corrupt JSON or a broken field | done | `loadStoreFromRaw` | Fresh defaults, or that field reset, plus a one-time message. The page is not left blank. |
+| Backup before replacing unreadable saved data | done | `backupRawBeforeSave`, `boot` | Before the first save, the original string is copied to `awc-demo-v1.bak-<timestamp>` when the data is unreadable, the root is not an object, or a field is repaired. |

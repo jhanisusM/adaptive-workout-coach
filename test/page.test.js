@@ -41,6 +41,15 @@ function readStore(window) {
   return JSON.parse(window.localStorage.getItem(app.LS_KEY));
 }
 
+function backupValues(window) {
+  const values = [];
+  for (let i = 0; i < window.localStorage.length; i++) {
+    const key = window.localStorage.key(i);
+    if (key && key.indexOf(app.LS_KEY + '.bak-') === 0) values.push(window.localStorage.getItem(key));
+  }
+  return values;
+}
+
 function click(window, el) {
   el.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
 }
@@ -272,6 +281,9 @@ test('corrupt storage still renders, and a saved session deadline is kept', () =
     assert.equal(stored.phase, 2);
     assert.equal(stored.completions['2026-10-06'], true);
     assert.deepEqual(stored.checks, {});
+    assert.deepEqual(backupValues(corrupt.window), [
+      '{"checks":null,"phase":2,"phaseSessions":null,"completions":{"2026-10-06":true}}',
+    ]);
   } finally {
     corrupt.dom.window.close();
   }
@@ -282,8 +294,18 @@ test('corrupt storage still renders, and a saved session deadline is kept', () =
     assert.match(garbage.window.document.getElementById('phaseTitle').textContent, /Phase 1/);
     assert.ok(garbage.window.document.querySelectorAll('.exercise').length >= 8);
     assert.match(garbage.window.document.getElementById('sessionMessage').textContent, /fresh start/);
+    assert.deepEqual(backupValues(garbage.window), ['{']);
   } finally {
     garbage.dom.window.close();
+  }
+
+  const notObject = boot('[]');
+  try {
+    assert.deepEqual(notObject.errors, []);
+    assert.match(notObject.window.document.getElementById('phaseTitle').textContent, /Phase 1/);
+    assert.deepEqual(backupValues(notObject.window), ['[]']);
+  } finally {
+    notObject.dom.window.close();
   }
 
   const deadline = Date.now() + 10 * 60 * 1000;
@@ -310,6 +332,7 @@ test('corrupt storage still renders, and a saved session deadline is kept', () =
     assert.equal(stored.completions['2026-10-01'], true);
     assert.notEqual(kept.window.document.getElementById('timer').textContent, '30:00');
     assert.equal(kept.window.document.getElementById('btnPause').hidden, false);
+    assert.deepEqual(backupValues(kept.window), []);
   } finally {
     kept.dom.window.close();
   }
