@@ -20,6 +20,17 @@ so voluntarily and at your own risk. The app is provided "as is", without
 warranty of any kind, and the authors are not liable for any injury, loss, or
 damage arising from its use.
 
+Stop and contact your clinician if you notice any of these:
+
+- The knee gives way
+- Locking or catching in the knee
+- The knee is hot or markedly swollen
+- Pain that wakes you at night
+- Fever, or numbness or tingling
+- Calf pain, swelling, warmth, or redness. This can be a blood clot. Shortness of breath or chest pain needs urgent care.
+
+If something is wrong, stop and contact your clinician before you train again.
+
 ## The program
 
 A 3-phase program, about 3 weeks per phase. The default week is Tuesday and
