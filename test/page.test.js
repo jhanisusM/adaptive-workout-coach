@@ -160,9 +160,9 @@ test('the disclaimer footer renders and links to the README', () => {
     assert.ok(footer);
     assert.equal(footer.hidden, false);
     assert.equal(footer.classList.contains('disclaimer-footer'), true);
-    assert.match(footer.textContent, /Not medical advice\. Check with your clinician before starting; you exercise at your own risk\./);
+    assert.equal(footer.textContent.trim(), 'Personal research project. Not medical advice; use at your own risk.');
     const link = footer.querySelector('a');
-    assert.equal(link.textContent, 'Full disclaimer');
+    assert.equal(link.textContent, 'Personal research project. Not medical advice; use at your own risk.');
     assert.equal(link.getAttribute('href'), 'https://github.com/jhanisusM/adaptive-workout-coach#disclaimer');
     assert.equal(window.document.getElementById('redFlags'), null);
     assert.equal(window.document.getElementById('clearanceModal'), null);

@@ -48,7 +48,7 @@ Run the tests with `npm test` (dev-only; nothing from `node_modules` is shipped 
 | Feature | Status | Location | Notes |
 | --- | --- | --- | --- |
 | Train-smart banner | done | `.safety` | Comfortable range, sharp pain is a stop, not medical advice, no running or plyometrics until cleared. |
-| Disclaimer footer | done | `#disclaimerFooter` | One fixed line: not medical advice, check with your clinician, exercise at your own risk, with a link to the README Disclaimer on GitHub. No pop-up. |
+| Disclaimer footer | done | `#disclaimerFooter` | Fixed line, exact text "Personal research project. Not medical advice; use at your own risk." The line links to the README Disclaimer on GitHub. No pop-up. |
 | First-run clearance | removed | | The pop-up is gone. Older saves that stored clearance still load, and that field is dropped. Start is not blocked by it. |
 | Red-flag panel on every screen size | removed | | The top banner is gone. Draft dose text and the Phase 3 Draft badge stay. |
 
