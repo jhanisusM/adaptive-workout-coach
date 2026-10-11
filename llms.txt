@@ -15,22 +15,28 @@ workout companion for someone returning after a long time off their feet,
 not a personal prescription. Start only after a physical therapist or
 physician has cleared resistance training.
 
-Phase 1 "Stability & Tissue Tolerance" (13 exercises): isometric strength,
-glute activation, balance, no deep loaded knee bending, including a high-box
-sit-to-stand. Phase 2 "Supported Unilateral" (11 exercises): light loaded
-patterns, bilateral before unilateral. Phase 3 "Complex Unilateral Loading"
-(14 exercises) is a placeholder until the full program is available. It
-includes a bodyweight Bulgarian split squat that starts at 3 x 6 each side,
-plus lateral step-downs and reverse lunges. Week-3 dumbbells on the split
-squat are a placeholder too. Sets, reps, holds, and week doses are
-placeholders pending the full program.
+Phase 1 "Stability & Tissue Tolerance" (14 exercises): low-load holds, glute
+activation, balance, and a high-box sit-to-stand. Holds are a starting
+point, not a treatment for pain. No deep loaded knee bending. The Spanish
+squat hold stays around 30 to 45 degrees, and side-lying hip abduction
+follows the clamshell. Phase 2 "Supported Unilateral" (13 exercises):
+supported split squat, low step-up, kickstand-stance single-leg RDL, single-leg bridge, band
+side-step, and a supported single-leg calf raise. Reduce support before
+load, and do not add range and load in the same week. Phase 3 "Complex
+Unilateral Loading" (15 exercises) is a placeholder until the full program
+is confirmed. It includes a bodyweight Bulgarian split squat that starts at
+3 x 6 each side, plus lateral step-downs, reverse lunges, and single-leg
+calf raises. Week-3 dumbbells on the split squat are a placeholder too.
+Sets, reps, holds, week doses, and the pain and swelling figures are
+placeholder rules of thumb pending professional confirmation.
 
 Moving up a phase uses Advance only, after 9 logged sessions and every
 checklist item for that phase. Moving back is always allowed. Weeks are
 minimums. Week 1, 2, and 3 doses sit inside each phase. Pain at or below
-2/10 that settles to 2/10 or less within 24 hours is acceptable. Pain above
-that, or next-morning swelling, does not move the week and, twice in a row,
-turns Advance off. Swelling advice says to cut volume by about 30%. The app
+2/10 that settles to 2/10 or less within 24 hours is an acceptable rule of
+thumb. Pain above that, or next-morning swelling, does not move the week
+and, twice in a row, turns Advance off. Swelling advice says to cut volume
+by about 30%. The app
 never ticks the checklist from those scores and never rewrites the dose text.
 No running or plyometrics until separately cleared.
 
@@ -46,8 +52,10 @@ No running or plyometrics until separately cleared.
 - Tue-Sat gym calendar (Sundays are for church, Mondays are rest) with a
   configurable third gym day; completed days log toward the 3-per-week goal.
 - A red-flag panel stays on the page: giving way, locking or catching, a hot
-  or markedly swollen knee, calf pain or swelling, and pain that wakes you
-  at night. The night-pain line is a placeholder pending the full program.
+  or markedly swollen knee, night pain, fever or numbness, and calf pain,
+  swelling, warmth, or redness. Shortness of breath or chest pain with calf
+  symptoms needs urgent care. These lines are placeholder rules of thumb
+  pending professional confirmation.
 - Demo videos come from a topic-organized video library
   (docs/video-library.js). To swap an exercise's videos, edit only that file
   or the exercise's demo_ids. Demo URLs are only added when verified, never

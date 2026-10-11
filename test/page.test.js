@@ -114,7 +114,7 @@ test('featured demos render and boxes cannot log a workout before Start', () => 
     assert.equal(window.document.querySelector('input[data-check="quad-sets"]').checked, false);
     assert.match(window.document.getElementById('sessionMessage').textContent, /Start a session/);
     assert.equal(window.document.getElementById('btnFinish').hidden, true);
-    assert.equal(window.document.querySelectorAll('.exercise').length, 13);
+    assert.equal(window.document.querySelectorAll('.exercise').length, 14);
     assert.doesNotMatch(window.document.getElementById('routine').textContent, /18 min/);
     assert.equal(window.document.querySelector('[data-phase="2"]').classList.contains('locked'), true);
     assert.equal(window.document.querySelector('[data-phase="3"]').classList.contains('locked'), true);
@@ -242,7 +242,7 @@ test('the current phase does nothing and a locked phase cannot be opened', () =>
     assert.equal(readStore(window).session.state, 'running');
     assert.equal(readStore(window).unlockedPhase, 1);
     assert.match(window.document.getElementById('sessionMessage').textContent, /9/);
-    assert.equal(window.document.querySelectorAll('.exercise').length, 13);
+    assert.equal(window.document.querySelectorAll('.exercise').length, 14);
   } finally {
     dom.window.close();
   }
@@ -291,7 +291,7 @@ test('moving back from an unlocked phase still asks before ending a session', ()
     assert.equal(changed.history.length, 1);
     click(window, window.document.querySelector('[data-phase="2"]'));
     assert.equal(readStore(window).phase, 2);
-    assert.equal(window.document.querySelectorAll('.exercise').length, 11);
+    assert.equal(window.document.querySelectorAll('.exercise').length, 13);
   } finally {
     dom.window.close();
   }

@@ -71,11 +71,11 @@ const EXERCISES = [
     demo_ids: ['v-djkim-slrdl', 'v-pauli-slrdl', 'v-e3-slrdl'] },
   { id: 'straight-leg-raises', section: 'strength',
     name: 'Straight leg raises',
-    note: 'Lie flat, keep the working knee straight, and lift the heel slowly.',
+    note: 'Lie flat, keep the working knee straight, and lift the heel slowly. Skip it if the thigh cannot hold the leg up.',
     dose: '3 × 10 each leg', muscle_groups: ['quads'], demo_ids: [] },
   { id: 'glute-bridges', section: 'strength',
     name: 'Glute bridges',
-    note: 'Both feet down.',
+    note: 'Both feet down. Pause about 3 seconds at the top.',
     dose: '3 × 12', muscle_groups: ['glutes'], demo_ids: [] },
   { id: 'tke-band', section: 'strength',
     name: 'Terminal knee extension with band',
@@ -85,6 +85,27 @@ const EXERCISES = [
     name: 'Clamshell',
     note: 'Lie on your side with knees bent. Lift the top knee without rolling the hips back.',
     dose: '2 × 8 each side', muscle_groups: ['glutes'], demo_ids: [] },
+  { id: 'side-lying-abduction', section: 'strength',
+    name: 'Side-lying hip abduction',
+    note: 'Lie on your side and lift the top leg with the toes level or slightly down. Do not roll the hips back.',
+    dose: '2 × 8 each side', muscle_groups: ['glutes'], demo_ids: [] },
+  { id: 'single-leg-bridge', section: 'strength',
+    name: 'Single-leg glute bridge',
+    note: 'One foot down and the other leg straight. Keep the hips level.',
+    dose: '2 × 8 each side', muscle_groups: ['glutes'], demo_ids: [] },
+  { id: 'band-side-step', section: 'strength',
+    name: 'Band side-step',
+    note: 'Band above the knees. Small steps, in a slight knee bend, not a deep squat.',
+    dose: '2 × 8 each way', muscle_groups: ['glutes'], demo_ids: [] },
+  { id: 'supported-split-squat', section: 'strength',
+    name: 'Supported split squat',
+    note: 'Hand on a wall or chair. Start with a short range and keep the front knee over the foot.',
+    dose: '3 × 6 each side', muscle_groups: ['quads', 'glutes'], demo_ids: [],
+    loaded_knee_flexion: true },
+  { id: 'calf-raise-single', section: 'strength',
+    name: 'Single-leg calf raise',
+    note: 'Hold a wall. The other foot can rest lightly until the working leg is steady.',
+    dose: '2 × 8 each side', muscle_groups: ['calves'], demo_ids: [] },
   { id: 'calf-raise-bilateral', section: 'strength',
     name: 'Calf raise, both feet',
     note: 'Slow up and down. Hold a wall if you need balance.',
@@ -95,7 +116,7 @@ const EXERCISES = [
     dose: '2 × 8', muscle_groups: ['quads', 'glutes'], demo_ids: [] },
   { id: 'spanish-squat-hold', section: 'stability',
     name: 'Spanish squat hold with band',
-    note: 'Anchor the band behind both knees and sit back into the hold. For more load, hold a dumbbell goblet-style.',
+    note: 'Anchor the band behind both knees. Keep the knee bend shallow. This is a low-load start, not a treatment for pain.',
     dose: '3 × 30 sec', muscle_groups: ['quads'],
     demo_ids: ['v-kneehaber-spanish'] },
   { id: 'split-squat-hold', section: 'stability',
@@ -140,9 +161,9 @@ EXERCISES.forEach(function (ex) { ex.demos = resolveDemoList(ex.demo_ids); });
  * replace the catalog note, or append a coaching cue. Week doses change one
  * variable at a time. New exercises have empty demo_ids.
  *
- * Placeholder doses. Every dose override and every doses map below (sets,
- * reps, holds, and week steps) is a stand-in. The prompt was truncated
- * before those numbers. They are pending the PT's full program.
+ * Placeholder doses and rules of thumb. Every dose override and every doses
+ * map below (sets, reps, holds, and week steps) is a stand-in pending
+ * professional confirmation. The prompt was truncated before those numbers.
  *
  * Phase 1 keeps deep loaded knee bending out (goblet squat, step-ups, split
  * squat, lunge, step-down). High-box sit-to-stand is in Phase 1, as the
@@ -160,35 +181,41 @@ const PHASES = [
     id: 1,
     name: 'Stability & Tissue Tolerance',
     weeks: 'Weeks 1-3',
-    goal: 'Motor control, isometric strength, and glute activation. No deep, loaded knee bending. Weeks are minimums; the checklist decides when you move on.',
+    goal: 'Motor control and glute activation. Low-load holds are a starting point, not a treatment for pain. No deep, loaded knee bending. Weeks are minimums; the checklist decides when you move on.',
     exercises: [
       { exercise_id: 'ankle-pumps-heel-slides' },
       { exercise_id: 'quad-sets',
         dose: '10 × 5-sec hold',
-        doses: { 1: '10 × 5-sec hold', 2: '15 × 5-sec hold', 3: '15 × 8-sec hold' } },
+        doses: { 1: '10 × 5-sec hold', 2: '10 × 8-sec hold', 3: '10 × 10-sec hold' } },
       { exercise_id: 'straight-leg-raises',
         dose: '2 × 8 each leg',
         doses: { 1: '2 × 8 each leg', 2: '3 × 8 each leg', 3: '3 × 10 each leg' } },
       { exercise_id: 'glute-bridges',
-        dose: '2 × 10',
-        doses: { 1: '2 × 10', 2: '3 × 10', 3: '3 × 12' } },
+        dose: '2 × 10, 3-sec hold',
+        doses: { 1: '2 × 10, 3-sec hold', 2: '3 × 10, 3-sec hold', 3: '3 × 12, 3-sec hold' } },
       { exercise_id: 'tke-band',
         dose: '2 × 10',
-        doses: { 1: '2 × 10', 2: '3 × 10', 3: '3 × 12' } },
+        doses: { 1: '2 × 10', 2: '3 × 10', 3: '3 × 15' } },
       { exercise_id: 'clamshell',
         dose: '2 × 8 each side',
-        doses: { 1: '2 × 8 each side', 2: '2 × 12 each side', 3: '3 × 12 each side' } },
+        doses: { 1: '2 × 8 each side', 2: '3 × 8 each side', 3: '3 × 12 each side' } },
+      { exercise_id: 'side-lying-abduction',
+        dose: '2 × 8 each side',
+        doses: { 1: '2 × 8 each side', 2: '3 × 8 each side', 3: '3 × 12 each side' } },
       { exercise_id: 'calf-raise-bilateral',
         dose: '2 × 10',
-        doses: { 1: '2 × 10', 2: '3 × 10', 3: '3 × 12' } },
+        doses: { 1: '2 × 10', 2: '3 × 10', 3: '3 × 15' },
+        note_append: 'Take extra time on the way down.' },
       { exercise_id: 'sit-to-stand-high',
         dose: '2 × 8',
         doses: { 1: '2 × 8', 2: '3 × 8', 3: '3 × 10' } },
       { exercise_id: 'spanish-squat-hold',
-        dose: '3 × 20 sec',
-        doses: { 1: '3 × 20 sec', 2: '4 × 20 sec', 3: '4 × 30 sec' },
-        note: 'Band behind both knees. Sit back only a little, about 45 to 60 degrees. Shallow hold, not a deep squat.' },
-      { exercise_id: 'single-leg-balance-supported' },
+        dose: '4 × 20 sec',
+        doses: { 1: '4 × 20 sec', 2: '4 × 30 sec', 3: '4 × 30 sec' },
+        note: 'Band behind both knees. Knee bend stays about 30 to 45 degrees. This is a low-load hold, not a treatment for pain.' },
+      { exercise_id: 'single-leg-balance-supported',
+        dose: '3 × 20 sec each side',
+        doses: { 1: '3 × 20 sec each side', 2: '3 × 25 sec each side', 3: '3 × 30 sec each side' } },
       { exercise_id: 'hamstring-stretch' },
       { exercise_id: 'calf-stretch' },
       { exercise_id: 'backward-walk', note_append: 'Slow. Only once normal forward walk feels steady.' },
@@ -198,7 +225,7 @@ const PHASES = [
     id: 2,
     name: 'Supported Unilateral',
     weeks: 'Weeks 4-6',
-    goal: 'Reintroduce load with support. Bilateral patterns come before unilateral ones. Weeks are minimums; the checklist decides when you move on.',
+    goal: 'Supported single-leg work. Reduce hand support before you add load, and do not add range and load in the same week. If you can test it, quadriceps strength near 80 percent of the other side is a useful check before Phase 3, not a required box. Weeks are minimums; the checklist decides when you move on.',
     exercises: [
       { exercise_id: 'ankle-pumps-heel-slides' },
       { exercise_id: 'quad-sets',
@@ -207,25 +234,34 @@ const PHASES = [
       { exercise_id: 'goblet-squat',
         dose: '3 × 6',
         doses: { 1: '3 × 6', 2: '3 × 8', 3: '3 × 8, a little more load' },
-        note_append: 'Light load to a high box. Add load only in week 3, and only if the knee is quiet.' },
+        note_append: 'Light load to a box, about 60 degrees. Add load only in a later week, and do not add depth in that same week.' },
       { exercise_id: 'step-ups',
         dose: '3 × 6 each side',
         doses: { 1: '3 × 6 each side', 2: '3 × 8 each side', 3: '3 × 8 each side, less hand support' },
-        note_append: 'Low step, bodyweight. Reduce hand support before you add dumbbells.' },
-      { exercise_id: 'db-romanian-deadlift',
-        dose: '3 × 8',
-        doses: { 1: '3 × 8', 2: '3 × 10', 3: '3 × 10, slightly heavier' },
-        note_append: 'Light load. Add weight only after the reps go up.' },
-      { exercise_id: 'spanish-squat-hold',
-        dose: '3 × 20 sec',
-        doses: { 1: '3 × 20 sec', 2: '3 × 30 sec', 3: '4 × 30 sec' } },
-      { exercise_id: 'split-squat-hold',
-        dose: '20 sec each side',
-        doses: { 1: '20 sec each side', 2: '30 sec each side', 3: '30 sec each side, less hand support' } },
+        note_append: 'Low step, about 10 to 15 cm, bodyweight. Reduce hand support before you add dumbbells.' },
+      { exercise_id: 'supported-split-squat',
+        dose: '3 × 6 each side, short range',
+        doses: {
+          1: '3 × 6 each side, short range',
+          2: '3 × 8 each side, short range',
+          3: '3 × 8 each side, a little more range',
+        } },
       { exercise_id: 'single-leg-rdl',
         dose: '3 × 6 each side',
         doses: { 1: '3 × 6 each side', 2: '3 × 8 each side', 3: '3 × 8 each side, fingertip support' },
-        note_append: 'Bodyweight with wall support. Reduce support before you add a dumbbell.' },
+        note_append: 'Kickstand stance, back toes down, with a hand on the wall. Reduce support before you add a dumbbell.' },
+      { exercise_id: 'single-leg-bridge',
+        dose: '2 × 8 each side',
+        doses: { 1: '2 × 8 each side', 2: '3 × 8 each side', 3: '3 × 10 each side' } },
+      { exercise_id: 'band-side-step',
+        dose: '2 × 8 each way',
+        doses: { 1: '2 × 8 each way', 2: '3 × 8 each way', 3: '3 × 10 each way' } },
+      { exercise_id: 'calf-raise-single',
+        dose: '2 × 8 each side',
+        doses: { 1: '2 × 8 each side, hand on the wall', 2: '3 × 8 each side, hand on the wall', 3: '3 × 10 each side, lighter hand support' } },
+      { exercise_id: 'single-leg-balance-supported',
+        dose: '3 × 20 sec each side',
+        doses: { 1: '3 × 20 sec each side', 2: '3 × 30 sec each side', 3: '3 × 30 sec each side, less hand support' } },
       { exercise_id: 'hamstring-stretch' },
       { exercise_id: 'calf-stretch' },
       { exercise_id: 'backward-walk' },
@@ -237,13 +273,14 @@ const PHASES = [
     id: 3,
     name: 'Complex Unilateral Loading',
     weeks: 'Weeks 7-9',
-    goal: 'Complex single-leg loading. The Bulgarian split squat starts here at bodyweight. No running or plyometrics until you are cleared for them separately.',
+    goal: 'Complex single-leg loading. The Bulgarian split squat starts here at bodyweight. Do not add range and load in the same week. No running or plyometrics, and no deep squats below parallel, until you are cleared for them separately.',
     exercises: [
       { exercise_id: 'ankle-pumps-heel-slides' },
       { exercise_id: 'quad-sets' },
       { exercise_id: 'goblet-squat',
         dose: '3 × 8',
-        doses: { 1: '3 × 8', 2: '3 × 10', 3: '3 × 10, modest load' } },
+        doses: { 1: '3 × 8', 2: '3 × 10', 3: '3 × 10, a little deeper only if the last week was quiet' },
+        note_append: 'Do not add depth and load in the same week.' },
       { exercise_id: 'bulgarian-split-squat',
         dose: '3 × 6 each side',
         doses: {
@@ -274,6 +311,9 @@ const PHASES = [
       { exercise_id: 'split-squat-hold',
         dose: '30 sec each side',
         doses: { 1: '30 sec each side', 2: '40 sec each side', 3: '40 sec each side, less support' } },
+      { exercise_id: 'calf-raise-single',
+        dose: '3 × 8 each side',
+        doses: { 1: '3 × 8 each side', 2: '3 × 10 each side', 3: '3 × 12 each side' } },
       { exercise_id: 'hamstring-stretch' },
       { exercise_id: 'calf-stretch' },
       { exercise_id: 'backward-walk' },
@@ -285,7 +325,7 @@ const PHASES = [
  * Phase 1 adds extension and a sit-to-stand test. Phase 2 adds split-squat
  * control and even weight in a squat. Symptom scores never tick these. */
 const SHARED_CHECKLIST = [
-  { id: 'no-swelling', label: 'No swelling after sessions' },
+  { id: 'no-swelling', label: 'No increase in swelling 24 hours after sessions' },
   { id: 'pain-ok', label: 'Pain at or below 2/10 during, and it settles to 2/10 or less within 24 hours' },
   { id: 'good-control', label: 'Every set completed with good control' },
 ];
@@ -298,6 +338,8 @@ const PHASE_CHECKLISTS = {
   2: SHARED_CHECKLIST.concat([
     { id: 'split-squat-control', label: 'Supported split squat to about 90 degrees with no knee caving in' },
     { id: 'even-squat', label: 'Even weight on both legs in a squat' },
+    { id: 'step-down-control', label: 'Lateral step-down with no more than one form fault' },
+    { id: 'no-flare', label: 'No flare for the last 2 weeks' },
   ]),
 };
 
@@ -557,9 +599,10 @@ function clampPain(value) {
   if (!Number.isFinite(n) || n < 0 || n > 10) return null;
   return Math.round(n);
 }
-/* Pain at or below 2/10 that is still at or below 2 the next morning has
- * settled within 24 hours and is acceptable. Pain above 2 during the session,
- * pain above 2 the next morning, or next-morning swelling is a flag. */
+/* Rule of thumb, pending professional confirmation. Pain at or below 2/10
+ * that is still at or below 2 the next morning has settled within 24 hours
+ * and is acceptable. Pain above 2 during the session, pain above 2 the next
+ * morning, or next-morning swelling is a flag. */
 function symptomFlagged(record) {
   if (!record || typeof record !== 'object') return false;
   const during = Number(record.painDuring);

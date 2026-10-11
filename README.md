@@ -14,19 +14,23 @@ for someone coming back after a long time off their feet. It is a workout
 companion, not a personal prescription. Start only after a physical therapist
 or physician has cleared you for resistance training.
 
-- **Phase 1 "Stability & Tissue Tolerance"** (13 exercises): isometric
-  strength, glute activation, and balance. No deep, loaded knee bending.
-  Includes a shallow Spanish squat hold, band terminal knee extension,
-  clamshells, calf raises, and a high-box sit-to-stand.
-- **Phase 2 "Supported Unilateral"** (11 exercises): light loaded patterns,
-  bilateral before unilateral, with support reduced before load is added.
-- **Phase 3 "Complex Unilateral Loading"** (14 exercises): a placeholder
-  until the full program is available. The Bulgarian split squat starts here
+- **Phase 1 "Stability & Tissue Tolerance"** (14 exercises): low-load
+  holds, glute activation, and balance. Holds are a starting point, not a
+  treatment for pain. No deep, loaded knee bending. Includes a Spanish squat
+  hold around 30 to 45 degrees, band terminal knee extension, clamshells,
+  side-lying hip abduction, calf raises, and a high-box sit-to-stand.
+- **Phase 2 "Supported Unilateral"** (13 exercises): supported split squat,
+  low step-up, kickstand-stance single-leg RDL, single-leg bridge, band side-step, and a
+  supported single-leg calf raise. Reduce hand support before adding load.
+  Do not add range and load in the same week.
+- **Phase 3 "Complex Unilateral Loading"** (15 exercises): a placeholder
+  until the full program is confirmed. The Bulgarian split squat starts here
   at bodyweight, low rear foot, 3 x 6 each side. Week-3 dumbbells on that
-  exercise are a placeholder too. Lateral step-downs and reverse lunges are
-  in this phase.
+  exercise are a placeholder too. Lateral step-downs, reverse lunges, and
+  single-leg calf raises are in this phase.
 
-Sets, reps, holds, and week doses are placeholders pending the full program.
+Sets, reps, holds, week doses, and the 2/10 and 30 percent figures are
+placeholder rules of thumb pending professional confirmation.
 
 Weeks inside a phase are minimums. The checklist decides when you move on.
 Moving up happens only through Advance, after 9 logged sessions and every
@@ -55,10 +59,11 @@ No running or plyometrics until you are cleared for them separately.
   clinician for giving way, locking, a hot or swollen knee, night pain, or
   calf pain or swelling. "Something's wrong" ends the session without logging it.
 - **Symptom flags.** Pain at or below 2/10 that settles to 2/10 or less
-  within 24 hours is acceptable. Pain above that, or next-morning swelling,
-  is a flag. Swelling advice says to cut volume by about 30%. Two flagged
-  sessions in a row turn Advance off until a later session is clean. The app
-  does not tick the checklist for you and does not rewrite doses.
+  within 24 hours is an acceptable rule of thumb. Pain above that, or
+  next-morning swelling, is a flag. Swelling advice says to cut volume by
+  about 30%. Two flagged sessions in a row turn Advance off until a later
+  session is clean. The app does not tick the checklist for you and does
+  not rewrite doses.
 - **Demo videos from a topic-organized video library**
   (`docs/video-library.js`). To swap an exercise's videos, edit only that
   file or that exercise's `demo_ids`. Demo URLs are only added when verified;

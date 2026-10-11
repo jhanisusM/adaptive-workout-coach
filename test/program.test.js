@@ -46,11 +46,14 @@ function readyToAdvance(extra) {
 test('phase 1 keeps the prompt boundary and phase 3 owns the split squat', () => {
   const phase1 = app.resolvePhase(1).exercises;
   assert.equal(phase1.some(e => e.loaded_knee_flexion), false);
-  ['spanish-squat-hold', 'tke-band', 'clamshell', 'calf-raise-bilateral', 'sit-to-stand-high'].forEach(id => {
+  ['spanish-squat-hold', 'tke-band', 'clamshell', 'side-lying-abduction', 'calf-raise-bilateral', 'sit-to-stand-high'].forEach(id => {
     assert.equal(phase1.some(e => e.id === id), true, id);
   });
   assert.equal(phase1.find(e => e.id === 'sit-to-stand-high').loaded_knee_flexion, false);
-  ['goblet-squat', 'bulgarian-split-squat', 'step-ups', 'reverse-lunge', 'lateral-step-down', 'split-squat-hold'].forEach(id => {
+  const spanish = phase1.find(e => e.id === 'spanish-squat-hold');
+  assert.match(spanish.note, /30 to 45/);
+  assert.match(spanish.note, /not a treatment for pain/);
+  ['goblet-squat', 'bulgarian-split-squat', 'step-ups', 'reverse-lunge', 'lateral-step-down', 'split-squat-hold', 'supported-split-squat'].forEach(id => {
     assert.equal(phase1.some(e => e.id === id), false, id);
   });
   assert.equal(app.resolvePhase(2).exercises.some(e => e.id === 'bulgarian-split-squat'), false);
@@ -62,8 +65,15 @@ test('phase 1 keeps the prompt boundary and phase 3 owns the split squat', () =>
   assert.equal(phase3.exercises.some(e => e.id === 'lateral-step-down'), true);
   assert.equal(phase3.exercises.some(e => e.id === 'reverse-lunge'), true);
   assert.match(app.resolvePhase(1).goal, /Weeks are minimums/);
+  assert.match(app.resolvePhase(1).goal, /not a treatment for pain/);
   assert.match(app.resolvePhase(2).goal, /Weeks are minimums/);
+  assert.equal(app.resolvePhase(2).exercises.some(e => e.id === 'supported-split-squat'), true);
+  assert.equal(app.resolvePhase(2).exercises.some(e => e.id === 'calf-raise-single'), true);
   assert.match(app.resolvePhase(3).goal, /No running or plyometrics/);
+  assert.equal(app.resolvePhase(3).exercises.some(e => e.id === 'calf-raise-single'), true);
+  const phase2Checks = app.checklistForPhase(2).map(item => item.id);
+  assert.equal(phase2Checks.includes('step-down-control'), true);
+  assert.equal(phase2Checks.includes('no-flare'), true);
 });
 
 test('week doses follow the uncapped session count and change one variable', () => {
@@ -76,8 +86,8 @@ test('week doses follow the uncapped session count and change one variable', () 
 
   const quad = week => app.resolvePhase(1, week).exercises.find(e => e.id === 'quad-sets').dose;
   assert.equal(quad(1), '10 \u00d7 5-sec hold');
-  assert.equal(quad(2), '15 \u00d7 5-sec hold');
-  assert.equal(quad(3), '15 \u00d7 8-sec hold');
+  assert.equal(quad(2), '10 \u00d7 8-sec hold');
+  assert.equal(quad(3), '10 \u00d7 10-sec hold');
 
   const bss = week => app.resolvePhase(3, week).exercises.find(e => e.id === 'bulgarian-split-squat').dose;
   assert.equal(bss(1), '3 \u00d7 6 each side');

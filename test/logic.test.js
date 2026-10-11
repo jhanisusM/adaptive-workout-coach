@@ -33,9 +33,9 @@ function gymState(day, extra) {
 }
 
 test('resolvePhase returns each current program and rejects an unknown phase', () => {
-  assert.equal(app.resolvePhase(1).exercises.length, 13);
-  assert.equal(app.resolvePhase(2).exercises.length, 11);
-  assert.equal(app.resolvePhase(3).exercises.length, 14);
+  assert.equal(app.resolvePhase(1).exercises.length, 14);
+  assert.equal(app.resolvePhase(2).exercises.length, 13);
+  assert.equal(app.resolvePhase(3).exercises.length, 15);
   assert.equal(app.resolvePhase(1).name, 'Stability & Tissue Tolerance');
   assert.equal(app.resolvePhase(2).name, 'Supported Unilateral');
   assert.equal(app.resolvePhase(3).name, 'Complex Unilateral Loading');
