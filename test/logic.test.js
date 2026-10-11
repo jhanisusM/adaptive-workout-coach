@@ -101,7 +101,7 @@ test('checking boxes does nothing without a session and does not log by itself',
   assert.equal(state.completions['2026-10-06'], true);
 });
 
-test('a day can be logged only once, and only from an active session on a gym day', () => {
+test('a day can be logged only once, and an active session logs its own day', () => {
   const state = gymState();
   assert.equal(app.applyCompletion(Object.assign(app.defaultStore(TUE), { session: null })).ok, false);
 
@@ -117,24 +117,23 @@ test('a day can be logged only once, and only from an active session on a gym da
   assert.equal(state.completions['2026-10-06'], true);
 
   const sunday = gymState('2026-10-11');
+  sunday.session = null;
+  sunday.activeDay = '2026-10-11';
+  assert.equal(app.canStartSession(sunday).reason, 'not-gym-day');
   sunday.session = session('2026-10-11');
-  const snapshot = JSON.parse(JSON.stringify(sunday));
-  const refused = app.applyCompletion(sunday);
-  assert.equal(refused.ok, false);
-  assert.equal(refused.reason, 'not-gym-day');
-  assert.deepEqual(sunday, snapshot);
+  assert.equal(app.applyCompletion(sunday).ok, true);
+  assert.equal(sunday.completions['2026-10-11'], true);
 
   const friday = gymState('2026-10-09');
-  friday.session = session('2026-10-09');
-  assert.equal(app.applyCompletion(friday).reason, 'not-gym-day');
-  friday.thirdDay = 'fri-morning';
+  friday.session = null;
+  friday.activeDay = '2026-10-09';
+  assert.equal(app.canStartSession(friday).reason, 'not-gym-day');
   friday.session = session('2026-10-09');
   assert.equal(app.applyCompletion(friday).ok, true);
+  assert.equal(friday.completions['2026-10-09'], true);
 
-  const clearance = { accepted: true, date: '2026-10-01' };
-  assert.equal(app.canStartSession(gymState('2026-10-10', { session: null, activeDay: '2026-10-10', clearance: clearance })).reason, 'not-gym-day');
-  assert.equal(app.canStartSession(gymState('2026-10-06', { session: null, activeDay: '2026-10-06', clearance: clearance })).action, 'start');
-  assert.equal(app.canStartSession(gymState('2026-10-06', { session: null, activeDay: '2026-10-06', clearance: null })).reason, 'no-clearance');
+  assert.equal(app.canStartSession(gymState('2026-10-10', { session: null, activeDay: '2026-10-10' })).reason, 'not-gym-day');
+  assert.equal(app.canStartSession(gymState('2026-10-06', { session: null, activeDay: '2026-10-06' })).action, 'start');
   const paused = gymState();
   paused.session = session('2026-10-06', { state: 'paused', remainingMs: 1000 });
   assert.equal(app.canStartSession(paused).action, 'resume');
@@ -189,14 +188,14 @@ test('the current phase is a no-op and a different phase confirms before discard
 });
 
 test('a selected day outside the visible week moves to today or the next gym day', () => {
-  assert.equal(app.resolveActiveDay('2020-01-01', TUE, 'none'), '2026-10-06');
-  assert.equal(app.resolveActiveDay('2020-01-01', WED, 'none'), '2026-10-08');
-  assert.equal(app.resolveActiveDay('2020-01-01', SAT, 'none'), '2026-10-13');
-  assert.equal(app.resolveActiveDay('2026-10-10', SAT, 'none'), '2026-10-10');
-  assert.equal(app.resolveActiveDay('2026-10-06', SAT, 'none'), '2026-10-06');
-  assert.equal(app.nextGymDay(SUN, 'none'), '2026-10-13');
-  assert.equal(app.isGymDay(SAT, 'sat-morning'), true);
-  assert.equal(app.isGymDay(SAT, 'none'), false);
+  assert.equal(app.resolveActiveDay('2020-01-01', TUE, [2, 4]), '2026-10-06');
+  assert.equal(app.resolveActiveDay('2020-01-01', WED, [2, 4]), '2026-10-08');
+  assert.equal(app.resolveActiveDay('2020-01-01', SAT, [2, 4]), '2026-10-13');
+  assert.equal(app.resolveActiveDay('2026-10-10', SAT, [2, 4]), '2026-10-10');
+  assert.equal(app.resolveActiveDay('2026-10-06', SAT, [2, 4]), '2026-10-06');
+  assert.equal(app.nextGymDay(SUN, [2, 4]), '2026-10-13');
+  assert.equal(app.isGymDay(SAT, [2, 4, 6]), true);
+  assert.equal(app.isGymDay(SAT, [2, 4]), false);
 
   const state = app.defaultStore(SAT);
   state.activeDay = '2020-01-01';
@@ -224,7 +223,7 @@ test('saved v1 progress survives migration and a second load is stable', () => {
   assert.deepEqual(saved, snapshot);
   assert.equal(first.notice, null);
   assert.equal(first.changed, true);
-  assert.equal(first.state.version, 2);
+  assert.equal(first.state.version, 3);
   assert.equal(first.state.phase, 2);
   assert.equal(first.state.unlockedPhase, 2);
   assert.equal(first.state.phaseSessions[1], 9);
@@ -234,13 +233,14 @@ test('saved v1 progress survives migration and a second load is stable', () => {
   assert.equal(first.state.session.state, 'running');
   assert.equal(first.state.checks['quad-sets'], true);
   assert.equal(first.state.collapsed.warmup, true);
-  assert.equal(first.state.thirdDay, 'sat-morning');
+  assert.deepEqual(first.state.workoutDays, [2, 4, 6]);
+  assert.equal(Object.prototype.hasOwnProperty.call(first.state, 'thirdDay'), false);
   assert.equal(first.state.completions['2026-10-06'], true);
   assert.equal(first.state.completions['2026-10-08'], true);
   assert.equal(first.state.activeDay, '2026-10-08');
   assert.equal(first.state.checklist['1']['good-control'], true);
   assert.deepEqual(first.state.symptoms, {});
-  assert.equal(first.state.clearance, null);
+  assert.equal(Object.prototype.hasOwnProperty.call(first.state, 'clearance'), false);
   assert.deepEqual(first.state.history, []);
 
   const second = app.migrate(first.state, TUE);
@@ -288,7 +288,7 @@ test('migration keeps counts above 9 and caps only the displayed goal', () => {
   const broken = app.migrate('nope', TUE);
   assert.equal(broken.notice, app.NOTICE_CORRUPT);
   assert.equal(broken.state.phase, 1);
-  assert.equal(broken.state.version, 2);
+  assert.equal(broken.state.version, 3);
 
   const parsed = app.loadStoreFromRaw('{"phase":', TUE);
   assert.equal(parsed.notice, app.NOTICE_CORRUPT);
@@ -315,12 +315,77 @@ test('a bad video id warns and is skipped', () => {
   assert.match(warnings.join('\n'), /unknown video id: x/);
 });
 
-test('changing the third gym day moves a non-gym selection when no session is running', () => {
+test('a session still logs its own day after that weekday is turned off', () => {
+  const state = gymState('2026-10-06');
+  state.session = session('2026-10-06');
+  state.workoutDays = [4];
+  const logged = app.applyCompletion(state);
+  assert.equal(logged.ok, true);
+  assert.equal(logged.day, '2026-10-06');
+  assert.equal(state.completions['2026-10-06'], true);
+  assert.equal(state.phaseSessions[1], 1);
+  assert.equal(state.session, null);
+
+  const broken = gymState('2026-10-06');
+  broken.session = session('not-a-day');
+  const before = JSON.parse(JSON.stringify(broken));
+  const refused = app.applyCompletion(broken);
+  assert.equal(refused.ok, false);
+  assert.deepEqual(broken.completions, before.completions);
+  assert.equal(broken.phaseSessions[1], before.phaseSessions[1]);
+
+  assert.equal(app.youtubeId('https://www.youtube.com/watch?v=5TUK4uT2nnw'), '5TUK4uT2nnw');
+  assert.equal(app.youtubeId('https://youtu.be/iCYO16wzPMw'), 'iCYO16wzPMw');
+  assert.equal(app.youtubeId('https://www.youtube-nocookie.com/embed/_r_vsI64pyw'), '_r_vsI64pyw');
+  assert.equal(app.youtubeId('https://evil.example/watch?v=5TUK4uT2nnw'), '');
+  assert.equal(app.youtubeId('https://youtube.com.evil.com/watch?v=5TUK4uT2nnw'), '');
+  assert.equal(app.youtubeId('javascript:alert(1)'), '');
+});
+
+test('changing workout days moves a rest-day selection when no session is running', () => {
   const state = app.defaultStore(SAT);
   state.activeDay = '2026-10-10';
-  state.thirdDay = 'sat-morning';
+  state.workoutDays = [2, 4, 6];
   state.session = null;
-  const picked = app.thirdDaySelection(state, 'none', SAT);
-  assert.equal(picked.thirdDay, 'none');
+  const picked = app.workoutDaySelection(state, [2, 4], SAT);
+  assert.deepEqual(picked.workoutDays, [2, 4]);
   assert.equal(picked.activeDay, '2026-10-13');
+
+  state.session = session('2026-10-10');
+  state.activeDay = '2026-10-10';
+  const held = app.workoutDaySelection(state, [2, 4], SAT);
+  assert.equal(held.activeDay, '2026-10-10');
+  assert.deepEqual(app.workoutDaySelection(state, [], SAT).workoutDays, [2, 4, 6]);
+});
+
+test('an old clearance or third-day choice migrates without a partial-repair notice', () => {
+  const cleared = app.migrate({
+    version: 2,
+    phase: 2,
+    unlockedPhase: 2,
+    phaseSessions: { 1: 9, 2: 1, 3: 0 },
+    checks: {},
+    collapsed: {},
+    thirdDay: 'fri-night',
+    completions: { '2026-10-06': true },
+    activeDay: '2026-10-06',
+    checklist: {},
+    session: null,
+    symptoms: {},
+    history: [],
+    clearance: { accepted: true, date: '2026-10-01' },
+  }, TUE);
+  assert.equal(cleared.notice, null);
+  assert.equal(cleared.changed, true);
+  assert.equal(Object.prototype.hasOwnProperty.call(cleared.state, 'clearance'), false);
+  assert.equal(Object.prototype.hasOwnProperty.call(cleared.state, 'thirdDay'), false);
+  assert.deepEqual(cleared.state.workoutDays, [2, 4, 5]);
+  assert.equal(cleared.state.phaseSessions[2], 1);
+  assert.equal(cleared.state.completions['2026-10-06'], true);
+  cleared.state.session = null;
+  assert.equal(app.canStartSession(cleared.state).action, 'start');
+
+  const badDay = app.migrate({ thirdDay: 'monday', phase: 1 }, TUE);
+  assert.equal(badDay.notice, app.NOTICE_PARTIAL);
+  assert.deepEqual(badDay.state.workoutDays, [2, 4]);
 });

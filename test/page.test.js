@@ -71,15 +71,8 @@ function checkAll(window) {
   throw new Error('could not check every exercise');
 }
 
-function acceptClearance(window, date) {
-  const doc = window.document;
-  const box = doc.getElementById('clearanceAccept');
-  const dateInput = doc.getElementById('clearanceDate');
-  box.checked = true;
-  dateInput.value = date || '2026-10-01';
-  box.dispatchEvent(new window.Event('change', { bubbles: true }));
-  dateInput.dispatchEvent(new window.Event('input', { bubbles: true }));
-  click(window, doc.getElementById('btnClearanceSave'));
+function acceptClearance() {
+  /* Clearance is no longer part of the page. Call sites stay so start flows read the same. */
 }
 
 function saveCheckin(window, pain) {
@@ -97,13 +90,18 @@ function thisTuesday() {
   return app.dayKey(tue);
 }
 
-test('featured demos render and boxes cannot log a workout before Start', () => {
+test('the demo list renders and boxes cannot log a workout before Start', () => {
   const { dom, window, errors } = boot();
   try {
     assert.deepEqual(errors, []);
-    const featured = window.document.querySelectorAll('#featuredDemos a');
-    assert.equal(featured.length, 3);
+    const demos = window.document.querySelectorAll('#demoVideoList .demo-row');
+    assert.equal(demos.length, 26);
+    assert.equal(window.document.querySelectorAll('#demoVideoList iframe').length, 26);
+    assert.equal(window.document.querySelectorAll('#demoVideoList .demo-missing').length, 0);
+    assert.match(window.document.querySelector('#demoVideoList iframe').getAttribute('src'), /youtube-nocookie\.com\/embed\//);
     assert.match(window.document.getElementById('blockNote').textContent, /foundation block/);
+    assert.equal(window.document.getElementById('infoPanel').hidden, true);
+    assert.equal(window.document.getElementById('settingsPanel').hidden, true);
     assert.ok(window.document.querySelector('input[data-check]').disabled);
 
     const box = window.document.querySelector('input[data-check]');
@@ -118,9 +116,62 @@ test('featured demos render and boxes cannot log a workout before Start', () => 
     assert.doesNotMatch(window.document.getElementById('routine').textContent, /18 min/);
     assert.equal(window.document.querySelector('[data-phase="2"]').classList.contains('locked'), true);
     assert.equal(window.document.querySelector('[data-phase="3"]').classList.contains('locked'), true);
-    assert.equal(window.document.getElementById('btnStart').disabled, true);
-    assert.equal(window.document.getElementById('redFlags').hidden, false);
-    assert.match(window.document.getElementById('redFlags').textContent, /blood clot/);
+    assert.equal(window.document.getElementById('btnStart').disabled, false);
+    assert.equal(window.document.getElementById('redFlags'), null);
+    assert.equal(window.document.getElementById('clearanceModal'), null);
+  } finally {
+    dom.window.close();
+  }
+});
+
+test('each exercise embeds one nocookie demo beside its description', () => {
+  const ids = [
+    'iCYO16wzPMw', '5TUK4uT2nnw', 'CzGVR5sJ1hY', 'kZapDhWEhNQ', 'DxUNi119Qzs',
+    '_r_vsI64pyw', 'w7pyyqLorJ4', 'uUjqvxEWcbo', 'c8xZbwTx4XM', 'zo2pqw794B0',
+    'PhTDzR0TpZs', 'xdKm8PSX438', 'gFyIjunfbbg', '-rDiQXjeXO0', 'fUOB9VcyvYo',
+    'Yy7qSkfELFY', 'vUikQQsXCbg', 'qPd73snQfUs', 'aZh9tCFh46o', 'qveKmiXEkIQ',
+    'hgFxm5KIF7M', 'WPSXSBFsLIo', '14MFOI3vTJs', 'aJvfeuu71gw', 'LoWfpR9y6rs',
+    'prkjsrecKr4',
+  ];
+  const { dom, window, errors } = boot();
+  try {
+    assert.deepEqual(errors, []);
+    const srcs = [...window.document.querySelectorAll('#demoVideoList iframe')].map(frame => frame.getAttribute('src'));
+    assert.equal(srcs.length, 26);
+    assert.equal(new Set(srcs).size, 26);
+    ids.forEach(id => {
+      assert.ok(srcs.includes('https://www.youtube-nocookie.com/embed/' + id), id);
+    });
+    assert.equal(window.document.querySelectorAll('#demoVideoList .demo-watch').length, 26);
+    const quad = window.document.querySelector('[data-check="quad-sets"]').closest('.exercise');
+    assert.ok(quad.querySelector('.exercise-note'));
+    const quadFrame = quad.querySelector('.exercise-video iframe');
+    assert.equal(quadFrame.getAttribute('src'), 'https://www.youtube-nocookie.com/embed/5TUK4uT2nnw');
+    assert.equal(quadFrame.getAttribute('sandbox'), 'allow-scripts allow-same-origin allow-presentation allow-popups');
+    assert.equal(quad.querySelector('.demo-watch').getAttribute('href'), 'https://www.youtube.com/watch?v=5TUK4uT2nnw');
+    assert.equal(window.document.querySelector('#demoVideoList .demo-watch').getAttribute('href'), 'https://www.youtube.com/watch?v=iCYO16wzPMw');
+    assert.equal(window.document.querySelectorAll('.exercise .exercise-video iframe').length, 14);
+  } finally {
+    dom.window.close();
+  }
+});
+
+test('the disclaimer footer renders and links to the README', () => {
+  const { dom, window, errors } = boot();
+  try {
+    assert.deepEqual(errors, []);
+    const footer = window.document.getElementById('disclaimerFooter');
+    assert.ok(footer);
+    assert.equal(footer.hidden, false);
+    assert.equal(footer.classList.contains('disclaimer-footer'), true);
+    assert.equal(footer.textContent.trim(), 'Personal research project. Not medical advice; use at your own risk.');
+    const link = footer.querySelector('a');
+    assert.equal(link.textContent, 'Personal research project. Not medical advice; use at your own risk.');
+    assert.equal(link.getAttribute('href'), 'https://github.com/jhanisusM/adaptive-workout-coach#disclaimer');
+    assert.equal(window.document.getElementById('redFlags'), null);
+    assert.equal(window.document.getElementById('clearanceModal'), null);
+    const css = fs.readFileSync(path.join(docs, 'styles.css'), 'utf8');
+    assert.match(css, /\.disclaimer-footer \{[^}]*position: fixed/);
   } finally {
     dom.window.close();
   }
@@ -185,7 +236,7 @@ test('an expired session reopens with demos, kept checks, and a log or discard c
   try {
     assert.deepEqual(first.errors, []);
     const doc = first.window.document;
-    assert.equal(doc.querySelectorAll('#featuredDemos a').length, 3);
+    assert.equal(doc.querySelectorAll('#demoVideoList .demo-row').length, 26);
     assert.match(doc.getElementById('blockNote').textContent, /accessory block/);
     assert.ok(doc.getElementById('expiryConfirm').classList.contains('show'));
     assert.equal(doc.querySelector('input[data-check="quad-sets"]').checked, true);
@@ -208,14 +259,14 @@ test('an expired session reopens with demos, kept checks, and a log or discard c
   const discardSeed = JSON.parse(JSON.stringify(seed));
   const second = boot(discardSeed);
   try {
-    assert.equal(second.window.document.querySelectorAll('#featuredDemos a').length, 3);
+    assert.equal(second.window.document.querySelectorAll('#demoVideoList .demo-row').length, 26);
     click(second.window, second.window.document.getElementById('btnExpireDiscard'));
     const stored = readStore(second.window);
     assert.equal(stored.session, null);
     assert.deepEqual(stored.checks, {});
     assert.equal(stored.phaseSessions['1'], 1);
     assert.equal(stored.completions[day], undefined);
-    assert.equal(second.window.document.querySelectorAll('#featuredDemos a').length, 3);
+    assert.equal(second.window.document.querySelectorAll('#demoVideoList .demo-row').length, 26);
   } finally {
     second.dom.window.close();
   }
@@ -274,7 +325,7 @@ test('moving back from an unlocked phase still asks before ending a session', ()
   });
   try {
     assert.deepEqual(errors, []);
-    assert.equal(window.document.getElementById('clearanceModal').hidden, true);
+    assert.equal(window.document.getElementById('clearanceModal'), null);
     assert.match(window.document.getElementById('phaseTitle').textContent, /Phase 2/);
     assert.equal(window.document.querySelector('[data-phase="1"]').classList.contains('locked'), false);
     assert.equal(window.document.querySelector('[data-phase="3"]').classList.contains('locked'), true);
@@ -320,7 +371,11 @@ test('a stale selected day is replaced on load and the calendar follows a new da
     assert.equal(stored.phaseSessions['1'], 2);
     assert.equal(stored.completions['2020-01-07'], true);
     assert.notEqual(stored.activeDay, '2020-01-01');
-    assert.ok(app.weekDayKeys(new Date()).includes(stored.activeDay) || app.isGymDayKey(stored.activeDay, 'none'));
+    assert.equal(stored.version, 3);
+    assert.deepEqual(stored.workoutDays, [2, 4]);
+    assert.equal(Object.prototype.hasOwnProperty.call(stored, 'clearance'), false);
+    assert.equal(Object.prototype.hasOwnProperty.call(stored, 'thirdDay'), false);
+    assert.ok(app.weekDayKeys(new Date()).includes(stored.activeDay) || app.isGymDayKey(stored.activeDay, stored.workoutDays));
     const before = window.document.getElementById('weekGrid').textContent;
     const RealDate = window.Date;
     const future = new RealDate(Date.now() + 8 * 24 * 60 * 60 * 1000);
@@ -353,7 +408,7 @@ test('corrupt storage still renders, and a saved session deadline is kept', () =
     assert.match(doc.getElementById('sessionMessage').textContent, /unreadable/);
     assert.match(doc.getElementById('sessionMessage').textContent, /backup of your previous save/);
     const stored = readStore(corrupt.window);
-    assert.equal(stored.version, 2);
+    assert.equal(stored.version, 3);
     assert.equal(stored.phase, 2);
     assert.equal(stored.completions['2026-10-06'], true);
     assert.deepEqual(stored.checks, {});
@@ -447,7 +502,8 @@ test('Advance opens the next phase only after 9 sessions and the checklist', () 
   }));
   try {
     assert.deepEqual(errors, []);
-    assert.equal(window.document.getElementById('clearanceModal').hidden, true);
+    assert.equal(window.document.getElementById('clearanceModal'), null);
+    assert.equal(window.document.getElementById('btnStart').disabled, false);
     assert.equal(window.document.getElementById('advanceBtn').disabled, false);
     click(window, window.document.getElementById('advanceBtn'));
     const stored = readStore(window);
@@ -572,7 +628,7 @@ test('a flagged check-in repeats the week and two flags lock Advance', () => {
   }
 });
 
-test('draft labels show on the phase card, phase 3, and the red flags', () => {
+test('draft labels stay on the phase card and phase 3', () => {
   const { dom, window, errors } = boot();
   try {
     assert.deepEqual(errors, []);
@@ -587,36 +643,123 @@ test('draft labels show on the phase card, phase 3, and the red flags', () => {
     assert.equal(badge.textContent, 'Draft');
     assert.equal(doc.querySelector('[data-phase="1"] .phase-draft'), null);
     assert.equal(doc.querySelector('[data-phase="2"] .phase-draft'), null);
-    const note = doc.getElementById('redFlagNote');
-    const heading = doc.querySelector('#redFlags h2');
-    assert.ok(note);
-    assert.equal(note.hidden, false);
-    assert.equal(note.textContent, 'These are general rules of thumb.');
-    assert.ok(heading.compareDocumentPosition(note) & window.Node.DOCUMENT_POSITION_FOLLOWING);
-    assert.ok(note.compareDocumentPosition(doc.querySelector('#redFlags ul')) & window.Node.DOCUMENT_POSITION_FOLLOWING);
+    assert.equal(doc.getElementById('redFlags'), null);
+    assert.equal(doc.getElementById('redFlagNote'), null);
   } finally {
     dom.window.close();
   }
 });
 
-test('Something is wrong ends the session without logging', () => {
+function setWorkoutDay(window, dow, on) {
+  const box = window.document.querySelector('[data-workout-day="' + dow + '"]');
+  assert.ok(box);
+  box.checked = on;
+  box.dispatchEvent(new window.Event('change', { bubbles: true }));
+}
+
+test('settings, the info panel, and demo videos follow the chosen week', () => {
   const { dom, window, errors } = boot();
   try {
     assert.deepEqual(errors, []);
-    acceptClearance(window);
-    selectGymDay(window);
-    click(window, window.document.getElementById('btnStart'));
-    const box = window.document.querySelector('input[data-check]');
-    box.checked = true;
-    box.dispatchEvent(new window.Event('change', { bubbles: true }));
-    click(window, window.document.getElementById('btnSomethingWrong'));
-    const stored = readStore(window);
-    assert.equal(stored.session, null);
-    assert.deepEqual(stored.checks, {});
-    assert.equal(stored.phaseSessions['1'], 0);
-    assert.match(window.document.getElementById('sessionMessage').textContent, /Nothing was logged/);
-    assert.match(window.document.getElementById('redFlags').textContent, /gives way/);
+    const doc = window.document;
+    assert.equal(doc.getElementById('btnStart').disabled, false);
+    assert.match(doc.getElementById('frequencyCount').textContent, /2 workout days/);
+    assert.equal(doc.querySelectorAll('.day').length, 7);
+    assert.equal(doc.querySelectorAll('.day.gym').length, 2);
+
+    click(window, doc.getElementById('btnInfo'));
+    assert.equal(doc.getElementById('infoPanel').hidden, false);
+    assert.equal(doc.getElementById('btnInfo').getAttribute('aria-expanded'), 'true');
+    assert.match(doc.getElementById('blockNote').textContent, /foundation block/);
+    assert.match(doc.getElementById('blockNote').textContent, /accessory block/);
+
+    click(window, doc.getElementById('btnMenu'));
+    assert.equal(doc.getElementById('settingsPanel').hidden, false);
+    assert.equal(doc.getElementById('infoPanel').hidden, true);
+    assert.equal(doc.getElementById('btnMenu').getAttribute('aria-expanded'), 'true');
+    assert.equal(doc.querySelectorAll('[data-workout-day]').length, 7);
+    assert.equal(doc.querySelector('[data-workout-day="2"]').checked, true);
+    assert.equal(doc.querySelector('[data-workout-day="4"]').checked, true);
+    assert.equal(doc.querySelector('[data-workout-day="0"]').checked, false);
+
+    setWorkoutDay(window, 5, true);
+    assert.deepEqual(readStore(window).workoutDays, [2, 4, 5]);
+    assert.equal(doc.querySelectorAll('.day.gym').length, 3);
+    assert.match(doc.getElementById('frequencyCount').textContent, /3 workout days/);
+    const fridayEl = [...doc.querySelectorAll('.day.gym')].find(el => el.querySelector('.dow').textContent === 'Fri');
+    assert.ok(fridayEl);
+    click(window, fridayEl);
+    click(window, doc.getElementById('btnStart'));
+    click(window, doc.getElementById('btnFinish'));
+    saveCheckin(window, 1);
+    const fridayKey = fridayEl.getAttribute('data-day');
+    assert.equal(readStore(window).completions[fridayKey], true);
+    assert.equal(readStore(window).phaseSessions['1'], 1);
+
+    setWorkoutDay(window, 2, false);
+    setWorkoutDay(window, 4, false);
+    assert.deepEqual(readStore(window).workoutDays, [5]);
+    setWorkoutDay(window, 5, false);
+    assert.equal(doc.querySelector('[data-workout-day="5"]').checked, true);
+    assert.deepEqual(readStore(window).workoutDays, [5]);
+    assert.match(doc.getElementById('sessionMessage').textContent, /Keep at least one workout day/);
+    assert.equal(doc.getElementById('workoutDaysNote').hidden, false);
+
+    doc.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    assert.equal(doc.getElementById('settingsPanel').hidden, true);
   } finally {
     dom.window.close();
+  }
+});
+
+test('turning off the session weekday still logs that day, and a rest day cannot start', () => {
+  const { dom, window, errors } = boot();
+  try {
+    assert.deepEqual(errors, []);
+    const doc = window.document;
+    const tuesday = [...doc.querySelectorAll('.day.gym')].find(el => el.querySelector('.dow').textContent === 'Tue');
+    click(window, tuesday);
+    click(window, doc.getElementById('btnStart'));
+    assert.equal(readStore(window).session.state, 'running');
+    click(window, doc.getElementById('btnMenu'));
+    setWorkoutDay(window, 2, false);
+    assert.equal(readStore(window).session.day, tuesday.getAttribute('data-day'));
+    click(window, doc.getElementById('btnFinish'));
+    assert.equal(doc.getElementById('checkinModal').hidden, false);
+    saveCheckin(window, 1);
+    const logged = readStore(window);
+    assert.equal(logged.completions[tuesday.getAttribute('data-day')], true);
+    assert.equal(logged.phaseSessions['1'], 1);
+    assert.equal(logged.session, null);
+    assert.deepEqual(logged.workoutDays, [4]);
+  } finally {
+    dom.window.close();
+  }
+
+  const today = new Date();
+  const start = app.weekStart(today);
+  const wednesday = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 3);
+  const rest = boot({
+    version: 3,
+    phase: 1,
+    unlockedPhase: 1,
+    phaseSessions: { 1: 0, 2: 0, 3: 0 },
+    checks: {},
+    collapsed: {},
+    workoutDays: [2, 4],
+    completions: {},
+    activeDay: app.dayKey(wednesday),
+    checklist: {},
+    session: null,
+    symptoms: {},
+    history: [],
+  });
+  try {
+    click(rest.window, rest.window.document.getElementById('btnStart'));
+    assert.match(rest.window.document.getElementById('sessionMessage').textContent, /Rest days are not logged/);
+    assert.equal(readStore(rest.window).session, null);
+    assert.equal(readStore(rest.window).phaseSessions['1'], 0);
+  } finally {
+    rest.dom.window.close();
   }
 });

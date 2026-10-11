@@ -28,133 +28,159 @@ const EXERCISES = [
     name: 'Ankle pumps + heel slides',
     note: 'Lie flat. Slide each heel toward your butt, then pump the ankles.',
     dose: '2 min · 20 each', muscle_groups: ['calves', 'quads'],
-    demo_ids: ['v-chauhan-top9', 'v-jag-post-op', 'v-crp-acl'] },
+    demo_ids: ['v-chauhan-top9', 'v-jag-post-op', 'v-crp-acl'],
+    video_url: 'https://www.youtube.com/watch?v=iCYO16wzPMw' },
   { id: 'quad-sets', section: 'warmup',
     name: 'Quad sets',
     note: 'Tighten your thigh and press the knee into the floor or mat.',
     dose: '15 × 5-sec hold', muscle_groups: ['quads'],
-    demo_ids: ['v-jag-quad-sets', 'v-chauhan-quad-iso', 'v-bobbrad-knee-ext'] },
+    demo_ids: ['v-jag-quad-sets', 'v-chauhan-quad-iso', 'v-bobbrad-knee-ext'],
+    video_url: 'https://www.youtube.com/watch?v=5TUK4uT2nnw' },
   { id: 'goblet-squat', section: 'strength',
     name: 'Goblet squat / dumbbell squat-to-bench',
     note: 'Hold one dumbbell at your chest. Use the bench as a depth target and keep every rep pain-free.',
     dose: '3 × 8 to 10', muscle_groups: ['quads', 'glutes'], demo_ids: [],
+    video_url: 'https://www.youtube.com/watch?v=CzGVR5sJ1hY',
     loaded_knee_flexion: true },
   { id: 'bulgarian-split-squat', section: 'strength',
     name: 'Bulgarian split squat',
     note: 'Keep the front foot planted and use a comfortable range. Start light and add load only with good control.',
     dose: '3 × 8 each side', muscle_groups: ['quads', 'glutes'], demo_ids: [],
+    video_url: 'https://www.youtube.com/watch?v=kZapDhWEhNQ',
     loaded_knee_flexion: true },
   { id: 'step-ups', section: 'strength',
     name: 'Step-ups with dumbbells',
     note: 'Drive through the working foot and lower slowly without dropping from the step.',
     dose: '3 × 8 each side', muscle_groups: ['quads', 'glutes'],
     demo_ids: ['v-kneehaber-stepup'],
+    video_url: 'https://www.youtube.com/watch?v=DxUNi119Qzs',
     loaded_knee_flexion: true },
   { id: 'lateral-step-down', section: 'strength',
     name: 'Lateral step-down',
     note: 'Low step. Take 3 seconds to lower. A hand on the wall is fine.',
     dose: '2 × 6 each side', muscle_groups: ['quads', 'glutes'], demo_ids: [],
+    video_url: 'https://www.youtube.com/watch?v=_r_vsI64pyw',
     loaded_knee_flexion: true },
   { id: 'reverse-lunge', section: 'strength',
     name: 'Reverse lunge',
     note: 'Step backward, bodyweight. Keep the front knee tracking over the foot.',
     dose: '2 × 6 each side', muscle_groups: ['quads', 'glutes'], demo_ids: [],
+    video_url: 'https://www.youtube.com/watch?v=w7pyyqLorJ4',
     loaded_knee_flexion: true },
   { id: 'db-romanian-deadlift', section: 'strength',
     name: 'Dumbbell Romanian deadlift',
     note: 'Hinge at the hips with soft knees, a long spine, and the dumbbells close to your legs.',
-    dose: '3 × 10', muscle_groups: ['hamstrings', 'glutes'], demo_ids: [] },
+    dose: '3 × 10', muscle_groups: ['hamstrings', 'glutes'], demo_ids: [],
+    video_url: 'https://www.youtube.com/watch?v=uUjqvxEWcbo' },
   { id: 'single-leg-rdl', section: 'strength',
     name: 'Single-leg RDL',
     note: 'Keep the hips level and use a light dumbbell or support as needed for balance.',
     dose: '3 × 8 each side', muscle_groups: ['hamstrings', 'glutes'],
-    demo_ids: ['v-djkim-slrdl', 'v-pauli-slrdl', 'v-e3-slrdl'] },
+    demo_ids: ['v-djkim-slrdl', 'v-pauli-slrdl', 'v-e3-slrdl'],
+    video_url: 'https://www.youtube.com/watch?v=c8xZbwTx4XM' },
   { id: 'straight-leg-raises', section: 'strength',
     name: 'Straight leg raises',
     note: 'Lie flat, keep the working knee straight, and lift the heel slowly. Skip it if the thigh cannot hold the leg up.',
-    dose: '3 × 10 each leg', muscle_groups: ['quads'], demo_ids: [] },
+    dose: '3 × 10 each leg', muscle_groups: ['quads'], demo_ids: [],
+    video_url: 'https://www.youtube.com/watch?v=zo2pqw794B0' },
   { id: 'glute-bridges', section: 'strength',
     name: 'Glute bridges',
     note: 'Both feet down. Pause about 3 seconds at the top.',
-    dose: '3 × 12', muscle_groups: ['glutes'], demo_ids: [] },
+    dose: '3 × 12', muscle_groups: ['glutes'], demo_ids: [],
+    video_url: 'https://www.youtube.com/watch?v=PhTDzR0TpZs' },
   { id: 'tke-band', section: 'strength',
     name: 'Terminal knee extension with band',
     note: 'Anchor the band in front of the knee. Straighten the knee against the band without the hip taking over.',
-    dose: '2 × 10', muscle_groups: ['quads'], demo_ids: [] },
+    dose: '2 × 10', muscle_groups: ['quads'], demo_ids: [],
+    video_url: 'https://www.youtube.com/watch?v=xdKm8PSX438' },
   { id: 'clamshell', section: 'strength',
     name: 'Clamshell',
     note: 'Lie on your side with knees bent. Lift the top knee without rolling the hips back.',
-    dose: '2 × 8 each side', muscle_groups: ['glutes'], demo_ids: [] },
+    dose: '2 × 8 each side', muscle_groups: ['glutes'], demo_ids: [],
+    video_url: 'https://www.youtube.com/watch?v=gFyIjunfbbg' },
   { id: 'side-lying-abduction', section: 'strength',
     name: 'Side-lying hip abduction',
     note: 'Lie on your side and lift the top leg with the toes level or slightly down. Do not roll the hips back.',
-    dose: '2 × 8 each side', muscle_groups: ['glutes'], demo_ids: [] },
+    dose: '2 × 8 each side', muscle_groups: ['glutes'], demo_ids: [],
+    video_url: 'https://www.youtube.com/watch?v=-rDiQXjeXO0' },
   { id: 'single-leg-bridge', section: 'strength',
     name: 'Single-leg glute bridge',
     note: 'One foot down and the other leg straight. Keep the hips level.',
-    dose: '2 × 8 each side', muscle_groups: ['glutes'], demo_ids: [] },
+    dose: '2 × 8 each side', muscle_groups: ['glutes'], demo_ids: [],
+    video_url: 'https://www.youtube.com/watch?v=fUOB9VcyvYo' },
   { id: 'band-side-step', section: 'strength',
     name: 'Band side-step',
     note: 'Band above the knees. Small steps, in a slight knee bend, not a deep squat.',
-    dose: '2 × 8 each way', muscle_groups: ['glutes'], demo_ids: [] },
+    dose: '2 × 8 each way', muscle_groups: ['glutes'], demo_ids: [],
+    video_url: 'https://www.youtube.com/watch?v=Yy7qSkfELFY' },
   { id: 'supported-split-squat', section: 'strength',
     name: 'Supported split squat',
     note: 'Hand on a wall or chair. Start with a short range and keep the front knee over the foot.',
     dose: '3 × 6 each side', muscle_groups: ['quads', 'glutes'], demo_ids: [],
+    video_url: 'https://www.youtube.com/watch?v=vUikQQsXCbg',
     loaded_knee_flexion: true },
   { id: 'calf-raise-single', section: 'strength',
     name: 'Single-leg calf raise',
     note: 'Hold a wall. The other foot can rest lightly until the working leg is steady.',
-    dose: '2 × 8 each side', muscle_groups: ['calves'], demo_ids: [] },
+    dose: '2 × 8 each side', muscle_groups: ['calves'], demo_ids: [],
+    video_url: 'https://www.youtube.com/watch?v=qPd73snQfUs' },
   { id: 'calf-raise-bilateral', section: 'strength',
     name: 'Calf raise, both feet',
     note: 'Slow up and down. Hold a wall if you need balance.',
-    dose: '2 × 10', muscle_groups: ['calves'], demo_ids: [] },
+    dose: '2 × 10', muscle_groups: ['calves'], demo_ids: [],
+    video_url: 'https://www.youtube.com/watch?v=aZh9tCFh46o' },
   { id: 'sit-to-stand-high', section: 'strength',
     name: 'High-box sit-to-stand',
     note: 'Use a high box or a high chair so the knee stays out of a deep bend. Hands on the thighs are fine.',
-    dose: '2 × 8', muscle_groups: ['quads', 'glutes'], demo_ids: [] },
+    dose: '2 × 8', muscle_groups: ['quads', 'glutes'], demo_ids: [],
+    video_url: 'https://www.youtube.com/watch?v=qveKmiXEkIQ' },
   { id: 'spanish-squat-hold', section: 'stability',
     name: 'Spanish squat hold with band',
     note: 'Anchor the band behind both knees. Keep the knee bend shallow. This is a low-load start, not a treatment for pain.',
     dose: '3 × 30 sec', muscle_groups: ['quads'],
-    demo_ids: ['v-kneehaber-spanish'] },
+    demo_ids: ['v-kneehaber-spanish'],
+    video_url: 'https://www.youtube.com/watch?v=hgFxm5KIF7M' },
   { id: 'split-squat-hold', section: 'stability',
     name: 'Split-squat hold',
     note: 'Hold a comfortable split-squat depth with the front foot fully planted and the torso tall.',
     dose: '~30 sec each side', muscle_groups: ['quads', 'glutes'],
     demo_ids: ['v-kneehaber-split'],
+    video_url: 'https://www.youtube.com/watch?v=WPSXSBFsLIo',
     loaded_knee_flexion: true },
   { id: 'single-leg-balance-supported', section: 'stability',
     name: 'Single-leg balance (supported)',
     note: 'Hand on wall.',
-    dose: '3 × 20 sec each side', muscle_groups: ['stability'], demo_ids: [] },
+    dose: '3 × 20 sec each side', muscle_groups: ['stability'], demo_ids: [],
+    video_url: 'https://www.youtube.com/watch?v=14MFOI3vTJs' },
   { id: 'hamstring-stretch', section: 'cooldown',
     name: 'Hamstring stretch',
     note: 'Ease into the stretch; no bouncing.',
     dose: '30 sec each', muscle_groups: ['hamstrings'],
-    demo_ids: ['v-bobbrad-hamstring', 'v-weshape-stretch'] },
+    demo_ids: ['v-bobbrad-hamstring', 'v-weshape-stretch'],
+    video_url: 'https://www.youtube.com/watch?v=aJvfeuu71gw' },
   { id: 'calf-stretch', section: 'cooldown',
     name: 'Calf stretch at wall',
     note: 'Keep the back heel grounded.',
     dose: '30 sec each', muscle_groups: ['calves'],
-    demo_ids: ['v-sommer-calf', 'v-hoopes-calf', 'v-bobbrad-calf'] },
+    demo_ids: ['v-sommer-calf', 'v-hoopes-calf', 'v-bobbrad-calf'],
+    video_url: 'https://www.youtube.com/watch?v=LoWfpR9y6rs' },
   { id: 'backward-walk', section: 'cooldown',
     name: 'Backward walk',
     note: 'Use a clear, level path and move with control.',
     dose: '1 min', muscle_groups: ['quads', 'calves'],
-    demo_ids: ['v-maloney-backward', 'v-benpatrick-backward'] },
+    demo_ids: ['v-maloney-backward', 'v-benpatrick-backward'],
+    video_url: 'https://www.youtube.com/watch?v=prkjsrecKr4' },
 ];
-
-/* Featured demos: ids into the video library. To rotate the featured set,
- * change only these ids. */
-const FEATURED_DEMO_IDS = ['v-djkim-featured', 'v-kneehaber-featured', 'v-pauli-featured'];
-const FEATURED_DEMOS = resolveDemoList(FEATURED_DEMO_IDS);
 
 /* Resolve every exercise's demo_ids into full video objects from the video
  * library (video-library.js must be loaded before this file). Unknown ids
- * are skipped so one bad id cannot blank the page. */
-EXERCISES.forEach(function (ex) { ex.demos = resolveDemoList(ex.demo_ids); });
+ * are skipped so one bad id cannot blank the page. video_url is one
+ * YouTube link per exercise. The page shows it through youtube-nocookie.com. */
+/* One demo link per exercise. A missing video_url stays empty. */
+EXERCISES.forEach(function (ex) {
+  if (typeof ex.video_url !== 'string') ex.video_url = '';
+  ex.demos = resolveDemoList(ex.demo_ids);
+});
 
 /* 3 phases x about 3 weeks each, 3 sessions per week (9 sessions per phase).
  * A phase entry can override the catalog dose, supply week doses (1, 2, 3),
@@ -363,6 +389,7 @@ function resolvePhase(phaseId, week) {
       id: base.id, section: base.section, name: base.name, note,
       dose: doseForEntry(entry, base, week),
       muscle_groups: base.muscle_groups, demos: base.demos, order: i,
+      video_url: typeof base.video_url === 'string' ? base.video_url : '',
       loaded_knee_flexion: base.loaded_knee_flexion === true,
     };
   });
@@ -391,13 +418,13 @@ function phaseWeek(sessionCount) {
 /* ---------------- Constants & store ---------------- */
 const SESSION_MS = 30 * 60 * 1000;
 const LS_KEY = 'awc-demo-v1';
-const STORE_VERSION = 2;
+const STORE_VERSION = 3;
 const BACKUP_KEEP = 3;
 const NOTICE_CORRUPT = 'Saved data could not be read, so progress was reset to a fresh start.';
 const NOTICE_PARTIAL = 'Some saved data was unreadable and was reset. The rest of your progress was kept.';
 const BACKUP_NOTICE = 'A backup of your previous save was stored in this browser.';
-const THIRD_DAYS = ['none', 'fri-morning', 'fri-night', 'sat-morning'];
-const DOWS = ['Tue', 'Wed', 'Thu', 'Fri', 'Sat']; // Tue-Sat only: Sundays are for church, Mondays are rest
+const WEEKDAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const DEFAULT_WORKOUT_DAYS = [2, 4];
 
 let bootNotice = null;
 let bootDirty = false;
@@ -439,58 +466,78 @@ function isPlainObject(value) {
   const proto = Object.getPrototypeOf(value);
   return proto === Object.prototype || proto === null;
 }
-function isGymDow(dow, thirdDay) {
-  if (dow === 2 || dow === 4) return true; // Tue, Thu
-  if (thirdDay === 'fri-morning' || thirdDay === 'fri-night') return dow === 5;
-  if (thirdDay === 'sat-morning') return dow === 6;
-  return false;
+function normalizeWorkoutDays(days) {
+  if (!Array.isArray(days)) return null;
+  const out = [];
+  days.forEach(function (d) {
+    const n = Number(d);
+    if (Number.isInteger(n) && n >= 0 && n <= 6 && out.indexOf(n) === -1) out.push(n);
+  });
+  out.sort(function (a, b) { return a - b; });
+  return out.length ? out : null;
 }
-function isGymDay(date, thirdDay) {
-  return isGymDow(date.getDay(), thirdDay);
+function workoutDaysFromThird(thirdDay) {
+  if (thirdDay === 'fri-morning' || thirdDay === 'fri-night') return [2, 4, 5];
+  if (thirdDay === 'sat-morning') return [2, 4, 6];
+  return DEFAULT_WORKOUT_DAYS.slice();
 }
-function isGymDayKey(key, thirdDay) {
-  return isDayKey(key) && isGymDay(parseDay(key), thirdDay);
+function daysOf(workoutDays) {
+  return normalizeWorkoutDays(workoutDays) || DEFAULT_WORKOUT_DAYS.slice();
 }
-function nextGymDay(fromDate, thirdDay) {
+function isGymDow(dow, workoutDays) {
+  return daysOf(workoutDays).indexOf(dow) !== -1;
+}
+function isGymDay(date, workoutDays) {
+  return isGymDow(date.getDay(), workoutDays);
+}
+function isGymDayKey(key, workoutDays) {
+  return isDayKey(key) && isGymDay(parseDay(key), workoutDays);
+}
+function nextGymDay(fromDate, workoutDays) {
   const d = new Date(fromDate.getFullYear(), fromDate.getMonth(), fromDate.getDate());
   for (let i = 0; i < 14; i++) {
-    if (isGymDay(d, thirdDay)) return dayKey(d);
+    if (isGymDay(d, workoutDays)) return dayKey(d);
     d.setDate(d.getDate() + 1);
   }
   return dayKey(fromDate);
 }
+function weekStart(date) {
+  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  d.setDate(d.getDate() - d.getDay());
+  return d;
+}
 function weekDayKeys(today) {
   const todayDate = today instanceof Date ? today : new Date(today);
-  const mon = mondayOf(todayDate);
+  const start = weekStart(todayDate);
   const keys = [];
-  for (let i = 1; i <= 5; i++) {
-    const d = new Date(mon.getFullYear(), mon.getMonth(), mon.getDate() + i);
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
     keys.push(dayKey(d));
   }
   return keys;
 }
-/* Keep a day that is still in the visible Tue-Sat week. Otherwise use today
- * when it is a gym day, or the next gym day. */
-function resolveActiveDay(activeDay, today, thirdDay) {
+/* Keep a day that is still in the visible week. Otherwise use today when it
+ * is a workout day, or the next workout day. */
+function resolveActiveDay(activeDay, today, workoutDays) {
   const todayDate = today instanceof Date ? today : new Date(today);
   if (isDayKey(activeDay) && weekDayKeys(todayDate).indexOf(activeDay) !== -1) return activeDay;
-  if (isGymDay(todayDate, thirdDay)) return dayKey(todayDate);
-  return nextGymDay(todayDate, thirdDay);
+  if (isGymDay(todayDate, workoutDays)) return dayKey(todayDate);
+  return nextGymDay(todayDate, workoutDays);
 }
 function rolloverActiveDay(state, now) {
   const today = now instanceof Date ? now : new Date(now);
-  const next = resolveActiveDay(state.activeDay, today, state.thirdDay);
+  const next = resolveActiveDay(state.activeDay, today, state.workoutDays);
   const changed = next !== state.activeDay;
   if (changed) state.activeDay = next;
   return { changed: changed, activeDay: state.activeDay, todayKey: dayKey(today) };
 }
-function thirdDaySelection(state, thirdDay, today) {
-  const nextThird = THIRD_DAYS.indexOf(thirdDay) === -1 ? state.thirdDay : thirdDay;
+function workoutDaySelection(state, workoutDays, today) {
+  const nextDays = normalizeWorkoutDays(workoutDays) || daysOf(state.workoutDays);
   let activeDay = state.activeDay;
-  if (!sessionIsActive(state.session) && !isGymDayKey(activeDay, nextThird)) {
-    activeDay = resolveActiveDay(null, today, nextThird);
+  if (!sessionIsActive(state.session) && !isGymDayKey(activeDay, nextDays)) {
+    activeDay = resolveActiveDay(null, today, nextDays);
   }
-  return { thirdDay: nextThird, activeDay: activeDay };
+  return { workoutDays: nextDays, activeDay: activeDay };
 }
 function normalizePhase(phase) {
   const n = Number(phase);
@@ -521,17 +568,12 @@ function remainingMs(session, now) {
   if (s.state === 'paused' || s.state === 'expired') return Math.max(0, s.remainingMs || 0);
   return Math.max(0, s.deadline - t);
 }
-function hasClearance(state) {
-  const c = state && state.clearance;
-  return !!(c && c.accepted === true && isDayKey(c.date));
-}
 function canStartSession(state) {
   const session = state.session;
   if (session && session.state === 'paused') return { ok: true, action: 'resume' };
   if (session && session.state === 'running') return { ok: false, reason: 'already-running' };
   if (session && session.state === 'expired') return { ok: false, reason: 'expired' };
-  if (!hasClearance(state)) return { ok: false, reason: 'no-clearance' };
-  if (!isGymDayKey(state.activeDay, state.thirdDay)) return { ok: false, reason: 'not-gym-day' };
+  if (!isGymDayKey(state.activeDay, state.workoutDays)) return { ok: false, reason: 'not-gym-day' };
   return { ok: true, action: 'start' };
 }
 function programExerciseIds(phaseId) {
@@ -545,13 +587,14 @@ function toggleCheckState(state, id) {
   const allDone = programExerciseIds(state.phase).every(eid => !!state.checks[eid]);
   return { ok: true, allChecked: allDone };
 }
-/* Log the session day once. Refuses a missing session or a non-gym day.
- * Does not mutate state when it refuses. */
+/* Log the session day once. A session that already started keeps its own day,
+ * even if that weekday is turned off before Finish. Refuses a missing session
+ * or a day that is not a real date. Does not mutate state when it refuses. */
 function applyCompletion(state) {
   const session = state.session;
   if (!sessionIsActive(session)) return { ok: false, reason: 'no-session' };
   const day = session.day;
-  if (!isGymDayKey(day, state.thirdDay)) return { ok: false, reason: 'not-gym-day', day: day };
+  if (!isDayKey(day)) return { ok: false, reason: 'not-gym-day', day: day };
   const phase = normalizePhase(state.phase);
   if (!isPlainObject(state.completions)) state.completions = {};
   if (!isPlainObject(state.phaseSessions)) state.phaseSessions = { 1: 0, 2: 0, 3: 0 };
@@ -738,7 +781,7 @@ function applySessionCheckin(state, input) {
   const session = state.session;
   if (!sessionIsActive(session)) return { ok: false, reason: 'no-session' };
   const day = session.day;
-  if (!isGymDayKey(day, state.thirdDay)) return { ok: false, reason: 'not-gym-day', day: day };
+  if (!isDayKey(day)) return { ok: false, reason: 'not-gym-day', day: day };
   const painDuring = clampPain(input && input.painDuring);
   if (painDuring == null) return { ok: false, reason: 'pain-during' };
   let morningPatch = null;
@@ -781,7 +824,7 @@ function defaultStore(now) {
     session: null,
     checks: {},
     collapsed: {},
-    thirdDay: 'none',
+    workoutDays: DEFAULT_WORKOUT_DAYS.slice(),
     completions: {},
     activeDay: dayKey(today),
     phase: 1,
@@ -789,7 +832,6 @@ function defaultStore(now) {
     checklist: {},
     unlockedPhase: 1,
     symptoms: {},
-    clearance: null,
     history: [],
   };
 }
@@ -864,10 +906,15 @@ function sanitizeActiveDay(raw, present, today) {
   if (!isDayKey(raw)) return { value: dayKey(today), repaired: true };
   return { value: raw, repaired: false };
 }
-function sanitizeThirdDay(raw, present) {
-  if (!present) return { value: 'none', repaired: false };
-  if (THIRD_DAYS.indexOf(raw) === -1) return { value: 'none', repaired: true };
-  return { value: raw, repaired: false };
+function sanitizeWorkoutDays(raw, present, thirdDay) {
+  if (present) {
+    const parsed = normalizeWorkoutDays(raw);
+    if (!parsed) return { value: workoutDaysFromThird(thirdDay), repaired: true, changed: true };
+    const same = Array.isArray(raw) && raw.length === parsed.length && raw.every(function (n, i) { return n === parsed[i]; });
+    return { value: parsed, repaired: !same, changed: !same };
+  }
+  const known = thirdDay == null || thirdDay === 'none' || thirdDay === 'fri-morning' || thirdDay === 'fri-night' || thirdDay === 'sat-morning';
+  return { value: workoutDaysFromThird(thirdDay), repaired: thirdDay != null && !known, changed: true };
 }
 function sanitizeSession(raw, present) {
   if (!present || raw == null) return { value: null, repaired: false };
@@ -923,15 +970,6 @@ function sanitizeSymptoms(raw, present) {
   });
   return { value: out, repaired: repaired };
 }
-function sanitizeClearance(raw, present) {
-  if (!present || raw == null) return { value: null, repaired: false };
-  if (!isPlainObject(raw) || raw.accepted !== true || !isDayKey(raw.date)) {
-    return { value: null, repaired: true };
-  }
-  const clean = { accepted: true, date: raw.date };
-  const extra = Object.keys(raw).some(key => key !== 'accepted' && key !== 'date');
-  return { value: clean, repaired: extra };
-}
 function sanitizeHistory(raw, present) {
   if (!present || raw == null) return { value: [], repaired: false };
   if (!Array.isArray(raw)) return { value: [], repaired: true };
@@ -957,10 +995,11 @@ function hasOwn(raw, key) {
   return Object.prototype.hasOwnProperty.call(raw, key);
 }
 
-/* v1 (no version) -> v2. Validates each field, keeps good progress, and
- * grandfathers unlockedPhase at the current phase. Session counts are kept
- * as stored, including totals above 9. Corrupt roots become a fresh store
- * plus a one-time notice. */
+/* v1 (no version) and v2 -> v3. Validates each field, keeps good progress,
+ * and grandfathers unlockedPhase at the current phase. Session counts are
+ * kept as stored, including totals above 9. An older third-day choice becomes
+ * workoutDays. Clearance is dropped and does not block Start. Corrupt roots
+ * become a fresh store plus a one-time notice. */
 function migrate(raw, now) {
   const today = now instanceof Date ? now : new Date();
   if (!isPlainObject(raw)) {
@@ -992,19 +1031,19 @@ function migrate(raw, now) {
   const completionsInfo = sanitizeCompletions(raw.completions, hasOwn(raw, 'completions'));
   const checklistInfo = sanitizeChecklist(raw.checklist, hasOwn(raw, 'checklist'));
   const dayInfo = sanitizeActiveDay(raw.activeDay, hasOwn(raw, 'activeDay'), today);
-  const thirdInfo = sanitizeThirdDay(raw.thirdDay, hasOwn(raw, 'thirdDay'));
+  const daysInfo = sanitizeWorkoutDays(raw.workoutDays, hasOwn(raw, 'workoutDays'), raw.thirdDay);
   const sessionInfo = sanitizeSession(raw.session, hasOwn(raw, 'session'));
   const symptomsInfo = sanitizeSymptoms(raw.symptoms, hasOwn(raw, 'symptoms'));
-  const clearanceInfo = sanitizeClearance(raw.clearance, hasOwn(raw, 'clearance'));
   const historyInfo = sanitizeHistory(raw.history, hasOwn(raw, 'history'));
 
-  [checksInfo, collapsedInfo, completionsInfo, checklistInfo, dayInfo, thirdInfo, sessionInfo, symptomsInfo, clearanceInfo, historyInfo].forEach(info => {
+  [checksInfo, collapsedInfo, completionsInfo, checklistInfo, dayInfo, daysInfo, sessionInfo, symptomsInfo, historyInfo].forEach(info => {
     if (info.repaired) repaired = true;
   });
+  if (daysInfo.changed) changed = true;
+  if (hasOwn(raw, 'thirdDay') || hasOwn(raw, 'clearance')) changed = true;
   if (!hasOwn(raw, 'checks') || !hasOwn(raw, 'collapsed') || !hasOwn(raw, 'completions') ||
-      !hasOwn(raw, 'checklist') || !hasOwn(raw, 'activeDay') || !hasOwn(raw, 'thirdDay') ||
-      !hasOwn(raw, 'session') || !hasOwn(raw, 'symptoms') || !hasOwn(raw, 'clearance') ||
-      !hasOwn(raw, 'history')) {
+      !hasOwn(raw, 'checklist') || !hasOwn(raw, 'activeDay') || !hasOwn(raw, 'workoutDays') ||
+      !hasOwn(raw, 'session') || !hasOwn(raw, 'symptoms') || !hasOwn(raw, 'history')) {
     changed = true;
   }
 
@@ -1015,7 +1054,7 @@ function migrate(raw, now) {
       session: sessionInfo.value,
       checks: checksInfo.value,
       collapsed: collapsedInfo.value,
-      thirdDay: thirdInfo.value,
+      workoutDays: daysInfo.value,
       completions: completionsInfo.value,
       activeDay: dayInfo.value,
       phase: phase,
@@ -1023,7 +1062,6 @@ function migrate(raw, now) {
       checklist: checklistInfo.value,
       unlockedPhase: unlocked,
       symptoms: symptomsInfo.value,
-      clearance: clearanceInfo.value,
       history: historyInfo.value,
     },
     changed: changed,
@@ -1159,11 +1197,7 @@ function allChecked() {
   return currentProgram().every(e => store.checks[e.id]);
 }
 function gymDows() {
-  const days = [];
-  for (let dow = 0; dow < 7; dow++) {
-    if (isGymDow(dow, store.thirdDay)) days.push(dow);
-  }
-  return days;
+  return daysOf(store.workoutDays);
 }
 function showMessage(text) {
   const el = $('sessionMessage');
@@ -1178,11 +1212,8 @@ function showMessage(text) {
 function startSession() {
   const decision = canStartSession(store);
   if (!decision.ok) {
-    if (decision.reason === 'no-clearance') {
-      showMessage('Confirm training clearance before you start a session.');
-      openClearance();
-    } else if (decision.reason === 'not-gym-day') {
-      showMessage('Pick a gym day before starting. This program trains Tuesday, Thursday, and your optional third day.');
+    if (decision.reason === 'not-gym-day') {
+      showMessage('Pick a workout day before starting. Rest days are not logged.');
     }
     return;
   }
@@ -1262,9 +1293,8 @@ function openFinishCheckin() {
     renderAll();
     return;
   }
-  if (!isGymDayKey(store.session.day, store.thirdDay)) {
-    const when = isDayKey(store.session.day) ? prettyDay(store.session.day) : 'that day';
-    showMessage('Nothing was logged. This program does not train on ' + when + '.');
+  if (!isDayKey(store.session.day)) {
+    showMessage('Nothing was logged. This program does not train on that day.');
     return;
   }
   openCheckin('finish');
@@ -1367,10 +1397,6 @@ function confirmClear() {
   endSession('Session cleared: timer, checkboxes, and progress reset.');
 }
 
-function somethingWrong() {
-  endSession('Session stopped. Nothing was logged. Contact your clinician before you train again.');
-}
-
 /* ---------------- Phase actions ---------------- */
 function checklistConfirmed(phaseId) {
   const items = checklistForPhase(phaseId) || [];
@@ -1443,40 +1469,32 @@ function advancePhase() {
   commitPhase(next, message);
 }
 
-function clearanceFormReady() {
-  return !!($('clearanceAccept') && $('clearanceAccept').checked && isDayKey($('clearanceDate').value));
-}
-function openClearance() {
-  const modal = $('clearanceModal');
-  if (!modal) return;
-  const c = store.clearance;
-  $('clearanceAccept').checked = !!(c && c.accepted === true);
-  $('clearanceDate').value = c && isDayKey(c.date) ? c.date : '';
-  $('btnClearanceSave').disabled = !clearanceFormReady();
-  modal.hidden = false;
-}
-function closeClearance() {
-  const modal = $('clearanceModal');
-  if (modal) modal.hidden = true;
-}
-function saveClearance() {
-  if (!$('clearanceAccept').checked || !isDayKey($('clearanceDate').value)) {
-    $('btnClearanceSave').disabled = true;
-    return;
+function openPanel(which) {
+  const settings = $('settingsPanel');
+  const info = $('infoPanel');
+  if (which === 'settings') {
+    if (info) info.hidden = true;
+    if (settings) settings.hidden = false;
+  } else if (which === 'info') {
+    if (settings) settings.hidden = true;
+    if (info) info.hidden = false;
   }
-  store.clearance = { accepted: true, date: $('clearanceDate').value };
-  save();
-  closeClearance();
-  renderAll();
-  showMessage('Clearance saved for ' + prettyDay(store.clearance.date) + '.');
-  if (!(store.session && store.session.state === 'expired')) {
-    const morning = pendingMorning(store, new Date());
-    if (morning) openCheckin('morning');
-  }
+  syncPanelButtons();
 }
-function refreshClearanceButton() {
-  const btn = $('btnClearanceSave');
-  if (btn) btn.disabled = !clearanceFormReady();
+function closePanels() {
+  const settings = $('settingsPanel');
+  const info = $('infoPanel');
+  if (settings) settings.hidden = true;
+  if (info) info.hidden = true;
+  syncPanelButtons();
+}
+function syncPanelButtons() {
+  const menu = $('btnMenu');
+  const info = $('btnInfo');
+  const settingsOpen = !!($('settingsPanel') && !$('settingsPanel').hidden);
+  const infoOpen = !!($('infoPanel') && !$('infoPanel').hidden);
+  if (menu) menu.setAttribute('aria-expanded', settingsOpen ? 'true' : 'false');
+  if (info) info.setAttribute('aria-expanded', infoOpen ? 'true' : 'false');
 }
 
 /* ---------------- Rendering ---------------- */
@@ -1503,20 +1521,16 @@ function renderTimer() {
   else t.textContent = fmtTime(remainingMs(s, Date.now()));
   const active = sessionIsActive(s);
   $('btnStart').hidden = !!s;
-  $('btnStart').disabled = !hasClearance(store);
+  $('btnStart').disabled = false;
   $('btnPause').hidden = !(s && s.state === 'running');
   $('btnResume').hidden = !(s && s.state === 'paused');
   $('btnFinish').hidden = !active || expired;
   let detail = 'in progress';
   if (s && s.state === 'paused') detail = 'paused';
   else if (expired) detail = 'time is up';
-  if (!s && !hasClearance(store)) {
-    $('sessionDate').textContent = 'Clearance is required before the first session.';
-  } else {
-    $('sessionDate').textContent = s
-      ? 'Session: ' + prettyDay(s.day) + ' (' + detail + ')'
-      : 'No active session: pick a gym day and press Start.';
-  }
+  $('sessionDate').textContent = s
+    ? 'Session: ' + prettyDay(s.day) + ' (' + detail + ')'
+    : 'No active session: pick a workout day and press Start.';
 }
 
 function renderProgress() {
@@ -1542,6 +1556,37 @@ function renderPrompts() {
       ? 'Advance phase? This ends the current session and clears its checkboxes.'
       : 'Change phase? This ends the current session and clears its checkboxes.';
   }
+}
+
+function isYoutubeHost(hostname) {
+  const host = String(hostname || '').toLowerCase();
+  return host === 'youtu.be' || host === 'youtube.com' || host === 'www.youtube.com' || host === 'm.youtube.com' || host === 'youtube-nocookie.com' || host === 'www.youtube-nocookie.com';
+}
+function youtubeId(url) {
+  let parsed;
+  try { parsed = new URL(String(url || '').trim()); } catch (e) { return ''; }
+  if (!isYoutubeHost(parsed.hostname)) return '';
+  const host = parsed.hostname.toLowerCase();
+  let id = '';
+  if (host === 'youtu.be') id = parsed.pathname.replace(/^\//, '').split('/')[0];
+  else if (/^\/embed\//.test(parsed.pathname)) id = parsed.pathname.split('/')[2] || '';
+  else id = parsed.searchParams.get('v') || '';
+  return /^[A-Za-z0-9_-]{11}$/.test(id) ? id : '';
+}
+function nocookieEmbed(url) {
+  const id = youtubeId(url);
+  return id ? 'https://www.youtube-nocookie.com/embed/' + id : '';
+}
+function youtubeWatchUrl(url) {
+  const id = youtubeId(url);
+  return id ? 'https://www.youtube.com/watch?v=' + id : '';
+}
+function videoEmbedHtml(ex) {
+  const embed = nocookieEmbed(ex && ex.video_url);
+  const watch = youtubeWatchUrl(ex && ex.video_url);
+  if (!embed || !watch) return '<p class="demo-missing">No demo link yet.</p>';
+  return '<div class="video-frame"><iframe src="' + esc(embed) + '" title="' + esc('Demo: ' + ex.name) + '" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" sandbox="allow-scripts allow-same-origin allow-presentation allow-popups" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>' +
+    '<a class="demo-watch" href="' + esc(watch) + '" target="_blank" rel="noopener noreferrer">Watch demo</a>';
 }
 
 function demoHtml(ex) {
@@ -1576,13 +1621,13 @@ function renderSections() {
     const collapsed = !!store.collapsed[sec.id];
     const rows = exs.map(e => {
       const tags = e.muscle_groups.map(t => '<span class="muscle-tag">' + esc(t) + '</span>').join('');
-      return '<li class="exercise"><label class="check-row">' +
+      return '<li class="exercise"><div class="exercise-main"><div class="exercise-copy"><label class="check-row">' +
         '<input type="checkbox" data-check="' + esc(e.id) + '"' + (store.checks[e.id] ? ' checked' : '') + (canCheck ? '' : ' disabled') + '>' +
         '<span><span class="exercise-name">' + esc(e.name) + '</span>' +
         '<span class="exercise-note">' + esc(e.note) + '</span>' +
         '<span class="muscle-tags">' + tags + '</span></span>' +
         '<span class="dose">' + esc(e.dose) + '</span></label>' +
-        demoHtml(e) + '</li>';
+        demoHtml(e) + '</div><div class="exercise-video">' + videoEmbedHtml(e) + '</div></div></li>';
     }).join('');
     const countLabel = exs.length === 1 ? '1 exercise' : exs.length + ' exercises';
     return '<section class="section' + (collapsed ? ' collapsed' : '') + (done ? ' complete' : '') + '">' +
@@ -1597,42 +1642,60 @@ function renderSections() {
 
 function renderCalendar() {
   const grid = $('weekGrid');
-  const mon = mondayOf(new Date());
+  if (!grid) return;
+  const start = weekStart(new Date());
   const today = dayKey(new Date());
   const gyms = gymDows();
   let html = '';
-  for (let i = 1; i <= 5; i++) { // Tue-Sat: Monday (i=0) is rest, Sunday (i=6) is for church
-    const d = new Date(mon.getFullYear(), mon.getMonth(), mon.getDate() + i);
+  const weekKeys = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
     const key = dayKey(d);
-    const isGym = gyms.includes(d.getDay());
+    const isGym = gyms.indexOf(d.getDay()) !== -1;
+    if (isGym) weekKeys.push(key);
     const done = !!store.completions[key];
     const cls = 'day' + (isGym ? ' gym' : '') + (key === today ? ' today' : '') + (key === store.activeDay ? ' selected' : '');
     html += '<div class="' + cls + '"' + (isGym ? ' data-day="' + key + '" role="button" tabindex="0"' : '') + '>' +
-      '<span class="dow">' + DOWS[i - 1] + '</span>' +
+      '<span class="dow">' + WEEKDAY_NAMES[i] + '</span>' +
       '<span class="dnum">' + d.getDate() + '</span>' +
       '<span class="dmark">' + (done ? '\u2713 done' : '') + '</span></div>';
   }
   grid.innerHTML = html;
-  const weekKeys = [];
-  for (let i = 1; i <= 5; i++) {
-    const d = new Date(mon.getFullYear(), mon.getMonth(), mon.getDate() + i);
-    if (gyms.includes(d.getDay())) weekKeys.push(dayKey(d));
-  }
   const doneCount = weekKeys.filter(k => store.completions[k]).length;
-  $('calProgress').textContent = doneCount + ' / ' + weekKeys.length;
-  $('thirdDay').value = store.thirdDay;
+  if ($('calProgress')) $('calProgress').textContent = doneCount + ' / ' + weekKeys.length;
 }
 
-function renderFeatured() {
-  $('featuredDemos').innerHTML = FEATURED_DEMOS.filter(d => d && d.url).map(d =>
-    '<a class="demo-card" href="' + esc(d.url) + '" target="_blank" rel="noopener">' +
-    '<div class="demo-title">\u25b6 ' + esc(d.creator) + (d.handle ? ' ' + esc(d.handle) : '') + '</div>' +
-    '<div class="demo-desc2">' + esc(d.description) + '</div></a>'
-  ).join('');
-  $('blockNote').textContent =
+function renderSettings() {
+  const group = $('workoutDays');
+  const days = gymDows();
+  if (group) {
+    group.innerHTML = WEEKDAY_NAMES.map(function (name, dow) {
+      const on = days.indexOf(dow) !== -1;
+      return '<label class="day-choice"><input type="checkbox" data-workout-day="' + dow + '"' +
+        (on ? ' checked' : '') + '><span>' + name + '</span></label>';
+    }).join('');
+  }
+  const freq = $('frequencyCount');
+  if (freq) {
+    freq.textContent = days.length === 1 ? '1 workout day' : days.length + ' workout days';
+  }
+}
+
+function renderInfo() {
+  const note = $('blockNote');
+  if (!note) return;
+  note.textContent =
     'The routine is split into a fixed foundation block (warm-up, stability, cool-down) and an ' +
     'accessory block (strength). Future upper-body, back, and arm exercises will slot into ' +
     'the accessory block as the program grows.';
+}
+
+function renderDemoDirectory() {
+  const list = $('demoVideoList');
+  if (!list) return;
+  list.innerHTML = EXERCISES.map(function (ex) {
+    return '<li class="demo-row"><span class="demo-name">' + esc(ex.name) + '</span>' + videoEmbedHtml(ex) + '</li>';
+  }).join('');
 }
 
 /* ---------------- Phase UI ---------------- */
@@ -1644,8 +1707,6 @@ function renderPhase() {
   $('phaseGoal').textContent = phase.goal;
   const doseDraft = $('doseDraftNote');
   if (doseDraft) doseDraft.textContent = 'Draft: doses not confirmed by a clinician';
-  const redFlagNote = $('redFlagNote');
-  if (redFlagNote) redFlagNote.textContent = 'These are general rules of thumb.';
   const unlocked = unlockedPhaseOf(store);
   document.querySelectorAll('#phasePicker .phase-btn').forEach(b => {
     const id = Number(b.getAttribute('data-phase'));
@@ -1714,6 +1775,9 @@ function renderAll() {
   renderPrompts();
   renderSections();
   renderCalendar();
+  renderSettings();
+  renderInfo();
+  renderDemoDirectory();
 }
 
 /* ---------------- Tick ---------------- */
@@ -1727,7 +1791,7 @@ function tick() {
     renderCalendar();
     renderStatus();
     renderTimer();
-    if (checkinMode == null && hasClearance(store) && pendingMorning(store, new Date(now)) && !(store.session && store.session.state === 'expired')) {
+    if (checkinMode == null && pendingMorning(store, new Date(now)) && !(store.session && store.session.state === 'expired')) {
       openCheckin('morning');
     }
   }
@@ -1741,6 +1805,10 @@ function tick() {
 
 /* ---------------- Events (delegated) ---------------- */
 function onClick(ev) {
+  if (ev.target.closest('[data-close-panel]')) {
+    closePanels();
+    return;
+  }
   const secBtn = ev.target.closest('[data-section]');
   if (secBtn) {
     const id = secBtn.getAttribute('data-section');
@@ -1805,24 +1873,42 @@ function onChange(ev) {
   if (box) { toggleCheck(box.getAttribute('data-check')); return; }
   const item = ev.target.closest('[data-checklist-item]');
   if (item) { toggleChecklistItem(item.getAttribute('data-checklist-item'), item.checked); return; }
-  if (ev.target.id === 'clearanceAccept' || ev.target.id === 'clearanceDate') {
-    refreshClearanceButton();
-    return;
-  }
-  if (ev.target.id === 'thirdDay') {
-    const picked = thirdDaySelection(store, ev.target.value, new Date());
-    store.thirdDay = picked.thirdDay;
+  const dayBox = ev.target.closest('[data-workout-day]');
+  if (dayBox) {
+    const dow = Number(dayBox.getAttribute('data-workout-day'));
+    const current = gymDows().slice();
+    const idx = current.indexOf(dow);
+    if (dayBox.checked) {
+      if (idx === -1) current.push(dow);
+    } else if (idx !== -1) {
+      if (current.length === 1) {
+        dayBox.checked = true;
+        const note = $('workoutDaysNote');
+        if (note) note.hidden = false;
+        showMessage('Keep at least one workout day.');
+        return;
+      }
+      current.splice(idx, 1);
+    }
+    const picked = workoutDaySelection(store, current, new Date());
+    store.workoutDays = picked.workoutDays;
     store.activeDay = picked.activeDay;
+    const note = $('workoutDaysNote');
+    if (note) note.hidden = true;
     save();
     renderCalendar();
     renderStatus();
     renderTimer();
+    renderSettings();
   }
 }
-function onInput(ev) {
-  if (ev.target.id === 'clearanceDate') refreshClearanceButton();
-}
 function onKey(ev) {
+  if (ev.key === 'Escape') {
+    const settingsOpen = $('settingsPanel') && !$('settingsPanel').hidden;
+    const infoOpen = $('infoPanel') && !$('infoPanel').hidden;
+    if (settingsOpen || infoOpen) closePanels();
+    return;
+  }
   if (ev.key === 'Enter' || ev.key === ' ') {
     const day = ev.target.closest && ev.target.closest('[data-day]');
     if (day) { ev.preventDefault(); day.click(); }
@@ -1831,9 +1917,16 @@ function onKey(ev) {
 function bindUi() {
   document.addEventListener('click', onClick);
   document.addEventListener('change', onChange);
-  document.addEventListener('input', onInput);
   document.addEventListener('keydown', onKey);
   $('btnStart').addEventListener('click', startSession);
+  $('btnMenu').addEventListener('click', function () {
+    if ($('settingsPanel').hidden) openPanel('settings');
+    else closePanels();
+  });
+  $('btnInfo').addEventListener('click', function () {
+    if ($('infoPanel').hidden) openPanel('info');
+    else closePanels();
+  });
   $('btnPause').addEventListener('click', pauseSession);
   $('btnResume').addEventListener('click', resumeSession);
   $('btnFinish').addEventListener('click', openFinishCheckin);
@@ -1847,10 +1940,6 @@ function bindUi() {
   $('btnPhaseNo').addEventListener('click', cancelPhaseChange);
   $('btnCheckinSave').addEventListener('click', saveCheckin);
   $('btnCheckinCancel').addEventListener('click', hideCheckin);
-  $('btnClearanceSave').addEventListener('click', saveClearance);
-  $('btnClearanceLater').addEventListener('click', closeClearance);
-  $('btnReviewClearance').addEventListener('click', openClearance);
-  $('btnSomethingWrong').addEventListener('click', somethingWrong);
 }
 
 /* ---------------- Init ---------------- */
@@ -1878,17 +1967,17 @@ function boot() {
     bootNeedsBackup = false;
   }
   if (backupMade) bootNotice = bootNotice ? (bootNotice + ' ' + BACKUP_NOTICE) : BACKUP_NOTICE;
-  // Featured demos and the organization note render even when a stored
-  // session has already expired. Expiry used to return before this call.
-  renderFeatured();
+  // The info note and demo list render even when a stored session has
+  // already expired. Expiry used to return before this call.
+  renderInfo();
+  renderDemoDirectory();
   const expired = offerExpiryChoice();
   if (!expired) {
     renderAll();
     if (bootNotice) showMessage(bootNotice);
   }
   bootNotice = null;
-  if (!hasClearance(store)) openClearance();
-  else if (!expired && pendingMorning(store, today)) openCheckin('morning');
+  if (!expired && pendingMorning(store, today)) openCheckin('morning');
   setInterval(tick, 250);
 }
 boot();
@@ -1920,12 +2009,13 @@ if (typeof module !== 'undefined') {
     weekDayKeys: weekDayKeys,
     resolveActiveDay: resolveActiveDay,
     rolloverActiveDay: rolloverActiveDay,
-    thirdDaySelection: thirdDaySelection,
+    workoutDaySelection: workoutDaySelection,
+    weekStart: weekStart,
     sessionIsActive: sessionIsActive,
     shouldExpireOnLoad: shouldExpireOnLoad,
     expireIfDue: expireIfDue,
     canStartSession: canStartSession,
-    hasClearance: hasClearance,
+    youtubeId: youtubeId,
     toggleCheckState: toggleCheckState,
     applyCompletion: applyCompletion,
     phaseChangeDecision: phaseChangeDecision,

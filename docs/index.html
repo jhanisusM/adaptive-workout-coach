@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Adaptive Workout Coach: live demo</title>
 <meta name="description" content="Adaptive Workout Coach: a guided 30-minute workout app anyone can follow, even with no routine or experience. Live GitHub Pages demo.">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' https:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' https:; frame-src https://www.youtube-nocookie.com; object-src 'none'; base-uri 'none'; form-action 'none'">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -19,29 +19,24 @@
 
   <header class="intro">
     <div>
-      <h1>30-minute workout</h1>
+      <div class="intro-top">
+        <h1>30-minute workout</h1>
+        <div class="header-tools">
+          <button class="icon-btn" id="btnInfo" type="button" aria-label="How the workout is organized" aria-expanded="false" aria-controls="infoPanel">
+            <span class="icon-info" aria-hidden="true"></span>
+          </button>
+          <button class="icon-btn" id="btnMenu" type="button" aria-label="Open settings" aria-expanded="false" aria-controls="settingsPanel">
+            <span class="hamburger" aria-hidden="true"><span></span><span></span><span></span></span>
+          </button>
+        </div>
+      </div>
       <p class="lede">A 3-phase program: stability and tissue tolerance, then supported unilateral work, then complex unilateral loading. It rebuilds capacity after a long time off your feet. Move up only with Advance, after 9 sessions and the checklist.</p>
       <p class="demo-badge">Live demo: progress is stored in this browser only.</p>
     </div>
-    <div class="frequency"><span>Weekly rhythm</span><strong>3 sessions</strong></div>
+    <div class="frequency"><span>Weekly rhythm</span><strong id="frequencyCount">2 workout days</strong></div>
   </header>
 
   <div class="safety"><strong>Train smart:</strong> stay inside a comfortable range. Sharp pain is a stop sign. Skip the move. Low-load holds are a starting point, not a treatment for pain. This demo is a workout companion, not medical advice. No running, plyometrics, or deep squats below parallel until you are cleared for them separately.</div>
-
-  <section class="red-flags" id="redFlags" aria-label="Stop and contact your clinician">
-    <h2>Stop and contact your clinician if you notice any of these</h2>
-    <p class="red-flag-note" id="redFlagNote">These are general rules of thumb.</p>
-    <ul>
-      <li>The knee gives way</li>
-      <li>Locking or catching in the knee</li>
-      <li>The knee is hot or markedly swollen</li>
-      <!-- Placeholder rules of thumb pending professional confirmation: night pain, fever, numbness, and the calf warning. -->
-      <li>Pain that wakes you at night</li>
-      <li>Fever, or numbness or tingling</li>
-      <li>Calf pain, swelling, warmth, or redness. This can be a blood clot. Shortness of breath or chest pain needs urgent care.</li>
-    </ul>
-    <button class="btn danger" id="btnSomethingWrong" type="button">Something's wrong</button>
-  </section>
 
   <section class="card phase-card" aria-label="Program phase">
     <div class="panel-label">Your program</div>
@@ -121,37 +116,20 @@
     <aside class="sidebar">
       <div class="side-card">
         <h2>Weekly calendar</h2>
-        <p>Tap a gym day to open that day's session.</p>
+        <p>Tap a workout day. Change which days you train in Settings.</p>
         <div class="cal-head">
-          <div><span class="cal-progress" id="calProgress">0 / 2</span><div class="muted small">gym days done this week</div></div>
+          <div><span class="cal-progress" id="calProgress">0 / 2</span><div class="muted small">workout days done this week</div></div>
         </div>
         <div class="week-grid" id="weekGrid"></div>
-        <div class="third-day">
-          <label class="muted small" for="thirdDay">Third gym day</label>
-          <select id="thirdDay">
-            <option value="none">None (Tue / Thu only)</option>
-            <option value="fri-morning">Friday morning</option>
-            <option value="fri-night">Friday night</option>
-            <option value="sat-morning">Saturday morning</option>
-          </select>
-        </div>
-      </div>
-      <div class="side-card">
-        <h2>Training clearance</h2>
-        <p>Start only after a physical therapist or physician has cleared you for resistance training.</p>
-        <button class="btn secondary" id="btnReviewClearance" type="button">Review clearance</button>
-      </div>
-      <div class="side-card">
-        <h2>How it's organized</h2>
-        <p id="blockNote"></p>
-      </div>
-      <div class="side-card">
-        <h2>Demo videos</h2>
-        <p>Form demos from verified creators, rotating where several exist.</p>
-        <div id="featuredDemos"></div>
       </div>
     </aside>
   </div>
+
+  <section class="card demo-directory" id="demoVideos" aria-label="Demo videos">
+    <h2>Demo videos</h2>
+    <p class="muted">One demo per exercise. Players use the privacy-enhanced YouTube domain and load only as you reach them.</p>
+    <ul class="demo-list" id="demoVideoList"></ul>
+  </section>
 
   <footer class="footer-note">
     <span>Adaptive Workout Coach: static GitHub Pages demo. No accounts, no tracking; everything is stored in your browser's local storage.</span>
@@ -160,22 +138,31 @@
 
 </div>
 
-<div class="modal" id="clearanceModal" hidden>
-  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="clearanceTitle">
-    <h2 id="clearanceTitle">Training clearance</h2>
-    <p>This program is for someone returning after a long time off their feet. It is a workout companion, not a personal prescription.</p>
-    <label class="check-item" for="clearanceAccept">
-      <input id="clearanceAccept" type="checkbox">
-      <span>I have clearance from my PT or physician for resistance training</span>
-    </label>
-    <label class="field" for="clearanceDate">Date of that clearance
-      <input id="clearanceDate" type="date">
-    </label>
+<footer class="disclaimer-footer" id="disclaimerFooter">
+  <p><a href="https://github.com/jhanisusM/adaptive-workout-coach#disclaimer">Personal research project. Not medical advice; use at your own risk.</a></p>
+</footer>
+
+<div class="modal" id="settingsPanel" hidden>
+  <button class="modal-backdrop" type="button" data-close-panel aria-label="Close settings"></button>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+    <h2 id="settingsTitle">Settings</h2>
+    <p>Choose which days you train. A day that is off stays a rest day and is not logged.</p>
+    <div class="day-choices" id="workoutDays" role="group" aria-label="Workout days"></div>
+    <p class="muted small" id="workoutDaysNote" hidden>Keep at least one workout day.</p>
     <div class="modal-actions">
-      <button class="btn" id="btnClearanceSave" type="button" disabled>Save clearance</button>
-      <button class="btn secondary" id="btnClearanceLater" type="button">Not now</button>
+      <button class="btn" id="btnSettingsClose" type="button" data-close-panel>Close</button>
     </div>
-    <p class="muted small">Start stays off until this is saved. You can open it again from Training clearance.</p>
+  </div>
+</div>
+
+<div class="modal" id="infoPanel" hidden>
+  <button class="modal-backdrop" type="button" data-close-panel aria-label="Close info"></button>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="infoTitle">
+    <h2 id="infoTitle">How it's organized</h2>
+    <p id="blockNote"></p>
+    <div class="modal-actions">
+      <button class="btn" id="btnInfoClose" type="button" data-close-panel>Close</button>
+    </div>
   </div>
 </div>
 
