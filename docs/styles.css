@@ -142,7 +142,12 @@ h1 { font-size: clamp(2rem, 5vw, 3.6rem); letter-spacing: -.03em; margin: 0 0 10
 .muscle-tag { font-size: .7rem; font-weight: 700; color: var(--muted); background: var(--bg); border: 1px solid var(--line); border-radius: 20px; padding: 2px 9px; }
 .dose { font: 700 1.02rem/1.4 ui-monospace, Menlo, monospace; background: var(--bg); border: 1px solid var(--line); padding: 8px 12px; border-radius: 8px; white-space: nowrap; }
 
-.demo { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--line); }
+.exercise-main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(200px, 280px); align-items: start; }
+.exercise-video { padding: 16px 16px 16px 0; }
+.video-frame { position: relative; width: 100%; aspect-ratio: 16 / 9; background: #111; border-radius: 10px; overflow: hidden; }
+.video-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.demo-watch { display: inline-flex; align-items: center; min-height: 44px; font-weight: 700; }
+.demo { margin: 0 18px 12px 58px; padding-top: 10px; border-top: 1px dashed var(--line); }
 .demo-link { display: block; color: var(--blue); text-decoration: none; font-size: .84rem; font-weight: 700; margin-bottom: 4px; }
 .demo-link:hover { text-decoration: underline; }
 .demo-desc { display: block; color: var(--muted); font-size: .78rem; font-weight: 400; margin-top: 2px; }
@@ -200,7 +205,7 @@ h1 { font-size: clamp(2rem, 5vw, 3.6rem); letter-spacing: -.03em; margin: 0 0 10
 .demo-directory { margin-top: 8px; }
 .demo-directory h2 { margin: 0 0 6px; font-size: 1.3rem; }
 .demo-list { list-style: none; margin: 12px 0 0; padding: 0; }
-.demo-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 44px; padding: 12px 0; border-top: 1px solid var(--line); }
+.demo-row { display: grid; gap: 8px; padding: 16px 0; border-top: 1px solid var(--line); }
 .demo-name { font-weight: 700; }
 .demo-missing { color: var(--muted); font-size: .86rem; }
 
@@ -239,7 +244,9 @@ h1 { font-size: clamp(2rem, 5vw, 3.6rem); letter-spacing: -.03em; margin: 0 0 10
   .day { padding: 8px 2px; }
   .day .dow { letter-spacing: 0; font-size: .62rem; }
   .day .dnum { font-size: .95rem; }
-  .demo-row { flex-direction: column; align-items: flex-start; gap: 4px; }
+  .exercise-main { grid-template-columns: 1fr; }
+  .exercise-video { padding: 0 16px 16px; }
+  .demo { margin-left: 18px; margin-right: 18px; }
   .check-row { grid-template-columns: 26px minmax(0, 1fr); }
   .dose { grid-column: 2; justify-self: start; }
   .status-bar { grid-template-columns: 1fr; }

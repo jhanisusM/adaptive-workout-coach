@@ -55,10 +55,11 @@ No running or plyometrics until separately cleared.
   calendar, the selected day, rest days, and once-per-day logging follow
   that choice.
 - "How it's organized" is in a header info panel, not in the main flow.
-- A Demo videos section lists every exercise. Each exercise has one
-  video_url, empty until a checked link is added. In-session clips still
-  come from docs/video-library.js through demo_ids. URLs are only added
-  when verified, never invented.
+- A Demo videos section lists every exercise, and the same clip sits next
+  to that exercise in the routine. Each exercise has one video_url. Players
+  and links use the privacy-enhanced domain youtube-nocookie.com. In-session
+  library clips still come from docs/video-library.js through demo_ids.
+  URLs are only added when verified, never invented.
 - All progress is stored in the browser's localStorage under awc-demo-v1.
   No accounts, no analytics, no tracking, no personal data. Unreadable saves
   are backed up in the browser, the user is told, and only the latest few
@@ -68,7 +69,8 @@ No running or plyometrics until separately cleared.
 
 - docs/index.html: app shell (status bar, timer, routine, calendar,
   phase picker, checklist, settings, info panel, demo videos). A
-  Content-Security-Policy meta tag limits the page to its own files.
+  Content-Security-Policy meta tag limits the page to its own files and
+  allows demo frames from https://www.youtube-nocookie.com.
 - docs/styles.css: styles, native CSS, light/dark aware.
 - docs/app.js: all app logic: phases, timer, calendar, checklist,
   progression, symptoms. Progress persists in localStorage.

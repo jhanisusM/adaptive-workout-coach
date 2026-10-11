@@ -96,8 +96,9 @@ test('the demo list renders and boxes cannot log a workout before Start', () => 
     assert.deepEqual(errors, []);
     const demos = window.document.querySelectorAll('#demoVideoList .demo-row');
     assert.equal(demos.length, 26);
-    assert.equal(window.document.querySelectorAll('#demoVideoList a').length, 0);
-    assert.equal(window.document.querySelectorAll('#demoVideoList .demo-missing').length, 26);
+    assert.equal(window.document.querySelectorAll('#demoVideoList iframe').length, 26);
+    assert.equal(window.document.querySelectorAll('#demoVideoList .demo-missing').length, 0);
+    assert.match(window.document.querySelector('#demoVideoList iframe').getAttribute('src'), /youtube-nocookie\.com\/embed\//);
     assert.match(window.document.getElementById('blockNote').textContent, /foundation block/);
     assert.equal(window.document.getElementById('infoPanel').hidden, true);
     assert.equal(window.document.getElementById('settingsPanel').hidden, true);
@@ -118,6 +119,35 @@ test('the demo list renders and boxes cannot log a workout before Start', () => 
     assert.equal(window.document.getElementById('btnStart').disabled, false);
     assert.equal(window.document.getElementById('redFlags'), null);
     assert.equal(window.document.getElementById('clearanceModal'), null);
+  } finally {
+    dom.window.close();
+  }
+});
+
+test('each exercise embeds one nocookie demo beside its description', () => {
+  const ids = [
+    'iCYO16wzPMw', '5TUK4uT2nnw', 'CzGVR5sJ1hY', 'kZapDhWEhNQ', 'DxUNi119Qzs',
+    '_r_vsI64pyw', 'w7pyyqLorJ4', 'uUjqvxEWcbo', 'c8xZbwTx4XM', 'zo2pqw794B0',
+    'PhTDzR0TpZs', 'xdKm8PSX438', 'gFyIjunfbbg', '-rDiQXjeXO0', 'fUOB9VcyvYo',
+    'Yy7qSkfELFY', 'vUikQQsXCbg', 'qPd73snQfUs', 'aZh9tCFh46o', 'qveKmiXEkIQ',
+    'hgFxm5KIF7M', 'WPSXSBFsLIo', '14MFOI3vTJs', 'aJvfeuu71gw', 'LoWfpR9y6rs',
+    'prkjsrecKr4',
+  ];
+  const { dom, window, errors } = boot();
+  try {
+    assert.deepEqual(errors, []);
+    const srcs = [...window.document.querySelectorAll('#demoVideoList iframe')].map(frame => frame.getAttribute('src'));
+    assert.equal(srcs.length, 26);
+    assert.equal(new Set(srcs).size, 26);
+    ids.forEach(id => {
+      assert.ok(srcs.includes('https://www.youtube-nocookie.com/embed/' + id), id);
+    });
+    assert.equal(window.document.querySelectorAll('#demoVideoList .demo-watch').length, 26);
+    const quad = window.document.querySelector('[data-check="quad-sets"]').closest('.exercise');
+    assert.ok(quad.querySelector('.exercise-note'));
+    assert.equal(quad.querySelector('.exercise-video iframe').getAttribute('src'), 'https://www.youtube-nocookie.com/embed/5TUK4uT2nnw');
+    assert.equal(window.document.querySelectorAll('.exercise .exercise-video iframe').length, 14);
+    assert.equal(window.document.body.textContent.includes('Check with your clinician before starting'), false);
   } finally {
     dom.window.close();
   }

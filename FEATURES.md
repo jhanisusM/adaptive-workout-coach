@@ -76,7 +76,7 @@ Run the tests with `npm test` (dev-only; nothing from `node_modules` is shipped 
 | Feature | Status | Location | Notes |
 | --- | --- | --- | --- |
 | Per-exercise demos from the video library | done | `docs/video-library.js`, `demo_ids` | In-session clips. New exercises ship with an empty list. URLs are not invented. |
-| Demo videos section | done | `#demoVideos`, `video_url` | One link per exercise. Empty until a checked URL is added. The row then says "No demo link yet." |
+| Demo videos section | done | `#demoVideos`, `video_url` | One YouTube link per exercise, shown there and beside the exercise note. The player uses youtube-nocookie.com. |
 | How it's organized | done | `#btnInfo`, `#infoPanel`, `#blockNote` | Header info panel, not a card in the main flow. Also fills when a stored session has already expired. |
 | Featured demo cards | removed | | The sidebar cards are gone. The Demo videos section lists the catalog instead. |
 | Unknown video id is skipped | done | `resolveVideo`, `resolveDemoList` | A console warning is logged and the page still loads. |
@@ -100,7 +100,7 @@ The prompt file was truncated, so most doses, all of Phase 3, and the symptom th
 - Every set, rep, hold, and week dose is a placeholder rule of thumb pending professional confirmation.
 - All of Phase 3 is a placeholder, including the Bulgarian split squat and the week-3 dumbbells on that exercise.
 - The red-flag list was removed from the page. Lines such as "Pain that wakes you at night", fever or numbness, and the calf warning were placeholder rules of thumb and are not shown.
-- The README Disclaimer is placeholder wording until final text arrives: not medical advice, provided as-is with no warranty, use at your own risk, consult a clinician before starting.
+- The README Disclaimer says the app is general fitness information, not medical advice, and that use is voluntary and at your own risk. There is no in-app disclaimer footer yet.
 - Pain at or below 2/10 that settles to 2/10 or less within 24 hours is an acceptable rule of thumb. Next-morning swelling is advice to cut volume by about 30%. The app does not change a dose on its own.
 - Low-load holds are a starting point, not a treatment for pain.
 - The gate is not tamper-proof against localStorage edits.

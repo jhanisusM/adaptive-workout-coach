@@ -28,129 +28,155 @@ const EXERCISES = [
     name: 'Ankle pumps + heel slides',
     note: 'Lie flat. Slide each heel toward your butt, then pump the ankles.',
     dose: '2 min · 20 each', muscle_groups: ['calves', 'quads'],
-    demo_ids: ['v-chauhan-top9', 'v-jag-post-op', 'v-crp-acl'] },
+    demo_ids: ['v-chauhan-top9', 'v-jag-post-op', 'v-crp-acl'],
+    video_url: 'https://www.youtube.com/watch?v=iCYO16wzPMw' },
   { id: 'quad-sets', section: 'warmup',
     name: 'Quad sets',
     note: 'Tighten your thigh and press the knee into the floor or mat.',
     dose: '15 × 5-sec hold', muscle_groups: ['quads'],
-    demo_ids: ['v-jag-quad-sets', 'v-chauhan-quad-iso', 'v-bobbrad-knee-ext'] },
+    demo_ids: ['v-jag-quad-sets', 'v-chauhan-quad-iso', 'v-bobbrad-knee-ext'],
+    video_url: 'https://www.youtube.com/watch?v=5TUK4uT2nnw' },
   { id: 'goblet-squat', section: 'strength',
     name: 'Goblet squat / dumbbell squat-to-bench',
     note: 'Hold one dumbbell at your chest. Use the bench as a depth target and keep every rep pain-free.',
     dose: '3 × 8 to 10', muscle_groups: ['quads', 'glutes'], demo_ids: [],
+    video_url: 'https://www.youtube.com/watch?v=CzGVR5sJ1hY',
     loaded_knee_flexion: true },
   { id: 'bulgarian-split-squat', section: 'strength',
     name: 'Bulgarian split squat',
     note: 'Keep the front foot planted and use a comfortable range. Start light and add load only with good control.',
     dose: '3 × 8 each side', muscle_groups: ['quads', 'glutes'], demo_ids: [],
+    video_url: 'https://www.youtube.com/watch?v=kZapDhWEhNQ',
     loaded_knee_flexion: true },
   { id: 'step-ups', section: 'strength',
     name: 'Step-ups with dumbbells',
     note: 'Drive through the working foot and lower slowly without dropping from the step.',
     dose: '3 × 8 each side', muscle_groups: ['quads', 'glutes'],
     demo_ids: ['v-kneehaber-stepup'],
+    video_url: 'https://www.youtube.com/watch?v=DxUNi119Qzs',
     loaded_knee_flexion: true },
   { id: 'lateral-step-down', section: 'strength',
     name: 'Lateral step-down',
     note: 'Low step. Take 3 seconds to lower. A hand on the wall is fine.',
     dose: '2 × 6 each side', muscle_groups: ['quads', 'glutes'], demo_ids: [],
+    video_url: 'https://www.youtube.com/watch?v=_r_vsI64pyw',
     loaded_knee_flexion: true },
   { id: 'reverse-lunge', section: 'strength',
     name: 'Reverse lunge',
     note: 'Step backward, bodyweight. Keep the front knee tracking over the foot.',
     dose: '2 × 6 each side', muscle_groups: ['quads', 'glutes'], demo_ids: [],
+    video_url: 'https://www.youtube.com/watch?v=w7pyyqLorJ4',
     loaded_knee_flexion: true },
   { id: 'db-romanian-deadlift', section: 'strength',
     name: 'Dumbbell Romanian deadlift',
     note: 'Hinge at the hips with soft knees, a long spine, and the dumbbells close to your legs.',
-    dose: '3 × 10', muscle_groups: ['hamstrings', 'glutes'], demo_ids: [] },
+    dose: '3 × 10', muscle_groups: ['hamstrings', 'glutes'], demo_ids: [],
+    video_url: 'https://www.youtube.com/watch?v=uUjqvxEWcbo' },
   { id: 'single-leg-rdl', section: 'strength',
     name: 'Single-leg RDL',
     note: 'Keep the hips level and use a light dumbbell or support as needed for balance.',
     dose: '3 × 8 each side', muscle_groups: ['hamstrings', 'glutes'],
-    demo_ids: ['v-djkim-slrdl', 'v-pauli-slrdl', 'v-e3-slrdl'] },
+    demo_ids: ['v-djkim-slrdl', 'v-pauli-slrdl', 'v-e3-slrdl'],
+    video_url: 'https://www.youtube.com/watch?v=c8xZbwTx4XM' },
   { id: 'straight-leg-raises', section: 'strength',
     name: 'Straight leg raises',
     note: 'Lie flat, keep the working knee straight, and lift the heel slowly. Skip it if the thigh cannot hold the leg up.',
-    dose: '3 × 10 each leg', muscle_groups: ['quads'], demo_ids: [] },
+    dose: '3 × 10 each leg', muscle_groups: ['quads'], demo_ids: [],
+    video_url: 'https://www.youtube.com/watch?v=zo2pqw794B0' },
   { id: 'glute-bridges', section: 'strength',
     name: 'Glute bridges',
     note: 'Both feet down. Pause about 3 seconds at the top.',
-    dose: '3 × 12', muscle_groups: ['glutes'], demo_ids: [] },
+    dose: '3 × 12', muscle_groups: ['glutes'], demo_ids: [],
+    video_url: 'https://www.youtube.com/watch?v=PhTDzR0TpZs' },
   { id: 'tke-band', section: 'strength',
     name: 'Terminal knee extension with band',
     note: 'Anchor the band in front of the knee. Straighten the knee against the band without the hip taking over.',
-    dose: '2 × 10', muscle_groups: ['quads'], demo_ids: [] },
+    dose: '2 × 10', muscle_groups: ['quads'], demo_ids: [],
+    video_url: 'https://www.youtube.com/watch?v=xdKm8PSX438' },
   { id: 'clamshell', section: 'strength',
     name: 'Clamshell',
     note: 'Lie on your side with knees bent. Lift the top knee without rolling the hips back.',
-    dose: '2 × 8 each side', muscle_groups: ['glutes'], demo_ids: [] },
+    dose: '2 × 8 each side', muscle_groups: ['glutes'], demo_ids: [],
+    video_url: 'https://www.youtube.com/watch?v=gFyIjunfbbg' },
   { id: 'side-lying-abduction', section: 'strength',
     name: 'Side-lying hip abduction',
     note: 'Lie on your side and lift the top leg with the toes level or slightly down. Do not roll the hips back.',
-    dose: '2 × 8 each side', muscle_groups: ['glutes'], demo_ids: [] },
+    dose: '2 × 8 each side', muscle_groups: ['glutes'], demo_ids: [],
+    video_url: 'https://www.youtube.com/watch?v=-rDiQXjeXO0' },
   { id: 'single-leg-bridge', section: 'strength',
     name: 'Single-leg glute bridge',
     note: 'One foot down and the other leg straight. Keep the hips level.',
-    dose: '2 × 8 each side', muscle_groups: ['glutes'], demo_ids: [] },
+    dose: '2 × 8 each side', muscle_groups: ['glutes'], demo_ids: [],
+    video_url: 'https://www.youtube.com/watch?v=fUOB9VcyvYo' },
   { id: 'band-side-step', section: 'strength',
     name: 'Band side-step',
     note: 'Band above the knees. Small steps, in a slight knee bend, not a deep squat.',
-    dose: '2 × 8 each way', muscle_groups: ['glutes'], demo_ids: [] },
+    dose: '2 × 8 each way', muscle_groups: ['glutes'], demo_ids: [],
+    video_url: 'https://www.youtube.com/watch?v=Yy7qSkfELFY' },
   { id: 'supported-split-squat', section: 'strength',
     name: 'Supported split squat',
     note: 'Hand on a wall or chair. Start with a short range and keep the front knee over the foot.',
     dose: '3 × 6 each side', muscle_groups: ['quads', 'glutes'], demo_ids: [],
+    video_url: 'https://www.youtube.com/watch?v=vUikQQsXCbg',
     loaded_knee_flexion: true },
   { id: 'calf-raise-single', section: 'strength',
     name: 'Single-leg calf raise',
     note: 'Hold a wall. The other foot can rest lightly until the working leg is steady.',
-    dose: '2 × 8 each side', muscle_groups: ['calves'], demo_ids: [] },
+    dose: '2 × 8 each side', muscle_groups: ['calves'], demo_ids: [],
+    video_url: 'https://www.youtube.com/watch?v=qPd73snQfUs' },
   { id: 'calf-raise-bilateral', section: 'strength',
     name: 'Calf raise, both feet',
     note: 'Slow up and down. Hold a wall if you need balance.',
-    dose: '2 × 10', muscle_groups: ['calves'], demo_ids: [] },
+    dose: '2 × 10', muscle_groups: ['calves'], demo_ids: [],
+    video_url: 'https://www.youtube.com/watch?v=aZh9tCFh46o' },
   { id: 'sit-to-stand-high', section: 'strength',
     name: 'High-box sit-to-stand',
     note: 'Use a high box or a high chair so the knee stays out of a deep bend. Hands on the thighs are fine.',
-    dose: '2 × 8', muscle_groups: ['quads', 'glutes'], demo_ids: [] },
+    dose: '2 × 8', muscle_groups: ['quads', 'glutes'], demo_ids: [],
+    video_url: 'https://www.youtube.com/watch?v=qveKmiXEkIQ' },
   { id: 'spanish-squat-hold', section: 'stability',
     name: 'Spanish squat hold with band',
     note: 'Anchor the band behind both knees. Keep the knee bend shallow. This is a low-load start, not a treatment for pain.',
     dose: '3 × 30 sec', muscle_groups: ['quads'],
-    demo_ids: ['v-kneehaber-spanish'] },
+    demo_ids: ['v-kneehaber-spanish'],
+    video_url: 'https://www.youtube.com/watch?v=hgFxm5KIF7M' },
   { id: 'split-squat-hold', section: 'stability',
     name: 'Split-squat hold',
     note: 'Hold a comfortable split-squat depth with the front foot fully planted and the torso tall.',
     dose: '~30 sec each side', muscle_groups: ['quads', 'glutes'],
     demo_ids: ['v-kneehaber-split'],
+    video_url: 'https://www.youtube.com/watch?v=WPSXSBFsLIo',
     loaded_knee_flexion: true },
   { id: 'single-leg-balance-supported', section: 'stability',
     name: 'Single-leg balance (supported)',
     note: 'Hand on wall.',
-    dose: '3 × 20 sec each side', muscle_groups: ['stability'], demo_ids: [] },
+    dose: '3 × 20 sec each side', muscle_groups: ['stability'], demo_ids: [],
+    video_url: 'https://www.youtube.com/watch?v=14MFOI3vTJs' },
   { id: 'hamstring-stretch', section: 'cooldown',
     name: 'Hamstring stretch',
     note: 'Ease into the stretch; no bouncing.',
     dose: '30 sec each', muscle_groups: ['hamstrings'],
-    demo_ids: ['v-bobbrad-hamstring', 'v-weshape-stretch'] },
+    demo_ids: ['v-bobbrad-hamstring', 'v-weshape-stretch'],
+    video_url: 'https://www.youtube.com/watch?v=aJvfeuu71gw' },
   { id: 'calf-stretch', section: 'cooldown',
     name: 'Calf stretch at wall',
     note: 'Keep the back heel grounded.',
     dose: '30 sec each', muscle_groups: ['calves'],
-    demo_ids: ['v-sommer-calf', 'v-hoopes-calf', 'v-bobbrad-calf'] },
+    demo_ids: ['v-sommer-calf', 'v-hoopes-calf', 'v-bobbrad-calf'],
+    video_url: 'https://www.youtube.com/watch?v=LoWfpR9y6rs' },
   { id: 'backward-walk', section: 'cooldown',
     name: 'Backward walk',
     note: 'Use a clear, level path and move with control.',
     dose: '1 min', muscle_groups: ['quads', 'calves'],
-    demo_ids: ['v-maloney-backward', 'v-benpatrick-backward'] },
+    demo_ids: ['v-maloney-backward', 'v-benpatrick-backward'],
+    video_url: 'https://www.youtube.com/watch?v=prkjsrecKr4' },
 ];
 
 /* Resolve every exercise's demo_ids into full video objects from the video
  * library (video-library.js must be loaded before this file). Unknown ids
- * are skipped so one bad id cannot blank the page. video_url is a separate
- * one-link field and stays empty until a checked link is added. */
-/* One demo link per exercise. video_url stays empty until a checked link is added. */
+ * are skipped so one bad id cannot blank the page. video_url is one
+ * YouTube link per exercise. The page shows it through youtube-nocookie.com. */
+/* One demo link per exercise. A missing video_url stays empty. */
 EXERCISES.forEach(function (ex) {
   if (typeof ex.video_url !== 'string') ex.video_url = '';
   ex.demos = resolveDemoList(ex.demo_ids);
@@ -363,6 +389,7 @@ function resolvePhase(phaseId, week) {
       id: base.id, section: base.section, name: base.name, note,
       dose: doseForEntry(entry, base, week),
       muscle_groups: base.muscle_groups, demos: base.demos, order: i,
+      video_url: typeof base.video_url === 'string' ? base.video_url : '',
       loaded_knee_flexion: base.loaded_knee_flexion === true,
     };
   });
@@ -1531,6 +1558,22 @@ function renderPrompts() {
   }
 }
 
+function youtubeId(url) {
+  const text = String(url || '').trim();
+  const match = text.match(/(?:[?&]v=|youtu\.be\/|youtube(?:-nocookie)?\.com\/embed\/)([A-Za-z0-9_-]{11})/);
+  return match ? match[1] : '';
+}
+function nocookieEmbed(url) {
+  const id = youtubeId(url);
+  return id ? 'https://www.youtube-nocookie.com/embed/' + id : '';
+}
+function videoEmbedHtml(ex) {
+  const embed = nocookieEmbed(ex && ex.video_url);
+  if (!embed) return '<p class="demo-missing">No demo link yet.</p>';
+  return '<div class="video-frame"><iframe src="' + esc(embed) + '" title="' + esc('Demo: ' + ex.name) + '" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>' +
+    '<a class="demo-watch" href="' + esc(embed) + '" target="_blank" rel="noopener noreferrer">Watch demo</a>';
+}
+
 function demoHtml(ex) {
   if (!ex.demos || !ex.demos.length) return '';
   const i = demoIdx[ex.id] || 0;
@@ -1563,13 +1606,13 @@ function renderSections() {
     const collapsed = !!store.collapsed[sec.id];
     const rows = exs.map(e => {
       const tags = e.muscle_groups.map(t => '<span class="muscle-tag">' + esc(t) + '</span>').join('');
-      return '<li class="exercise"><label class="check-row">' +
+      return '<li class="exercise"><div class="exercise-main"><div class="exercise-copy"><label class="check-row">' +
         '<input type="checkbox" data-check="' + esc(e.id) + '"' + (store.checks[e.id] ? ' checked' : '') + (canCheck ? '' : ' disabled') + '>' +
         '<span><span class="exercise-name">' + esc(e.name) + '</span>' +
         '<span class="exercise-note">' + esc(e.note) + '</span>' +
         '<span class="muscle-tags">' + tags + '</span></span>' +
         '<span class="dose">' + esc(e.dose) + '</span></label>' +
-        demoHtml(e) + '</li>';
+        demoHtml(e) + '</div><div class="exercise-video">' + videoEmbedHtml(e) + '</div></div></li>';
     }).join('');
     const countLabel = exs.length === 1 ? '1 exercise' : exs.length + ' exercises';
     return '<section class="section' + (collapsed ? ' collapsed' : '') + (done ? ' complete' : '') + '">' +
@@ -1636,11 +1679,7 @@ function renderDemoDirectory() {
   const list = $('demoVideoList');
   if (!list) return;
   list.innerHTML = EXERCISES.map(function (ex) {
-    const url = typeof ex.video_url === 'string' ? ex.video_url.trim() : '';
-    const action = url
-      ? '<a href="' + esc(url) + '" target="_blank" rel="noopener">Watch demo</a>'
-      : '<span class="demo-missing">No demo link yet.</span>';
-    return '<li class="demo-row"><span class="demo-name">' + esc(ex.name) + '</span>' + action + '</li>';
+    return '<li class="demo-row"><span class="demo-name">' + esc(ex.name) + '</span>' + videoEmbedHtml(ex) + '</li>';
   }).join('');
 }
 

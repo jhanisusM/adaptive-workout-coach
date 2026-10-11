@@ -294,6 +294,7 @@ test('the page policy, docs, and workflow stay free of dev-only inline code', ()
   assert.match(html, /http-equiv="Content-Security-Policy"/);
   assert.match(html, /default-src 'self'/);
   assert.match(html, /img-src 'self' https:/);
+  assert.match(html, /frame-src https:\/\/www\.youtube-nocookie\.com/);
   assert.match(html, /object-src 'none'/);
   assert.match(html, /base-uri 'none'/);
   assert.match(html, /form-action 'none'/);
@@ -310,11 +311,13 @@ test('the page policy, docs, and workflow stay free of dev-only inline code', ()
   const disclaimerAt = readme.indexOf('## Disclaimer');
   const programAt = readme.indexOf('## The program');
   assert.ok(disclaimerAt !== -1 && disclaimerAt < programAt);
-  assert.match(readme, /not medical advice/);
-  assert.match(readme, /as-is/);
-  assert.match(readme, /no warranty/);
-  assert.match(readme, /own risk/);
-  assert.match(readme, /consult a clinician/i);
+  assert.match(readme, /general fitness information, not medical advice/);
+  assert.match(readme, /does not create a patient relationship of any kind/);
+  assert.match(readme, /physician or physical therapist/);
+  assert.match(readme, /at your own risk/);
+  assert.match(readme, /provided "as is", without/);
+  assert.match(readme, /without\s+warranty of any kind/);
+  assert.doesNotMatch(readme, /MIT License/);
   const features = fs.readFileSync(path.join(root, 'FEATURES.md'), 'utf8');
   assert.match(features, /Stability & Tissue Tolerance/);
   assert.match(features, /Every set, rep, hold, and week dose is a placeholder/);
