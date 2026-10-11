@@ -1,11 +1,11 @@
 'use strict';
-/* VIDEO LIBRARY (browser copy of data/video-library.js).
+/* VIDEO LIBRARY
  *
- * The single place where demo videos live. To swap videos, edit
- * data/video-library.js and regenerate this file (or edit both the same
- * way). To change an exercise's videos, change only its demo_ids list in
- * docs/app.js. To change a whole topic's videos, change only the videos
- * list below. Never edit app logic to change videos.
+ * The single place where demo videos live. To change an exercise's videos,
+ * change only its demo_ids list in docs/app.js. To change a whole topic's
+ * videos, change only the videos list below. Never edit app logic to
+ * change videos. Demo URLs are only added when verified. They are never
+ * invented.
  *
  * Plain browser script: no modules, no build step. Loaded via a script
  * tag before app.js in docs/index.html.

@@ -2,47 +2,71 @@
 
 [Open the app](https://jhanisusM.github.io/adaptive-workout-coach/)
 
-**A guided 30-minute workout app anyone can follow — even with no routine,
+**A guided 30-minute workout app anyone can follow, even with no routine,
 no plan, and no experience.** Pure HTML, CSS, and JavaScript. No build step,
 no server, no accounts, no tracking. Open the URL and work out.
 
 ## The program
 
-A PT-approved 3-phase program, about 3 weeks per phase, 3 sessions per week:
+A 3-phase program, about 3 weeks per phase, 3 sessions per week. It follows
+a stability, then supported single-leg, then loaded single-leg progression
+for someone coming back after a long time off their feet. It is a workout
+companion, not a personal prescription. Start only after a physical therapist
+or physician has cleared you for resistance training.
 
-- **Phase 1 "Reactivate"** (8 exercises): quad activation, range of motion,
-  balance. No loaded knee bending.
+- **Phase 1 "Reactivate"** (12 exercises): isometric strength, glute
+  activation, and balance. No deep, loaded knee bending. Includes a shallow
+  Spanish squat hold, band terminal knee extension, clamshells, and calf
+  raises.
 - **Phase 2 "Reload"** (11 exercises): light loaded patterns, bilateral
-  before unilateral.
-- **Phase 3 "Return"** (12 exercises): the full routine, including Bulgarian
-  split squats.
+  before unilateral, with support reduced before load is added.
+- **Phase 3 "Return"** (14 exercises): the full routine. The Bulgarian split
+  squat starts here at bodyweight, low rear foot, 3 x 6 each side, and only
+  then adds reps and load. Lateral step-downs and reverse lunges are in this
+  phase.
 
-A phase picker selects the current phase. Progression tracks completed
-sessions toward 9 per phase. Moving up a phase requires confirming the
-advancement checklist: no swelling after sessions, pain 2/10 or less during
-with zero pain the next morning, every set completed with good control.
+Weeks inside a phase are minimums. The checklist decides when you move on.
+Moving up happens only through Advance, after 9 logged sessions and every
+checklist item. Moving back is always available. A phase you have not
+unlocked stays locked. There is no button to skip ahead.
+
+Each phase has its own week 1, week 2, and week 3 doses. One thing changes
+at a time (reps, then hold time or load). A flagged session does not move
+you to the next week's dose.
+
+No running or plyometrics until you are cleared for them separately.
 
 ## Key features
 
 - **30-minute timer with a single stored deadline.** Closing and reopening
   the browser resumes with the correct time left; it can never double-subtract.
 - **Full session lifecycle**: start, pause, resume, clear (with confirmation),
-  complete, timer expiry.
+  finish, timer expiry. Finish asks for pain during the session before the
+  day is logged. The next visit asks about morning swelling and pain.
 - **Per-exercise checklists**, accordion sections, progress bar, sticky status
   bar, big legible dose labels.
-- **Tue–Sat gym calendar** (Sundays are for church, Mondays are rest) with a
+- **Tue-Sat gym calendar** (Sundays are for church, Mondays are rest) with a
   configurable third gym day. Tap a gym day to open that day's session.
+- **Clearance and red flags.** The first run asks you to confirm clearance
+  for resistance training. A panel stays on the page: stop and contact your
+  clinician for giving way, locking, a hot or swollen knee, night pain, or
+  calf pain or swelling. "Something's wrong" ends the session without logging it.
+- **Symptom flags.** Pain above 2/10 during, next-morning pain, or next-morning
+  swelling suggests repeating the week or reducing sets. Two flagged sessions
+  in a row turn Advance off until a later session is clean. The app does not
+  tick the checklist for you and does not rewrite doses.
 - **Demo videos from a topic-organized video library**
-  (`docs/video-library.js`). To swap an exercise's videos, edit only that one
-  file. Demo URLs are only added when verified; they are never invented.
-- **Privacy by design.** Progress lives in the browser's localStorage. Nothing
-  leaves the device.
+  (`docs/video-library.js`). To swap an exercise's videos, edit only that
+  file or that exercise's `demo_ids`. Demo URLs are only added when verified;
+  they are never invented.
+- **Privacy by design.** Progress lives in the browser's localStorage under
+  `awc-demo-v1`. Nothing leaves the device.
 
 ## Run it
 
 **Live:** https://jhanisusM.github.io/adaptive-workout-coach/
 (deploys from the `docs/` folder on every push to `main`, usually live in
-1–3 minutes).
+1 to 3 minutes).
 
 **Locally:** serve the `docs/` folder with any static file server:
 
@@ -51,6 +75,16 @@ cd docs && python3 -m http.server 8000
 ```
 
 then open http://localhost:8000.
+
+## Tests
+
+```bash
+npm test
+```
+
+That runs `node --test` on `test/`. jsdom is a dev dependency. Nothing from
+`node_modules` is copied into `docs/`. GitHub Actions runs `npm ci` and
+`npm test` on pull requests (`.github/workflows/test.yml`).
 
 ## Project structure
 
@@ -61,6 +95,8 @@ adaptive-workout-coach/
 │   ├── styles.css         # Styles, native CSS, light/dark aware
 │   ├── app.js             # All app logic: phases, timer, calendar, checklist
 │   └── video-library.js   # Topic-organized demo video library (edit this to swap videos)
+├── test/                  # node:test suites (not served)
+├── FEATURES.md            # Feature list and where each one lives
 ├── llms.txt               # Plain-language summary for AI crawlers/bots
 └── README.md
 ```
@@ -68,15 +104,18 @@ adaptive-workout-coach/
 ## Safety note
 
 This is a workout companion, not medical advice. Train within a comfortable
-range — sharp pain is a stop sign: skip the move. If you train around an
+range. Sharp pain is a stop sign: skip the move. If you train around an
 injury or medical condition, follow your clinician's guidance; the app
 supplements it, never replaces it.
 
 ## Privacy
 
 No accounts, no analytics, no tracking, no personal data. Everything stays in
-your browser.
+your browser. If a save cannot be read, the previous text is copied to a
+`awc-demo-v1.bak-<timestamp>` key in this browser and the page says so. Only
+the latest few backups are kept.
 
 ## License
 
-Private project — all rights reserved.
+The source is public on GitHub. All rights reserved. No license is granted
+to copy or reuse this project.

@@ -4,45 +4,69 @@ What the app in `docs/` does today. The page is static HTML, CSS, and JavaScript
 
 Status is one of: planned, in progress, done, removed.
 
-Run the tests with `npm test` (dev-only; nothing from `node_modules` is shipped to `docs/`).
+Run the tests with `npm test` (dev-only; nothing from `node_modules` is shipped to `docs/`). Pull requests run the same command in GitHub Actions.
 
 ## Program and phases
 
 | Feature | Status | Location | Notes |
 | --- | --- | --- | --- |
-| Three phases: Reactivate, Reload, Return | done | `docs/app.js` `PHASES`, `docs/index.html` `#phasePicker` | |
-| Phase doses and notes override the catalog | done | `resolvePhase` | |
-| Advancement checklist of three confirmations | done | `advancePhase`, `#checklistWrap` | The advance button stays disabled until all three are confirmed. |
-| Phase-advancement gating | planned | `advancePhase`, `#phasePicker` | The picker can still open any phase. `unlockedPhase` is stored so a later gate can keep the current phase. |
-| Tapping the current phase does nothing | done | `requestPhaseChange` | |
-| Switching phase while a session is active asks first | done | `#phaseConfirm` | |
+| Three phases: Reactivate, Reload, Return | done | `docs/app.js` `PHASES`, `docs/index.html` `#phasePicker` | Phase 1 has 12 exercises, Phase 2 has 11, Phase 3 has 14. |
+| Phase 1 avoids loaded knee bending | done | `PHASES[0]`, `loaded_knee_flexion` | Spanish squat hold, band TKE, clamshell, and two-foot calf raises are in. Sit-to-stand is a checklist item, not a Phase 1 exercise. |
+| Bulgarian split squat starts in Phase 3 | done | Phase 3 `bulgarian-split-squat` | Bodyweight, low rear foot, `3 x 6` each side in week 1. Lateral step-down and reverse lunge are in this phase only. |
+| Week doses inside a phase | done | `doses`, `phaseWeek`, `weekCredit` | Sessions 0-2 use week 1, 3-5 use week 2, 6 or more use week 3. The count is the real stored total, minus flagged or unfinished morning checks. One variable changes per week. |
+| Weeks are minimums | done | phase `goal`, `#weekNote` | The checklist decides when a phase changes. No running or plyometrics until separately cleared. |
+| Move up only through Advance | done | `advanceDecision`, `#advanceBtn` | Needs 9 logged sessions in the phase, every checklist item, and no two-flag lock. There is no early override. |
+| Moving back is always available | done | `phaseChangeDecision` | A phase Advance has already unlocked can be selected again. Higher phases stay locked until then. |
+| Current phase is kept for existing saves | done | `migrate` `unlockedPhase` | An older save is not moved backward. `unlockedPhase` is at least the phase they were already on. |
 
 ## Session and timer
 
 | Feature | Status | Location | Notes |
 | --- | --- | --- | --- |
 | 30 minute timer with one stored deadline | done | `remainingMs`, `startSession` | Reopening subtracts elapsed time once. |
-| Start, pause, resume, and clear | done | `#btnStart`, `#btnPause`, `#btnResume`, `#btnClear` | Clear asks first. |
+| Start, pause, resume, and clear | done | `#btnStart`, `#btnPause`, `#btnResume`, `#btnClear` | Clear asks first. Start stays off until clearance is saved. |
 | Check off exercises only during a session | done | `toggleCheckState`, `renderSections` | Boxes stay disabled until a session starts. |
-| Finish workout button logs the day | done | `#btnFinish`, `#finishConfirm` | Also offered when every box is ticked. Ticking the last box does not log by itself. |
+| Finish workout opens a check-in, then logs the day | done | `#btnFinish`, `#checkinModal` | Ticking the last box does not log by itself. |
 | Each gym day counts at most once | done | `applyCompletion` | |
 | Rest days are not logged | done | `canStartSession`, `isGymDayKey` | Start is refused, and Finish does not write a completion. |
-| Timer expiry keeps checkboxes and asks | done | `expireIfDue`, `#expiryConfirm` | Log anyway or discard. |
+| Timer expiry keeps checkboxes and asks | done | `expireIfDue`, `#expiryConfirm` | Log anyway opens the same check-in, or discard. |
+| Something's wrong stops without logging | done | `#btnSomethingWrong` | Ends the session and leaves the completion count alone. |
 
 ## Checklist
 
 | Feature | Status | Location | Notes |
 | --- | --- | --- | --- |
-| Per-exercise checkboxes, doses, notes, and muscle tags | done | `renderSections` | |
+| Per-exercise checkboxes, doses, notes, and muscle tags | done | `renderSections` | Section headings show how many exercises are in that phase, not a fixed minute guess. |
 | Accordion sections | done | `[data-section]` | |
 | Progress bar and sticky status | done | `#progressFill`, `#statusBar` | |
+| Phase 1 advancement criteria | done | `PHASE_CHECKLISTS[1]` | Shared checks, plus full extension with no quad lag, plus sit-to-stand with no hands and no knee collapse. |
+| Phase 2 advancement criteria | done | `PHASE_CHECKLISTS[2]` | Shared checks, plus a supported split squat to about 90 degrees without the knee caving in, plus even weight in a squat. |
+| Older checklist ticks are kept | done | `sanitizeChecklist` | New ids stay unticked. Symptom scores never tick a box. |
+
+## Safety
+
+| Feature | Status | Location | Notes |
+| --- | --- | --- | --- |
+| Train-smart banner | done | `.safety` | Comfortable range, sharp pain is a stop, not medical advice, no running or plyometrics until cleared. |
+| First-run clearance | done | `#clearanceModal`, `store.clearance` | Checkbox plus date. Start stays disabled until it is saved. Review clearance opens it again. |
+| Red-flag panel on every screen size | done | `#redFlags` | Giving way, locking or catching, a hot or markedly swollen knee, night pain, and calf pain or swelling (possible blood clot, urgent). |
+
+## Symptoms
+
+| Feature | Status | Location | Notes |
+| --- | --- | --- | --- |
+| Pain during the session, 0 to 10 | done | `#painDuring`, `applySessionCheckin` | Stored at `store.symptoms[day]` in this browser only. |
+| Next-morning swelling and pain | done | `#morningFields`, `pendingMorning` | Asked on a later calendar day, or with the next check-in if it is still open. |
+| Flag advice | done | `symptomFlagged`, `#symptomAdvice` | Pain above 2 during, any next-morning pain, or next-morning swelling. The note says to repeat the week or reduce sets. |
+| Flagged work does not move the week | done | `weekCredit` | The listed dose text is not rewritten. |
+| Two flags in a row lock Advance | done | `consecutiveFlagLock` | A later clean session turns Advance back on. Flags never tick the checklist. |
 
 ## Calendar
 
 | Feature | Status | Location | Notes |
 | --- | --- | --- | --- |
 | Tue-Sat week, with Sundays and Mondays off | done | `renderCalendar` | |
-| Optional third gym day | done | `#thirdDay` | Friday morning and Friday night both make Friday a gym day. |
+| Optional third gym day | done | `#thirdDay` | Friday morning and Friday night both make Friday a gym day. Phase 1 stays at 3 days, not 4 or 5. |
 | Tap a gym day to select it | done | `[data-day]` | |
 | Stale selected day from another week resets | done | `resolveActiveDay`, `tick` | Runs on load and when the date changes. |
 
@@ -50,7 +74,7 @@ Run the tests with `npm test` (dev-only; nothing from `node_modules` is shipped 
 
 | Feature | Status | Location | Notes |
 | --- | --- | --- | --- |
-| Per-exercise demos from the video library | done | `docs/video-library.js`, `demo_ids` | |
+| Per-exercise demos from the video library | done | `docs/video-library.js`, `demo_ids` | New exercises ship with an empty list. URLs are not invented. |
 | Featured demos and "How it's organized" | done | `renderFeatured` | Also renders when a stored session has already expired. |
 | Unknown video id is skipped | done | `resolveVideo`, `resolveDemoList` | A console warning is logged and the page still loads. |
 
@@ -59,8 +83,9 @@ Run the tests with `npm test` (dev-only; nothing from `node_modules` is shipped 
 | Feature | Status | Location | Notes |
 | --- | --- | --- | --- |
 | localStorage key `awc-demo-v1` | done | `LS_KEY` | The key name is unchanged so existing browsers keep their data. |
-| Version 2 migration | done | `migrate` | Missing or older saves are validated and written back. Phase, checklist, completions, and session deadline are kept. |
-| Current phase stored on `unlockedPhase` | done | `migrate` | Set to the current phase on older saves. The picker does not read it yet. |
-| Session counts above the 9-session target | done | `sanitizePhaseSessions`, `cappedSessionCount` | The stored count is kept. The progress line and the goal check show at most 9. |
+| Version 2 migration | done | `migrate` | Missing or older saves are validated and written back. Phase, checklist, completions, session deadline, symptoms, clearance, and history are kept when they are valid. |
+| Current phase stored on `unlockedPhase` | done | `migrate` | Set to the current phase on older saves. The picker reads it. |
+| Session counts above the 9-session target | done | `sanitizePhaseSessions`, `cappedSessionCount` | The stored count is kept. The progress line shows at most 9. Week doses and the Advance gate use the real count. |
 | Corrupt JSON or a broken field | done | `loadStoreFromRaw` | Fresh defaults, or that field reset, plus a one-time message. The page is not left blank. |
-| Backup before replacing unreadable saved data | done | `backupRawBeforeSave`, `boot` | Before the first save, the original string is copied to `awc-demo-v1.bak-<timestamp>` when the data is unreadable, the root is not an object, or a field is repaired. |
+| Backup before replacing unreadable saved data | done | `backupRawBeforeSave`, `boot` | The original string is copied to `awc-demo-v1.bak-<timestamp>`. The page says when that backup was stored. |
+| Old backups are trimmed | done | `pruneBackups` | The newest 3 backup keys are kept. |

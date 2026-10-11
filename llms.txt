@@ -3,50 +3,69 @@
 Adaptive Workout Coach is a lightweight guided workout app: pure HTML, CSS,
 and JavaScript, no build step, no server, no accounts. It runs as a static
 site (GitHub Pages serves the docs/ folder). Open the URL and follow the
-30-minute session, three times per week — even with no routine, no plan, and
+30-minute session, three times per week, even with no routine, no plan, and
 no experience. Every exercise tells the user exactly what to do, in what
 order, with big legible dose labels (sets x reps), muscle-group tags, and
 demo video links where verified demos exist. No expertise required.
 
 ## The program
 
-A PT-approved 3-phase program, about 3 weeks per phase, 3 sessions per week.
-Phase 1 "Reactivate" (8 exercises): quad activation, range of motion,
-balance, no loaded knee bending. Phase 2 "Reload" (11 exercises): light
-loaded patterns, bilateral before unilateral. Phase 3 "Return" (12
-exercises): the full routine including Bulgarian split squats. A phase picker
-selects the current phase; progression tracks sessions toward 9 per phase;
-phase-ups require confirming an advancement checklist (no swelling after
-sessions, pain 2/10 or less during with zero pain the next morning, every set
-with good control).
+A 3-phase program, about 3 weeks per phase, 3 sessions per week. It is a
+workout companion for someone returning after a long time off their feet,
+not a personal prescription. Start only after a physical therapist or
+physician has cleared resistance training.
+
+Phase 1 "Reactivate" (12 exercises): isometric strength, glute activation,
+balance, no deep loaded knee bending. Phase 2 "Reload" (11 exercises): light
+loaded patterns, bilateral before unilateral. Phase 3 "Return" (14
+exercises): the full routine, including a bodyweight Bulgarian split squat
+that starts at 3 x 6 each side, plus lateral step-downs and reverse lunges.
+
+Moving up a phase uses Advance only, after 9 logged sessions and every
+checklist item for that phase. Moving back is always allowed. Weeks are
+minimums. Week 1, 2, and 3 doses sit inside each phase. A flagged session
+(pain above 2/10 during, next-morning pain, or next-morning swelling) does
+not move the week and, twice in a row, turns Advance off. The app never
+ticks the checklist from those scores and never rewrites the dose text.
+No running or plyometrics until separately cleared.
 
 ## What the app does
 
 - Runs a guided 30-minute workout with a single stored timer deadline, so
   closing and reopening the browser resumes with the correct time left.
-- Full session lifecycle: start, pause, resume, clear (with confirmation),
-  complete, timer expiry.
+- Full session lifecycle: start (after a clearance confirmation), pause,
+  resume, clear (with confirmation), finish (pain check-in, then log),
+  timer expiry, and "Something's wrong" (stop without logging).
 - Per-exercise checklists, accordion sections, progress bar, sticky status
   bar, big dose labels.
 - Tue-Sat gym calendar (Sundays are for church, Mondays are rest) with a
   configurable third gym day; completed days log toward the 3-per-week goal.
+- A red-flag panel stays on the page: giving way, locking or catching, a hot
+  or markedly swollen knee, night pain, calf pain or swelling.
 - Demo videos come from a topic-organized video library
-  (docs/video-library.js). To swap an exercise's videos, edit only that file.
-  Demo URLs are only added when verified, never invented.
-- All progress is stored in the browser's localStorage. No accounts, no
-  analytics, no tracking, no personal data.
+  (docs/video-library.js). To swap an exercise's videos, edit only that file
+  or the exercise's demo_ids. Demo URLs are only added when verified, never
+  invented.
+- All progress is stored in the browser's localStorage under awc-demo-v1.
+  No accounts, no analytics, no tracking, no personal data. Unreadable saves
+  are backed up in the browser, the user is told, and only the latest few
+  backups are kept.
 
 ## Project layout
 
-- docs/index.html -- app shell (status bar, timer, routine, calendar,
-  phase picker, checklist).
-- docs/styles.css -- styles, native CSS, light/dark aware.
-- docs/app.js -- all app logic: phases, timer, calendar, checklist,
-  progression. Progress persists in localStorage.
-- docs/video-library.js -- topic-organized demo video library. This is the
+- docs/index.html: app shell (status bar, timer, routine, calendar,
+  phase picker, checklist, clearance, red flags). A Content-Security-Policy
+  meta tag limits the page to its own files.
+- docs/styles.css: styles, native CSS, light/dark aware.
+- docs/app.js: all app logic: phases, timer, calendar, checklist,
+  progression, symptoms. Progress persists in localStorage.
+- docs/video-library.js: topic-organized demo video library. This is the
   file to edit when swapping videos.
-- README.md -- full documentation.
-- llms.txt -- this file.
+- test/: node:test suites. Run with npm test. Not served from docs/.
+- .github/workflows/test.yml: npm ci and npm test on pull requests.
+- README.md: full documentation.
+- FEATURES.md: feature list with status and location.
+- llms.txt: this file.
 
 ## How to run it
 
@@ -56,8 +75,11 @@ deploys from docs/ on every push to main).
 Locally: serve the docs/ folder with any static file server, e.g.
 `cd docs && python3 -m http.server 8000`, then open http://localhost:8000.
 
+Tests: `npm test` from the repository root.
+
 ## Safety
 
 This is a workout companion, not medical advice. The app tells users to train
 within a comfortable range, that sharp pain is a stop sign, and to follow
 their clinician's guidance when training around an injury or condition.
+The source is public on GitHub. All rights reserved.
