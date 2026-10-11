@@ -33,16 +33,22 @@ function gymState(day, extra) {
 }
 
 test('resolvePhase returns each current program and rejects an unknown phase', () => {
-  assert.equal(app.resolvePhase(1).exercises.length, 8);
-  assert.equal(app.resolvePhase(2).exercises.length, 11);
-  assert.equal(app.resolvePhase(3).exercises.length, 12);
-  assert.equal(app.resolvePhase(1).name, 'Reactivate');
+  assert.equal(app.resolvePhase(1).exercises.length, 14);
+  assert.equal(app.resolvePhase(2).exercises.length, 13);
+  assert.equal(app.resolvePhase(3).exercises.length, 15);
+  assert.equal(app.resolvePhase(1).name, 'Stability & Tissue Tolerance');
+  assert.equal(app.resolvePhase(2).name, 'Supported Unilateral');
+  assert.equal(app.resolvePhase(3).name, 'Complex Unilateral Loading');
+  assert.equal(app.resolvePhase(1).exercises.some(e => e.id === 'sit-to-stand-high'), true);
   assert.equal(app.resolvePhase(3).exercises.some(e => e.id === 'bulgarian-split-squat'), true);
   assert.equal(app.resolvePhase(1).exercises.some(e => e.id === 'bulgarian-split-squat'), false);
+  assert.equal(app.resolvePhase(2).exercises.some(e => e.id === 'bulgarian-split-squat'), false);
   assert.equal(app.resolvePhase(1).exercises.some(e => e.id === 'goblet-squat'), false);
   const bss = app.resolvePhase(3).exercises.find(e => e.id === 'bulgarian-split-squat');
-  assert.equal(bss.dose, '3 \u00d7 8 each side');
+  assert.equal(bss.dose, '3 \u00d7 6 each side');
+  assert.match(bss.note, /Bodyweight, low rear foot/);
   assert.throws(() => app.resolvePhase(9), /unknown phase/);
+  assert.throws(() => app.resolvePhase(0), /unknown phase/);
 });
 
 test('remainingMs uses one deadline and does not move while paused', () => {
@@ -60,7 +66,11 @@ test('checklist gating stays closed until every item is confirmed', () => {
   assert.equal(app.checklistReady({ 1: { 'no-swelling': true, 'pain-ok': true } }, 1), false);
   assert.equal(app.checklistReady({
     1: { 'no-swelling': true, 'pain-ok': true, 'good-control': true },
-  }, 1), true);
+  }, 1), false);
+  const phase1 = {};
+  app.checklistForPhase(1).forEach(item => { phase1[item.id] = true; });
+  assert.equal(app.checklistReady({ 1: phase1 }, 1), true);
+  assert.equal(app.checklistReady({ 1: phase1 }, 2), false);
 });
 
 test('checking boxes does nothing without a session and does not log by itself', () => {
@@ -121,8 +131,10 @@ test('a day can be logged only once, and only from an active session on a gym da
   friday.session = session('2026-10-09');
   assert.equal(app.applyCompletion(friday).ok, true);
 
-  assert.equal(app.canStartSession(gymState('2026-10-10', { session: null, activeDay: '2026-10-10' })).reason, 'not-gym-day');
-  assert.equal(app.canStartSession(gymState('2026-10-06', { session: null, activeDay: '2026-10-06' })).action, 'start');
+  const clearance = { accepted: true, date: '2026-10-01' };
+  assert.equal(app.canStartSession(gymState('2026-10-10', { session: null, activeDay: '2026-10-10', clearance: clearance })).reason, 'not-gym-day');
+  assert.equal(app.canStartSession(gymState('2026-10-06', { session: null, activeDay: '2026-10-06', clearance: clearance })).action, 'start');
+  assert.equal(app.canStartSession(gymState('2026-10-06', { session: null, activeDay: '2026-10-06', clearance: null })).reason, 'no-clearance');
   const paused = gymState();
   paused.session = session('2026-10-06', { state: 'paused', remainingMs: 1000 });
   assert.equal(app.canStartSession(paused).action, 'resume');
@@ -153,17 +165,25 @@ test('the current phase is a no-op and a different phase confirms before discard
   assert.equal(state.session.state, 'running');
   assert.equal(state.checks['quad-sets'], true);
 
-  assert.deepEqual(app.phaseChangeDecision(state, 2), { action: 'confirm', phase: 2 });
+  assert.deepEqual(app.phaseChangeDecision(state, 2), { action: 'advance' });
   assert.equal(state.phase, 1);
+  assert.equal(state.session.state, 'running');
+  assert.equal(state.checks['quad-sets'], true);
+
+  state.unlockedPhase = 2;
+  assert.deepEqual(app.phaseChangeDecision(state, 2), { action: 'confirm', phase: 2 });
   assert.equal(state.session.state, 'running');
 
   app.applyPhaseChange(state, 2);
   assert.equal(state.phase, 2);
   assert.equal(state.session, null);
   assert.deepEqual(state.checks, {});
+  assert.equal(state.unlockedPhase, 2);
 
   const idle = gymState();
   idle.session = null;
+  assert.deepEqual(app.phaseChangeDecision(idle, 3), { action: 'advance' });
+  idle.unlockedPhase = 3;
   assert.deepEqual(app.phaseChangeDecision(idle, 3), { action: 'apply', phase: 3 });
   assert.deepEqual(app.phaseChangeDecision(idle, 99), { action: 'noop' });
 });

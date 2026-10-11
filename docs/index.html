@@ -5,48 +5,66 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Adaptive Workout Coach: live demo</title>
 <meta name="description" content="Adaptive Workout Coach: a guided 30-minute workout app anyone can follow, even with no routine or experience. Live GitHub Pages demo.">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' https:; object-src 'none'; base-uri 'none'; form-action 'none'">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 <div class="page">
 
   <div class="status-bar" id="statusBar">
-    <div class="status-state"><span class="status-dot" id="statusDot"></span><span id="statusText">Ready</span></div>
-    <div class="status-detail"><span id="statusDay">&ndash;</span><span id="statusCount">0 / 8</span></div>
+    <div class="status-state"><span class="status-dot"></span><span id="statusText">Ready</span></div>
+    <div class="status-detail"><span id="statusDay">Today</span><span id="statusCount">0 / 0</span></div>
     <div class="status-track"><div class="status-fill" id="statusFill"></div></div>
   </div>
 
   <header class="intro">
     <div>
       <h1>30-minute workout</h1>
-      <p class="lede">A PT-approved 3-phase program: reactivate, reload, return. Pick your
-        phase and follow along at your own pace.</p>
+      <p class="lede">A 3-phase program: stability and tissue tolerance, then supported unilateral work, then complex unilateral loading. It rebuilds capacity after a long time off your feet. Move up only with Advance, after 9 sessions and the checklist.</p>
       <p class="demo-badge">Live demo: progress is stored in this browser only.</p>
     </div>
     <div class="frequency"><span>Weekly rhythm</span><strong>3 sessions</strong></div>
   </header>
 
-  <div class="safety"><strong>Train smart:</strong> stay inside a comfortable range. Sharp
-    pain is a stop sign, skip the move. This demo is a workout companion, not medical advice.</div>
+  <div class="safety"><strong>Train smart:</strong> stay inside a comfortable range. Sharp pain is a stop sign. Skip the move. Low-load holds are a starting point, not a treatment for pain. This demo is a workout companion, not medical advice. No running, plyometrics, or deep squats below parallel until you are cleared for them separately.</div>
+
+  <section class="red-flags" id="redFlags" aria-label="Stop and contact your clinician">
+    <h2>Stop and contact your clinician if you notice any of these</h2>
+    <p class="red-flag-note" id="redFlagNote">These are general rules of thumb.</p>
+    <ul>
+      <li>The knee gives way</li>
+      <li>Locking or catching in the knee</li>
+      <li>The knee is hot or markedly swollen</li>
+      <!-- Placeholder rules of thumb pending professional confirmation: night pain, fever, numbness, and the calf warning. -->
+      <li>Pain that wakes you at night</li>
+      <li>Fever, or numbness or tingling</li>
+      <li>Calf pain, swelling, warmth, or redness. This can be a blood clot. Shortness of breath or chest pain needs urgent care.</li>
+    </ul>
+    <button class="btn danger" id="btnSomethingWrong" type="button">Something's wrong</button>
+  </section>
 
   <section class="card phase-card" aria-label="Program phase">
     <div class="panel-label">Your program</div>
-    <h2 id="phaseTitle">Phase 1: Reactivate</h2>
+    <p class="draft-note" id="doseDraftNote">Draft: doses not confirmed by a clinician</p>
+    <h2 id="phaseTitle">Phase 1: Stability &amp; Tissue Tolerance</h2>
     <p class="muted" id="phaseGoal"></p>
+    <p class="week-note" id="weekNote"></p>
     <div class="phase-picker" id="phasePicker" role="group" aria-label="Choose your phase">
-      <button type="button" class="phase-btn" data-phase="1"><strong>Phase 1</strong><span>Reactivate</span></button>
-      <button type="button" class="phase-btn" data-phase="2"><strong>Phase 2</strong><span>Reload</span></button>
-      <button type="button" class="phase-btn" data-phase="3"><strong>Phase 3</strong><span>Return</span></button>
+      <button type="button" class="phase-btn" data-phase="1"><strong>Phase 1</strong><span class="phase-name">Stability &amp; Tissue Tolerance</span><span class="phase-lock"></span></button>
+      <button type="button" class="phase-btn" data-phase="2"><strong>Phase 2</strong><span class="phase-name">Supported Unilateral</span><span class="phase-lock"></span></button>
+      <button type="button" class="phase-btn" data-phase="3"><strong>Phase 3</strong><span class="phase-name">Complex Unilateral Loading</span><span class="phase-draft">Draft</span><span class="phase-lock"></span></button>
     </div>
     <div class="phase-progress" id="phaseProgress" aria-live="polite"></div>
+    <p class="advice" id="symptomAdvice" hidden></p>
     <div class="checklist" id="checklistWrap">
-      <h3 id="checklistTitle">Before advancing, confirm all three</h3>
+      <h3 id="checklistTitle">Before advancing, confirm every item</h3>
       <div id="checklistItems"></div>
       <button class="btn" id="advanceBtn" type="button">Advance to Phase 2</button>
+      <p class="muted small" id="advanceNote"></p>
     </div>
-    <p class="muted small">Changing phase ends a running session. If one is in progress, you will be asked to confirm. The advance button unlocks once the checklist is complete.</p>
+    <p class="muted small">Moving back to an earlier phase is always available. Moving up uses Advance, after 9 logged sessions and every checklist item. Changing phase ends a running session, and you will be asked to confirm.</p>
     <div class="prompt-bar danger" id="phaseConfirm">
-      <span><strong>Change phase?</strong> This ends the current session and clears its checkboxes.</span>
+      <span id="phaseConfirmText"><strong>Change phase?</strong> This ends the current session and clears its checkboxes.</span>
       <span class="prompt-actions">
         <button class="btn danger" id="btnPhaseYes" type="button">Yes, change phase</button>
         <button class="btn secondary" id="btnPhaseNo" type="button">Keep this phase</button>
@@ -71,15 +89,15 @@
     </div>
     <div class="progress-panel">
       <div class="panel-label">Progress</div>
-      <div class="progress-top"><span class="progress-count" id="progressCount">0 / 8</span></div>
+      <div class="progress-top"><span class="progress-count" id="progressCount">0 / 0</span></div>
       <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
       <div class="progress-note" id="progressNote">Check off exercises as you finish them.</div>
     </div>
     <div class="clear-confirm" id="clearConfirm">
       <span><strong>Clear the whole session?</strong> This wipes the timer, checkboxes, and progress.</span>
       <span class="clear-actions">
-        <button class="btn danger" id="btnClearYes">Yes, clear it</button>
-        <button class="btn secondary" id="btnClearNo">Keep going</button>
+        <button class="btn danger" id="btnClearYes" type="button">Yes, clear it</button>
+        <button class="btn secondary" id="btnClearNo" type="button">Keep going</button>
       </span>
     </div>
     <div class="prompt-bar ok" id="finishConfirm">
@@ -119,6 +137,11 @@
         </div>
       </div>
       <div class="side-card">
+        <h2>Training clearance</h2>
+        <p>Start only after a physical therapist or physician has cleared you for resistance training.</p>
+        <button class="btn secondary" id="btnReviewClearance" type="button">Review clearance</button>
+      </div>
+      <div class="side-card">
         <h2>How it's organized</h2>
         <p id="blockNote"></p>
       </div>
@@ -136,6 +159,80 @@
   </footer>
 
 </div>
+
+<div class="modal" id="clearanceModal" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="clearanceTitle">
+    <h2 id="clearanceTitle">Training clearance</h2>
+    <p>This program is for someone returning after a long time off their feet. It is a workout companion, not a personal prescription.</p>
+    <label class="check-item" for="clearanceAccept">
+      <input id="clearanceAccept" type="checkbox">
+      <span>I have clearance from my PT or physician for resistance training</span>
+    </label>
+    <label class="field" for="clearanceDate">Date of that clearance
+      <input id="clearanceDate" type="date">
+    </label>
+    <div class="modal-actions">
+      <button class="btn" id="btnClearanceSave" type="button" disabled>Save clearance</button>
+      <button class="btn secondary" id="btnClearanceLater" type="button">Not now</button>
+    </div>
+    <p class="muted small">Start stays off until this is saved. You can open it again from Training clearance.</p>
+  </div>
+</div>
+
+<div class="modal" id="checkinModal" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="checkinTitle">
+    <h2 id="checkinTitle">Session check-in</h2>
+    <p id="checkinLead">Pain at or below 2 out of 10 that settles by the next morning is acceptable. The score is stored in this browser only.</p>
+    <div class="field" id="painDuringWrap">
+      <label for="painDuring">Pain during this session (0 to 10)</label>
+      <select id="painDuring">
+        <option value="">Choose</option>
+        <option value="0">0</option>
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+        <option value="6">6</option>
+        <option value="7">7</option>
+        <option value="8">8</option>
+        <option value="9">9</option>
+        <option value="10">10</option>
+      </select>
+    </div>
+    <div id="morningFields" hidden>
+      <p id="morningPrompt"></p>
+      <label class="field" for="swellingNext">Swelling this morning?
+        <select id="swellingNext">
+          <option value="">Choose</option>
+          <option value="no">No</option>
+          <option value="yes">Yes</option>
+        </select>
+      </label>
+      <label class="field" for="painNext">Pain this morning (0 to 10)
+        <select id="painNext">
+          <option value="">Choose</option>
+          <option value="0">0</option>
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5">5</option>
+          <option value="6">6</option>
+          <option value="7">7</option>
+          <option value="8">8</option>
+          <option value="9">9</option>
+          <option value="10">10</option>
+        </select>
+      </label>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="btnCheckinSave" type="button">Save check-in</button>
+      <button class="btn secondary" id="btnCheckinCancel" type="button">Not yet</button>
+    </div>
+  </div>
+</div>
+
 <script src="video-library.js"></script>
 <script src="app.js"></script>
 </body>

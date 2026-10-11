@@ -71,6 +71,24 @@ function checkAll(window) {
   throw new Error('could not check every exercise');
 }
 
+function acceptClearance(window, date) {
+  const doc = window.document;
+  const box = doc.getElementById('clearanceAccept');
+  const dateInput = doc.getElementById('clearanceDate');
+  box.checked = true;
+  dateInput.value = date || '2026-10-01';
+  box.dispatchEvent(new window.Event('change', { bubbles: true }));
+  dateInput.dispatchEvent(new window.Event('input', { bubbles: true }));
+  click(window, doc.getElementById('btnClearanceSave'));
+}
+
+function saveCheckin(window, pain) {
+  const doc = window.document;
+  const select = doc.getElementById('painDuring');
+  select.value = String(pain);
+  click(window, doc.getElementById('btnCheckinSave'));
+}
+
 function thisTuesday() {
   const today = new Date();
   const mon = new Date(today.getFullYear(), today.getMonth(), today.getDate());
@@ -96,7 +114,13 @@ test('featured demos render and boxes cannot log a workout before Start', () => 
     assert.equal(window.document.querySelector('input[data-check="quad-sets"]').checked, false);
     assert.match(window.document.getElementById('sessionMessage').textContent, /Start a session/);
     assert.equal(window.document.getElementById('btnFinish').hidden, true);
-    assert.equal(window.document.querySelectorAll('.exercise').length, 8);
+    assert.equal(window.document.querySelectorAll('.exercise').length, 14);
+    assert.doesNotMatch(window.document.getElementById('routine').textContent, /18 min/);
+    assert.equal(window.document.querySelector('[data-phase="2"]').classList.contains('locked'), true);
+    assert.equal(window.document.querySelector('[data-phase="3"]').classList.contains('locked'), true);
+    assert.equal(window.document.getElementById('btnStart').disabled, true);
+    assert.equal(window.document.getElementById('redFlags').hidden, false);
+    assert.match(window.document.getElementById('redFlags').textContent, /blood clot/);
   } finally {
     dom.window.close();
   }
@@ -106,6 +130,7 @@ test('Finish logs a gym day once, and ticking every box does not', async () => {
   const { dom, window, errors } = boot();
   try {
     assert.deepEqual(errors, []);
+    acceptClearance(window);
     const day = selectGymDay(window);
     click(window, window.document.getElementById('btnStart'));
     checkAll(window);
@@ -115,11 +140,16 @@ test('Finish logs a gym day once, and ticking every box does not', async () => {
     assert.ok(window.document.getElementById('finishConfirm').classList.contains('show'));
 
     click(window, window.document.getElementById('btnFinishNow'));
+    assert.equal(window.document.getElementById('checkinModal').hidden, false);
+    assert.equal(readStore(window).phaseSessions['1'], 0);
+    saveCheckin(window, 1);
     stored = readStore(window);
     assert.equal(stored.phaseSessions['1'], 1);
     assert.equal(stored.completions[day], true);
+    assert.equal(stored.symptoms[day].painDuring, 1);
     assert.equal(stored.session, null);
     assert.deepEqual(stored.checks, {});
+    assert.deepEqual(stored.checklist, {});
 
     selectGymDay(window);
     click(window, window.document.getElementById('btnStart'));
@@ -164,6 +194,9 @@ test('an expired session reopens with demos, kept checks, and a log or discard c
     assert.equal(readStore(first.window).phaseSessions['1'], 1);
 
     click(first.window, doc.getElementById('btnExpireLog'));
+    assert.equal(doc.getElementById('checkinModal').hidden, false);
+    assert.equal(readStore(first.window).phaseSessions['1'], 1);
+    saveCheckin(first.window, 0);
     const logged = readStore(first.window);
     assert.equal(logged.phaseSessions['1'], 2);
     assert.equal(logged.completions[day], true);
@@ -188,10 +221,11 @@ test('an expired session reopens with demos, kept checks, and a log or discard c
   }
 });
 
-test('the current phase does nothing and another phase waits for confirmation', () => {
+test('the current phase does nothing and a locked phase cannot be opened', () => {
   const { dom, window, errors } = boot();
   try {
     assert.deepEqual(errors, []);
+    acceptClearance(window);
     selectGymDay(window);
     click(window, window.document.getElementById('btnStart'));
     const before = readStore(window);
@@ -203,20 +237,61 @@ test('the current phase does nothing and another phase waits for confirmation', 
     assert.equal(window.document.getElementById('phaseConfirm').classList.contains('show'), false);
 
     click(window, window.document.querySelector('[data-phase="3"]'));
-    assert.ok(window.document.getElementById('phaseConfirm').classList.contains('show'));
+    assert.equal(window.document.getElementById('phaseConfirm').classList.contains('show'), false);
     assert.equal(readStore(window).phase, 1);
     assert.equal(readStore(window).session.state, 'running');
+    assert.equal(readStore(window).unlockedPhase, 1);
+    assert.match(window.document.getElementById('sessionMessage').textContent, /9/);
+    assert.equal(window.document.querySelectorAll('.exercise').length, 14);
+  } finally {
+    dom.window.close();
+  }
+});
 
-    click(window, window.document.getElementById('btnPhaseNo'));
-    assert.equal(window.document.getElementById('phaseConfirm').classList.contains('show'), false);
+test('moving back from an unlocked phase still asks before ending a session', () => {
+  const day = thisTuesday();
+  const { dom, window, errors } = boot({
+    version: 2,
+    phase: 2,
+    unlockedPhase: 2,
+    phaseSessions: { 1: 9, 2: 1, 3: 0 },
+    checks: {},
+    collapsed: {},
+    thirdDay: 'none',
+    completions: {},
+    activeDay: day,
+    checklist: { 1: { 'no-swelling': true, 'pain-ok': true, 'good-control': true } },
+    session: {
+      state: 'running',
+      startedAt: Date.now(),
+      deadline: Date.now() + 10 * 60 * 1000,
+      remainingMs: null,
+      day: day,
+    },
+    symptoms: {},
+    clearance: { accepted: true, date: '2026-10-01' },
+    history: [{ type: 'advance', from: 1, to: 2, at: '2026-10-01T00:00:00.000Z' }],
+  });
+  try {
+    assert.deepEqual(errors, []);
+    assert.equal(window.document.getElementById('clearanceModal').hidden, true);
+    assert.match(window.document.getElementById('phaseTitle').textContent, /Phase 2/);
+    assert.equal(window.document.querySelector('[data-phase="1"]').classList.contains('locked'), false);
+    assert.equal(window.document.querySelector('[data-phase="3"]').classList.contains('locked'), true);
+    click(window, window.document.querySelector('[data-phase="1"]'));
+    assert.ok(window.document.getElementById('phaseConfirm').classList.contains('show'));
+    assert.equal(readStore(window).phase, 2);
     assert.equal(readStore(window).session.state, 'running');
-
-    click(window, window.document.querySelector('[data-phase="3"]'));
     click(window, window.document.getElementById('btnPhaseYes'));
     const changed = readStore(window);
-    assert.equal(changed.phase, 3);
+    assert.equal(changed.phase, 1);
+    assert.equal(changed.unlockedPhase, 2);
     assert.equal(changed.session, null);
-    assert.equal(window.document.querySelectorAll('.exercise').length, 12);
+    assert.equal(changed.checklist['1']['good-control'], true);
+    assert.equal(changed.history.length, 1);
+    click(window, window.document.querySelector('[data-phase="2"]'));
+    assert.equal(readStore(window).phase, 2);
+    assert.equal(window.document.querySelectorAll('.exercise').length, 13);
   } finally {
     dom.window.close();
   }
@@ -276,6 +351,7 @@ test('corrupt storage still renders, and a saved session deadline is kept', () =
     assert.match(doc.getElementById('phaseTitle').textContent, /Phase 2/);
     assert.ok(doc.querySelectorAll('.exercise').length >= 8);
     assert.match(doc.getElementById('sessionMessage').textContent, /unreadable/);
+    assert.match(doc.getElementById('sessionMessage').textContent, /backup of your previous save/);
     const stored = readStore(corrupt.window);
     assert.equal(stored.version, 2);
     assert.equal(stored.phase, 2);
@@ -294,6 +370,7 @@ test('corrupt storage still renders, and a saved session deadline is kept', () =
     assert.match(garbage.window.document.getElementById('phaseTitle').textContent, /Phase 1/);
     assert.ok(garbage.window.document.querySelectorAll('.exercise').length >= 8);
     assert.match(garbage.window.document.getElementById('sessionMessage').textContent, /fresh start/);
+    assert.match(garbage.window.document.getElementById('sessionMessage').textContent, /backup of your previous save/);
     assert.deepEqual(backupValues(garbage.window), ['{']);
   } finally {
     garbage.dom.window.close();
@@ -335,5 +412,211 @@ test('corrupt storage still renders, and a saved session deadline is kept', () =
     assert.deepEqual(backupValues(kept.window), []);
   } finally {
     kept.dom.window.close();
+  }
+});
+
+function phase1Checklist() {
+  const bucket = {};
+  app.checklistForPhase(1).forEach(item => { bucket[item.id] = true; });
+  return { 1: bucket };
+}
+
+function baseStore(extra) {
+  return Object.assign({
+    version: 2,
+    phase: 1,
+    unlockedPhase: 1,
+    phaseSessions: { 1: 0, 2: 0, 3: 0 },
+    checks: {},
+    collapsed: {},
+    thirdDay: 'none',
+    completions: {},
+    activeDay: thisTuesday(),
+    checklist: {},
+    session: null,
+    symptoms: {},
+    clearance: { accepted: true, date: '2026-10-01' },
+    history: [],
+  }, extra || {});
+}
+
+test('Advance opens the next phase only after 9 sessions and the checklist', () => {
+  const { dom, window, errors } = boot(baseStore({
+    phaseSessions: { 1: 9, 2: 0, 3: 0 },
+    checklist: phase1Checklist(),
+  }));
+  try {
+    assert.deepEqual(errors, []);
+    assert.equal(window.document.getElementById('clearanceModal').hidden, true);
+    assert.equal(window.document.getElementById('advanceBtn').disabled, false);
+    click(window, window.document.getElementById('advanceBtn'));
+    const stored = readStore(window);
+    assert.equal(stored.phase, 2);
+    assert.equal(stored.unlockedPhase, 2);
+    assert.equal(stored.history.length, 1);
+    assert.equal(stored.history[0].to, 2);
+    assert.equal(window.document.querySelector('[data-phase="3"]').classList.contains('locked'), true);
+    assert.match(window.document.getElementById('phaseTitle').textContent, /Phase 2/);
+  } finally {
+    dom.window.close();
+  }
+});
+
+function runningSession(day) {
+  return {
+    state: 'running',
+    startedAt: Date.now(),
+    deadline: Date.now() + 10 * 60 * 1000,
+    remainingMs: null,
+    day: day,
+  };
+}
+
+test('confirming an advance checks the gate again', () => {
+  const day = thisTuesday();
+  const unticked = boot(baseStore({
+    phaseSessions: { 1: 9, 2: 0, 3: 0 },
+    checklist: phase1Checklist(),
+    activeDay: day,
+    session: runningSession(day),
+  }));
+  try {
+    const doc = unticked.window.document;
+    click(unticked.window, doc.getElementById('advanceBtn'));
+    assert.ok(doc.getElementById('phaseConfirm').classList.contains('show'));
+    assert.equal(readStore(unticked.window).phase, 1);
+    const box = doc.querySelector('[data-checklist-item="sit-to-stand"]');
+    box.checked = false;
+    box.dispatchEvent(new unticked.window.Event('change', { bubbles: true }));
+    click(unticked.window, doc.getElementById('btnPhaseYes'));
+    const stored = readStore(unticked.window);
+    assert.equal(stored.phase, 1);
+    assert.equal(stored.unlockedPhase, 1);
+    assert.deepEqual(stored.history, []);
+    assert.equal(stored.session.state, 'running');
+    assert.equal(doc.getElementById('phaseConfirm').classList.contains('show'), false);
+    assert.match(doc.getElementById('sessionMessage').textContent, /checklist/i);
+  } finally {
+    unticked.dom.window.close();
+  }
+
+  const flagged = boot(baseStore({
+    phaseSessions: { 1: 9, 2: 0, 3: 0 },
+    checklist: phase1Checklist(),
+    activeDay: day,
+    session: runningSession(day),
+    symptoms: {
+      '2020-01-07': { painDuring: 5, painNext: 0, swellingNext: false, phase: 1 },
+    },
+  }));
+  try {
+    const doc = flagged.window.document;
+    assert.equal(doc.getElementById('advanceBtn').disabled, false);
+    click(flagged.window, doc.getElementById('advanceBtn'));
+    assert.ok(doc.getElementById('phaseConfirm').classList.contains('show'));
+    click(flagged.window, doc.getElementById('btnFinish'));
+    saveCheckin(flagged.window, 6);
+    assert.equal(readStore(flagged.window).phaseSessions['1'], 10);
+    assert.ok(doc.getElementById('phaseConfirm').classList.contains('show'));
+    click(flagged.window, doc.getElementById('btnPhaseYes'));
+    const stored = readStore(flagged.window);
+    assert.equal(stored.phase, 1);
+    assert.equal(stored.unlockedPhase, 1);
+    assert.deepEqual(stored.history, []);
+    assert.equal(doc.getElementById('phaseConfirm').classList.contains('show'), false);
+    assert.match(doc.getElementById('sessionMessage').textContent, /two flagged sessions/i);
+  } finally {
+    flagged.dom.window.close();
+  }
+});
+
+test('a flagged check-in repeats the week and two flags lock Advance', () => {
+  const flagged = boot(baseStore());
+  try {
+    acceptClearance(flagged.window, '2026-10-01');
+    selectGymDay(flagged.window);
+    click(flagged.window, flagged.window.document.getElementById('btnStart'));
+    click(flagged.window, flagged.window.document.getElementById('btnFinish'));
+    const doseBefore = flagged.window.document.querySelector('.dose').textContent;
+    saveCheckin(flagged.window, 6);
+    const doc = flagged.window.document;
+    assert.match(doc.getElementById('symptomAdvice').textContent, /Repeat this week or reduce your sets/);
+    assert.equal(doc.getElementById('symptomAdvice').hidden, false);
+    assert.match(doc.getElementById('weekNote').textContent, /Week 1/);
+    assert.equal(doc.querySelector('[data-check="quad-sets"]').parentElement.querySelector('.dose').textContent, '10 \u00d7 5-sec hold');
+    assert.equal(doc.querySelector('.dose').textContent, doseBefore);
+    const stored = readStore(flagged.window);
+    assert.deepEqual(stored.checklist, {});
+    assert.equal(stored.phaseSessions['1'], 1);
+  } finally {
+    flagged.dom.window.close();
+  }
+
+  const locked = boot(baseStore({
+    phaseSessions: { 1: 9, 2: 0, 3: 0 },
+    checklist: phase1Checklist(),
+    symptoms: {
+      '2026-10-01': { painDuring: 5, painNext: 0, swellingNext: false, phase: 1 },
+      '2026-10-03': { painDuring: 1, painNext: 0, swellingNext: true, phase: 1 },
+    },
+  }));
+  try {
+    const doc = locked.window.document;
+    assert.equal(doc.getElementById('advanceBtn').disabled, true);
+    assert.match(doc.getElementById('advanceNote').textContent, /two flagged sessions/i);
+    assert.match(doc.getElementById('symptomAdvice').textContent, /Doses are not changed for you/);
+    click(locked.window, doc.getElementById('advanceBtn'));
+    assert.equal(readStore(locked.window).phase, 1);
+  } finally {
+    locked.dom.window.close();
+  }
+});
+
+test('draft labels show on the phase card, phase 3, and the red flags', () => {
+  const { dom, window, errors } = boot();
+  try {
+    assert.deepEqual(errors, []);
+    const doc = window.document;
+    const dose = doc.getElementById('doseDraftNote');
+    assert.ok(dose);
+    assert.equal(dose.hidden, false);
+    assert.equal(dose.textContent, 'Draft: doses not confirmed by a clinician');
+    assert.ok(doc.querySelector('.phase-card').contains(dose));
+    const badge = doc.querySelector('[data-phase="3"] .phase-draft');
+    assert.ok(badge);
+    assert.equal(badge.textContent, 'Draft');
+    assert.equal(doc.querySelector('[data-phase="1"] .phase-draft'), null);
+    assert.equal(doc.querySelector('[data-phase="2"] .phase-draft'), null);
+    const note = doc.getElementById('redFlagNote');
+    const heading = doc.querySelector('#redFlags h2');
+    assert.ok(note);
+    assert.equal(note.hidden, false);
+    assert.equal(note.textContent, 'These are general rules of thumb.');
+    assert.ok(heading.compareDocumentPosition(note) & window.Node.DOCUMENT_POSITION_FOLLOWING);
+    assert.ok(note.compareDocumentPosition(doc.querySelector('#redFlags ul')) & window.Node.DOCUMENT_POSITION_FOLLOWING);
+  } finally {
+    dom.window.close();
+  }
+});
+
+test('Something is wrong ends the session without logging', () => {
+  const { dom, window, errors } = boot();
+  try {
+    assert.deepEqual(errors, []);
+    acceptClearance(window);
+    selectGymDay(window);
+    click(window, window.document.getElementById('btnStart'));
+    const box = window.document.querySelector('input[data-check]');
+    box.checked = true;
+    box.dispatchEvent(new window.Event('change', { bubbles: true }));
+    click(window, window.document.getElementById('btnSomethingWrong'));
+    const stored = readStore(window);
+    assert.equal(stored.session, null);
+    assert.deepEqual(stored.checks, {});
+    assert.equal(stored.phaseSessions['1'], 0);
+    assert.match(window.document.getElementById('sessionMessage').textContent, /Nothing was logged/);
+    assert.match(window.document.getElementById('redFlags').textContent, /gives way/);
+  } finally {
+    dom.window.close();
   }
 });

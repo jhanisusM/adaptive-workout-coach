@@ -1,29 +1,28 @@
 'use strict';
 /* Adaptive Workout Coach: static GitHub Pages demo.
  *
- * Client-side reimplementation of the session engine. Everything is stored in
- * localStorage under a single key. The timer uses ONE stored deadline:
+ * Client-side session engine. Everything is stored in localStorage under
+ * a single key. The timer uses ONE stored deadline:
  *   remaining = deadline - Date.now()
  * The deadline is written once at start (or re-anchored once at resume) and
  * never recomputed on reopen, so closing and reopening the browser can never
  * double-subtract elapsed time.
+ *
+ * Demo videos come from docs/video-library.js, loaded before this file.
+ * To swap an exercise's videos, change only its demo_ids list. Never invent
+ * a demo URL. Unknown ids are skipped.
  */
 
-/* ---------------- Exercise data (mirrors data/exercises.js) ----------------
- *
- * demo_ids reference entries in docs/video-library.js (loaded via a script
- * tag before this file). To swap an exercise's videos, change only its
- * demo_ids list, or edit the library itself. Never edit app logic to
- * change videos. Each list is resolved to full video objects on `demos`
- * at load time, so the rendering code below keeps working unchanged.
- */
 const SECTIONS = [
-  { id: 'warmup',    title: 'Warm-up',                     duration: '4 min',             block: 'foundation' },
-  { id: 'strength',  title: 'Strength',                    duration: '18 min · rest 30s',  block: 'accessory' },
-  { id: 'stability', title: 'Stability & shock absorbers', duration: '5 min',             block: 'foundation' },
-  { id: 'cooldown',  title: 'Cool-down',                   duration: '3 min',             block: 'foundation' },
+  { id: 'warmup',    title: 'Warm-up',                     block: 'foundation' },
+  { id: 'strength',  title: 'Strength',                    block: 'accessory' },
+  { id: 'stability', title: 'Stability & shock absorbers', block: 'foundation' },
+  { id: 'cooldown',  title: 'Cool-down',                   block: 'foundation' },
 ];
 
+/* Placeholder doses. The prompt was truncated before any set, rep, hold, or
+ * week progression, so every dose string in this catalog is a stand-in
+ * pending the PT's full program. */
 const EXERCISES = [
   { id: 'ankle-pumps-heel-slides', section: 'warmup',
     name: 'Ankle pumps + heel slides',
@@ -38,16 +37,29 @@ const EXERCISES = [
   { id: 'goblet-squat', section: 'strength',
     name: 'Goblet squat / dumbbell squat-to-bench',
     note: 'Hold one dumbbell at your chest. Use the bench as a depth target and keep every rep pain-free.',
-    dose: '3 × 8–10', muscle_groups: ['quads', 'glutes'], demo_ids: [] },
+    dose: '3 × 8 to 10', muscle_groups: ['quads', 'glutes'], demo_ids: [],
+    loaded_knee_flexion: true },
   { id: 'bulgarian-split-squat', section: 'strength',
     name: 'Bulgarian split squat',
     note: 'Keep the front foot planted and use a comfortable range. Start light and add load only with good control.',
-    dose: '3 × 8 each side', muscle_groups: ['quads', 'glutes'], demo_ids: [] },
+    dose: '3 × 8 each side', muscle_groups: ['quads', 'glutes'], demo_ids: [],
+    loaded_knee_flexion: true },
   { id: 'step-ups', section: 'strength',
     name: 'Step-ups with dumbbells',
     note: 'Drive through the working foot and lower slowly without dropping from the step.',
     dose: '3 × 8 each side', muscle_groups: ['quads', 'glutes'],
-    demo_ids: ['v-kneehaber-stepup'] },
+    demo_ids: ['v-kneehaber-stepup'],
+    loaded_knee_flexion: true },
+  { id: 'lateral-step-down', section: 'strength',
+    name: 'Lateral step-down',
+    note: 'Low step. Take 3 seconds to lower. A hand on the wall is fine.',
+    dose: '2 × 6 each side', muscle_groups: ['quads', 'glutes'], demo_ids: [],
+    loaded_knee_flexion: true },
+  { id: 'reverse-lunge', section: 'strength',
+    name: 'Reverse lunge',
+    note: 'Step backward, bodyweight. Keep the front knee tracking over the foot.',
+    dose: '2 × 6 each side', muscle_groups: ['quads', 'glutes'], demo_ids: [],
+    loaded_knee_flexion: true },
   { id: 'db-romanian-deadlift', section: 'strength',
     name: 'Dumbbell Romanian deadlift',
     note: 'Hinge at the hips with soft knees, a long spine, and the dumbbells close to your legs.',
@@ -59,22 +71,60 @@ const EXERCISES = [
     demo_ids: ['v-djkim-slrdl', 'v-pauli-slrdl', 'v-e3-slrdl'] },
   { id: 'straight-leg-raises', section: 'strength',
     name: 'Straight leg raises',
-    note: 'Lie flat, keep the working knee straight, and lift the heel slowly.',
+    note: 'Lie flat, keep the working knee straight, and lift the heel slowly. Skip it if the thigh cannot hold the leg up.',
     dose: '3 × 10 each leg', muscle_groups: ['quads'], demo_ids: [] },
   { id: 'glute-bridges', section: 'strength',
     name: 'Glute bridges',
-    note: 'Both feet down.',
+    note: 'Both feet down. Pause about 3 seconds at the top.',
     dose: '3 × 12', muscle_groups: ['glutes'], demo_ids: [] },
+  { id: 'tke-band', section: 'strength',
+    name: 'Terminal knee extension with band',
+    note: 'Anchor the band in front of the knee. Straighten the knee against the band without the hip taking over.',
+    dose: '2 × 10', muscle_groups: ['quads'], demo_ids: [] },
+  { id: 'clamshell', section: 'strength',
+    name: 'Clamshell',
+    note: 'Lie on your side with knees bent. Lift the top knee without rolling the hips back.',
+    dose: '2 × 8 each side', muscle_groups: ['glutes'], demo_ids: [] },
+  { id: 'side-lying-abduction', section: 'strength',
+    name: 'Side-lying hip abduction',
+    note: 'Lie on your side and lift the top leg with the toes level or slightly down. Do not roll the hips back.',
+    dose: '2 × 8 each side', muscle_groups: ['glutes'], demo_ids: [] },
+  { id: 'single-leg-bridge', section: 'strength',
+    name: 'Single-leg glute bridge',
+    note: 'One foot down and the other leg straight. Keep the hips level.',
+    dose: '2 × 8 each side', muscle_groups: ['glutes'], demo_ids: [] },
+  { id: 'band-side-step', section: 'strength',
+    name: 'Band side-step',
+    note: 'Band above the knees. Small steps, in a slight knee bend, not a deep squat.',
+    dose: '2 × 8 each way', muscle_groups: ['glutes'], demo_ids: [] },
+  { id: 'supported-split-squat', section: 'strength',
+    name: 'Supported split squat',
+    note: 'Hand on a wall or chair. Start with a short range and keep the front knee over the foot.',
+    dose: '3 × 6 each side', muscle_groups: ['quads', 'glutes'], demo_ids: [],
+    loaded_knee_flexion: true },
+  { id: 'calf-raise-single', section: 'strength',
+    name: 'Single-leg calf raise',
+    note: 'Hold a wall. The other foot can rest lightly until the working leg is steady.',
+    dose: '2 × 8 each side', muscle_groups: ['calves'], demo_ids: [] },
+  { id: 'calf-raise-bilateral', section: 'strength',
+    name: 'Calf raise, both feet',
+    note: 'Slow up and down. Hold a wall if you need balance.',
+    dose: '2 × 10', muscle_groups: ['calves'], demo_ids: [] },
+  { id: 'sit-to-stand-high', section: 'strength',
+    name: 'High-box sit-to-stand',
+    note: 'Use a high box or a high chair so the knee stays out of a deep bend. Hands on the thighs are fine.',
+    dose: '2 × 8', muscle_groups: ['quads', 'glutes'], demo_ids: [] },
   { id: 'spanish-squat-hold', section: 'stability',
     name: 'Spanish squat hold with band',
-    note: 'Anchor the band behind both knees and sit back into the hold. For more load, hold a dumbbell goblet-style.',
+    note: 'Anchor the band behind both knees. Keep the knee bend shallow. This is a low-load start, not a treatment for pain.',
     dose: '3 × 30 sec', muscle_groups: ['quads'],
     demo_ids: ['v-kneehaber-spanish'] },
   { id: 'split-squat-hold', section: 'stability',
     name: 'Split-squat hold',
     note: 'Hold a comfortable split-squat depth with the front foot fully planted and the torso tall.',
     dose: '~30 sec each side', muscle_groups: ['quads', 'glutes'],
-    demo_ids: ['v-kneehaber-split'] },
+    demo_ids: ['v-kneehaber-split'],
+    loaded_knee_flexion: true },
   { id: 'single-leg-balance-supported', section: 'stability',
     name: 'Single-leg balance (supported)',
     note: 'Hand on wall.',
@@ -103,34 +153,69 @@ const FEATURED_DEMOS = resolveDemoList(FEATURED_DEMO_IDS);
 
 /* Resolve every exercise's demo_ids into full video objects from the video
  * library (video-library.js must be loaded before this file). Unknown ids
- * are skipped so one bad id cannot blank the page. `demos` keeps working
- * for all rendering code below. */
+ * are skipped so one bad id cannot blank the page. */
 EXERCISES.forEach(function (ex) { ex.demos = resolveDemoList(ex.demo_ids); });
 
-/* ---------------- Phases (PT-approved 3-phase program, mirrors data/exercises.js) ----------------
+/* 3 phases x about 3 weeks each, 3 sessions per week (9 sessions per phase).
+ * A phase entry can override the catalog dose, supply week doses (1, 2, 3),
+ * replace the catalog note, or append a coaching cue. Week doses change one
+ * variable at a time. New exercises have empty demo_ids.
  *
- * 3 phases x ~3 weeks each, 3 sessions per week (9 sessions per phase).
- * Each phase lists its exercises in order; a phase entry can override the
- * catalog dose (dose), replace the catalog note (note), or append a
- * phase-specific coaching cue after the catalog note (note_append).
- * Demo URLs are never invented: exercises resolve demos from the video
- * library via demo_ids, and new exercises intentionally have an empty
- * demo_ids array.
+ * Placeholder doses and rules of thumb. Every dose override and every doses
+ * map below (sets, reps, holds, and week steps) is a stand-in pending
+ * professional confirmation. The prompt was truncated before those numbers.
+ *
+ * Phase 1 keeps deep loaded knee bending out (goblet squat, step-ups, split
+ * squat, lunge, step-down). High-box sit-to-stand is in Phase 1, as the
+ * summary listed it, because the box stays high. Sit-to-stand from a chair
+ * with no hands remains an advancement check as well.
+ *
+ * Phase titles. Phase 1 uses the prompt heading. The file ends before the
+ * Phase 2 and Phase 3 headings, so those names follow the prompt's own
+ * description: supported unilateral movements, then complex unilateral loading.
  */
 const SESSIONS_PER_PHASE = 9;
 
 const PHASES = [
   {
     id: 1,
-    name: 'Reactivate',
+    name: 'Stability & Tissue Tolerance',
     weeks: 'Weeks 1-3',
-    goal: 'Quad activation, range of motion, balance. No loaded knee bending.',
+    goal: 'Motor control and glute activation. Low-load holds are a starting point, not a treatment for pain. No deep, loaded knee bending. Weeks are minimums; the checklist decides when you move on.',
     exercises: [
       { exercise_id: 'ankle-pumps-heel-slides' },
-      { exercise_id: 'quad-sets' },
-      { exercise_id: 'straight-leg-raises' },
-      { exercise_id: 'glute-bridges' },
-      { exercise_id: 'single-leg-balance-supported' },
+      { exercise_id: 'quad-sets',
+        dose: '10 × 5-sec hold',
+        doses: { 1: '10 × 5-sec hold', 2: '10 × 8-sec hold', 3: '10 × 10-sec hold' } },
+      { exercise_id: 'straight-leg-raises',
+        dose: '2 × 8 each leg',
+        doses: { 1: '2 × 8 each leg', 2: '3 × 8 each leg', 3: '3 × 10 each leg' } },
+      { exercise_id: 'glute-bridges',
+        dose: '2 × 10, 3-sec hold',
+        doses: { 1: '2 × 10, 3-sec hold', 2: '3 × 10, 3-sec hold', 3: '3 × 12, 3-sec hold' } },
+      { exercise_id: 'tke-band',
+        dose: '2 × 10',
+        doses: { 1: '2 × 10', 2: '3 × 10', 3: '3 × 15' } },
+      { exercise_id: 'clamshell',
+        dose: '2 × 8 each side',
+        doses: { 1: '2 × 8 each side', 2: '3 × 8 each side', 3: '3 × 12 each side' } },
+      { exercise_id: 'side-lying-abduction',
+        dose: '2 × 8 each side',
+        doses: { 1: '2 × 8 each side', 2: '3 × 8 each side', 3: '3 × 12 each side' } },
+      { exercise_id: 'calf-raise-bilateral',
+        dose: '2 × 10',
+        doses: { 1: '2 × 10', 2: '3 × 10', 3: '3 × 15' },
+        note_append: 'Take extra time on the way down.' },
+      { exercise_id: 'sit-to-stand-high',
+        dose: '2 × 8',
+        doses: { 1: '2 × 8', 2: '3 × 8', 3: '3 × 10' } },
+      { exercise_id: 'spanish-squat-hold',
+        dose: '4 × 20 sec',
+        doses: { 1: '4 × 20 sec', 2: '4 × 30 sec', 3: '4 × 30 sec' },
+        note: 'Band behind both knees. Knee bend stays about 30 to 45 degrees. This is a low-load hold, not a treatment for pain.' },
+      { exercise_id: 'single-leg-balance-supported',
+        dose: '3 × 20 sec each side',
+        doses: { 1: '3 × 20 sec each side', 2: '3 × 25 sec each side', 3: '3 × 30 sec each side' } },
       { exercise_id: 'hamstring-stretch' },
       { exercise_id: 'calf-stretch' },
       { exercise_id: 'backward-walk', note_append: 'Slow. Only once normal forward walk feels steady.' },
@@ -138,38 +223,97 @@ const PHASES = [
   },
   {
     id: 2,
-    name: 'Reload',
+    name: 'Supported Unilateral',
     weeks: 'Weeks 4-6',
-    goal: 'Reintroduce loaded patterns. Bilateral before unilateral.',
+    goal: 'Supported single-leg work. Reduce hand support before you add load, and do not add range and load in the same week. If you can test it, quadriceps strength near 80 percent of the other side is a useful check before Phase 3, not a required box. Weeks are minimums; the checklist decides when you move on.',
     exercises: [
       { exercise_id: 'ankle-pumps-heel-slides' },
-      { exercise_id: 'quad-sets' },
-      { exercise_id: 'goblet-squat', dose: '3 × 8', note_append: 'Light load. Phase 2 dose.' },
-      { exercise_id: 'step-ups', dose: '3 × 8 each side', note_append: 'Low step, bodyweight to light dumbbells.' },
-      { exercise_id: 'db-romanian-deadlift', dose: '3 × 10', note_append: 'Light load.' },
-      { exercise_id: 'spanish-squat-hold', dose: '3 × 20 sec' },
-      { exercise_id: 'split-squat-hold', dose: '~20 sec each side' },
-      { exercise_id: 'single-leg-rdl', dose: '3 × 6 each side', note_append: 'Bodyweight with wall support.' },
+      { exercise_id: 'quad-sets',
+        dose: '15 × 5-sec hold',
+        doses: { 1: '15 × 5-sec hold', 2: '15 × 8-sec hold', 3: '15 × 10-sec hold' } },
+      { exercise_id: 'goblet-squat',
+        dose: '3 × 6',
+        doses: { 1: '3 × 6', 2: '3 × 8', 3: '3 × 8, a little more load' },
+        note_append: 'Light load to a box, about 60 degrees. Add load only in a later week, and do not add depth in that same week.' },
+      { exercise_id: 'step-ups',
+        dose: '3 × 6 each side',
+        doses: { 1: '3 × 6 each side', 2: '3 × 8 each side', 3: '3 × 8 each side, less hand support' },
+        note_append: 'Low step, about 10 to 15 cm, bodyweight. Reduce hand support before you add dumbbells.' },
+      { exercise_id: 'supported-split-squat',
+        dose: '3 × 6 each side, short range',
+        doses: {
+          1: '3 × 6 each side, short range',
+          2: '3 × 8 each side, short range',
+          3: '3 × 8 each side, a little more range',
+        } },
+      { exercise_id: 'single-leg-rdl',
+        dose: '3 × 6 each side',
+        doses: { 1: '3 × 6 each side', 2: '3 × 8 each side', 3: '3 × 8 each side, fingertip support' },
+        note_append: 'Kickstand stance, back toes down, with a hand on the wall. Reduce support before you add a dumbbell.' },
+      { exercise_id: 'single-leg-bridge',
+        dose: '2 × 8 each side',
+        doses: { 1: '2 × 8 each side', 2: '3 × 8 each side', 3: '3 × 10 each side' } },
+      { exercise_id: 'band-side-step',
+        dose: '2 × 8 each way',
+        doses: { 1: '2 × 8 each way', 2: '3 × 8 each way', 3: '3 × 10 each way' } },
+      { exercise_id: 'calf-raise-single',
+        dose: '2 × 8 each side',
+        doses: { 1: '2 × 8 each side, hand on the wall', 2: '3 × 8 each side, hand on the wall', 3: '3 × 10 each side, lighter hand support' } },
+      { exercise_id: 'single-leg-balance-supported',
+        dose: '3 × 20 sec each side',
+        doses: { 1: '3 × 20 sec each side', 2: '3 × 30 sec each side', 3: '3 × 30 sec each side, less hand support' } },
       { exercise_id: 'hamstring-stretch' },
       { exercise_id: 'calf-stretch' },
       { exercise_id: 'backward-walk' },
     ],
   },
   {
+    /* Placeholder phase. The prompt was truncated before Phase 3, so this
+     * list and its doses are not from the PT's full program. */
     id: 3,
-    name: 'Return',
+    name: 'Complex Unilateral Loading',
     weeks: 'Weeks 7-9',
-    goal: 'The full routine. Bulgarian split squats enter here.',
+    goal: 'Complex single-leg loading. The Bulgarian split squat starts here at bodyweight. Do not add range and load in the same week. No running or plyometrics, and no deep squats below parallel, until you are cleared for them separately.',
     exercises: [
       { exercise_id: 'ankle-pumps-heel-slides' },
       { exercise_id: 'quad-sets' },
-      { exercise_id: 'goblet-squat' },
-      { exercise_id: 'bulgarian-split-squat' },
-      { exercise_id: 'step-ups' },
-      { exercise_id: 'db-romanian-deadlift' },
-      { exercise_id: 'single-leg-rdl' },
-      { exercise_id: 'spanish-squat-hold' },
-      { exercise_id: 'split-squat-hold' },
+      { exercise_id: 'goblet-squat',
+        dose: '3 × 8',
+        doses: { 1: '3 × 8', 2: '3 × 10', 3: '3 × 10, a little deeper only if the last week was quiet' },
+        note_append: 'Do not add depth and load in the same week.' },
+      { exercise_id: 'bulgarian-split-squat',
+        dose: '3 × 6 each side',
+        doses: {
+          1: '3 × 6 each side',
+          2: '3 × 8 each side',
+          /* Placeholder: week-3 dumbbells are not from the PT's full program. */
+          3: '3 × 8 each side, light dumbbells if the last week was quiet',
+        },
+        note_append: 'Bodyweight, low rear foot first. Add dumbbells only after 3 × 8 is clean and the next day is quiet.' },
+      { exercise_id: 'lateral-step-down',
+        dose: '2 × 6 each side',
+        doses: { 1: '2 × 6 each side', 2: '3 × 6 each side', 3: '3 × 8 each side' } },
+      { exercise_id: 'reverse-lunge',
+        dose: '2 × 6 each side',
+        doses: { 1: '2 × 6 each side', 2: '3 × 6 each side', 3: '3 × 8 each side' } },
+      { exercise_id: 'step-ups',
+        dose: '3 × 8 each side',
+        doses: { 1: '3 × 8 each side', 2: '3 × 10 each side', 3: '3 × 10 each side, light dumbbells' } },
+      { exercise_id: 'db-romanian-deadlift',
+        dose: '3 × 8',
+        doses: { 1: '3 × 8', 2: '3 × 10', 3: '3 × 10, slightly heavier' } },
+      { exercise_id: 'single-leg-rdl',
+        dose: '3 × 6 each side',
+        doses: { 1: '3 × 6 each side', 2: '3 × 8 each side', 3: '3 × 8 each side, light dumbbell' } },
+      { exercise_id: 'spanish-squat-hold',
+        dose: '3 × 30 sec',
+        doses: { 1: '3 × 30 sec', 2: '4 × 30 sec', 3: '4 × 40 sec' } },
+      { exercise_id: 'split-squat-hold',
+        dose: '30 sec each side',
+        doses: { 1: '30 sec each side', 2: '40 sec each side', 3: '40 sec each side, less support' } },
+      { exercise_id: 'calf-raise-single',
+        dose: '3 × 8 each side',
+        doses: { 1: '3 × 8 each side', 2: '3 × 10 each side', 3: '3 × 12 each side' } },
       { exercise_id: 'hamstring-stretch' },
       { exercise_id: 'calf-stretch' },
       { exercise_id: 'backward-walk' },
@@ -177,19 +321,37 @@ const PHASES = [
   },
 ];
 
-/* Advancement checklist: the user must confirm every item before the
- * "advance to the next phase" action is allowed. */
-const ADVANCEMENT_CHECKLIST = [
-  { id: 'no-swelling', label: 'No swelling after sessions' },
-  { id: 'pain-ok', label: 'Pain 2/10 or less during, zero the next morning' },
+/* Shared checks stay on the same ids so older saves still match.
+ * Phase 1 adds extension and a sit-to-stand test. Phase 2 adds split-squat
+ * control and even weight in a squat. Symptom scores never tick these. */
+const SHARED_CHECKLIST = [
+  { id: 'no-swelling', label: 'No increase in swelling 24 hours after sessions' },
+  { id: 'pain-ok', label: 'Pain at or below 2/10 during, and it settles to 2/10 or less within 24 hours' },
   { id: 'good-control', label: 'Every set completed with good control' },
 ];
 
+const PHASE_CHECKLISTS = {
+  1: SHARED_CHECKLIST.concat([
+    { id: 'full-extension', label: 'Full knee extension, with no quad lag on a straight leg raise' },
+    { id: 'sit-to-stand', label: 'Sit to stand from a chair with no hands and no knee collapse' },
+  ]),
+  2: SHARED_CHECKLIST.concat([
+    { id: 'split-squat-control', label: 'Supported split squat to about 90 degrees with no knee caving in' },
+    { id: 'even-squat', label: 'Even weight on both legs in a squat' },
+    { id: 'step-down-control', label: 'Lateral step-down with no more than one form fault' },
+    { id: 'no-flare', label: 'No flare for the last 2 weeks' },
+  ]),
+};
+
 const EXERCISE_BY_ID = new Map(EXERCISES.map(e => [e.id, e]));
 
-/* Resolve a phase into its concrete program: the phase's ordered exercises
- * with catalog fields merged and phase-specific doses/notes applied. */
-function resolvePhase(phaseId) {
+function checklistForPhase(phaseId) {
+  return PHASE_CHECKLISTS[normalizePhase(phaseId)] || null;
+}
+
+/* Resolve a phase into its concrete program. `week` selects doses[week]
+ * when that entry exists; otherwise the phase dose, then the catalog dose. */
+function resolvePhase(phaseId, week) {
   const phase = PHASES.find(p => p.id === phaseId);
   if (!phase) throw new Error('unknown phase: ' + phaseId);
   const exercises = phase.exercises.map((entry, i) => {
@@ -199,8 +361,9 @@ function resolvePhase(phaseId) {
     if (entry.note_append) note = note + ' ' + entry.note_append;
     return {
       id: base.id, section: base.section, name: base.name, note,
-      dose: entry.dose !== undefined ? entry.dose : base.dose,
+      dose: doseForEntry(entry, base, week),
       muscle_groups: base.muscle_groups, demos: base.demos, order: i,
+      loaded_knee_flexion: base.loaded_knee_flexion === true,
     };
   });
   return {
@@ -209,12 +372,30 @@ function resolvePhase(phaseId) {
   };
 }
 
+function doseForEntry(entry, base, week) {
+  const w = Number(week);
+  if ((w === 1 || w === 2 || w === 3) && entry.doses && entry.doses[w] != null && entry.doses[w] !== '') {
+    return entry.doses[w];
+  }
+  if (entry.dose !== undefined) return entry.dose;
+  return base.dose;
+}
+
+/* Week 1 is sessions 0-2, week 2 is 3-5, week 3 is 6 and above.
+ * The count is the real (uncapped) number of sessions that still count. */
+function phaseWeek(sessionCount) {
+  const n = Math.max(0, Math.floor(Number(sessionCount) || 0));
+  return Math.min(3, Math.floor(n / 3) + 1);
+}
+
 /* ---------------- Constants & store ---------------- */
 const SESSION_MS = 30 * 60 * 1000;
 const LS_KEY = 'awc-demo-v1';
 const STORE_VERSION = 2;
+const BACKUP_KEEP = 3;
 const NOTICE_CORRUPT = 'Saved data could not be read, so progress was reset to a fresh start.';
 const NOTICE_PARTIAL = 'Some saved data was unreadable and was reset. The rest of your progress was kept.';
+const BACKUP_NOTICE = 'A backup of your previous save was stored in this browser.';
 const THIRD_DAYS = ['none', 'fri-morning', 'fri-night', 'sat-morning'];
 const DOWS = ['Tue', 'Wed', 'Thu', 'Fri', 'Sat']; // Tue-Sat only: Sundays are for church, Mondays are rest
 
@@ -225,6 +406,8 @@ let bootNeedsBackup = false;
 let renderedDayKey = null;
 let pendingPhase = null;
 let pendingPhaseMessage = null;
+let pendingAdvance = false;
+let checkinMode = null;
 let booted = false;
 let messageTimer = null;
 
@@ -338,11 +521,16 @@ function remainingMs(session, now) {
   if (s.state === 'paused' || s.state === 'expired') return Math.max(0, s.remainingMs || 0);
   return Math.max(0, s.deadline - t);
 }
+function hasClearance(state) {
+  const c = state && state.clearance;
+  return !!(c && c.accepted === true && isDayKey(c.date));
+}
 function canStartSession(state) {
   const session = state.session;
   if (session && session.state === 'paused') return { ok: true, action: 'resume' };
   if (session && session.state === 'running') return { ok: false, reason: 'already-running' };
   if (session && session.state === 'expired') return { ok: false, reason: 'expired' };
+  if (!hasClearance(state)) return { ok: false, reason: 'no-clearance' };
   if (!isGymDayKey(state.activeDay, state.thirdDay)) return { ok: false, reason: 'not-gym-day' };
   return { ok: true, action: 'start' };
 }
@@ -374,11 +562,20 @@ function applyCompletion(state) {
   state.checks = {};
   return { ok: true, already: already, day: day, phase: phase };
 }
+function unlockedPhaseOf(state) {
+  const current = normalizePhase(state.phase);
+  const n = Number(state.unlockedPhase);
+  const unlocked = (n === 1 || n === 2 || n === 3) ? n : current;
+  return Math.max(current, unlocked);
+}
+/* Moving down is always allowed. Moving up to a phase Advance has already
+ * unlocked is allowed. Anything past that goes through advancePhase. */
 function phaseChangeDecision(state, nextPhase) {
   const current = normalizePhase(state.phase);
   const next = Number(nextPhase);
   if (!PHASES.some(p => p.id === next)) return { action: 'noop' };
   if (next === current) return { action: 'noop' };
+  if (next > current && next > unlockedPhaseOf(state)) return { action: 'advance' };
   if (sessionIsActive(state.session)) return { action: 'confirm', phase: next };
   return { action: 'apply', phase: next };
 }
@@ -391,8 +588,190 @@ function applyPhaseChange(state, nextPhase) {
   return state;
 }
 function checklistReady(checklist, phaseId) {
+  const items = checklistForPhase(phaseId);
+  if (!items || !items.length) return false;
   const c = (checklist && checklist[String(phaseId)]) || {};
-  return ADVANCEMENT_CHECKLIST.every(item => c[item.id] === true);
+  return items.every(item => c[item.id] === true);
+}
+function clampPain(value) {
+  if (typeof value === 'boolean' || value == null || value === '') return null;
+  const n = Number(value);
+  if (!Number.isFinite(n) || n < 0 || n > 10) return null;
+  return Math.round(n);
+}
+/* Rule of thumb, pending professional confirmation. Pain at or below 2/10
+ * that is still at or below 2 the next morning has settled within 24 hours
+ * and is acceptable. Pain above 2 during the session, pain above 2 the next
+ * morning, or next-morning swelling is a flag. */
+function symptomFlagged(record) {
+  if (!record || typeof record !== 'object') return false;
+  const during = Number(record.painDuring);
+  if (Number.isFinite(during) && during > 2) return true;
+  if (record.swellingNext === true) return true;
+  if (record.painNext != null && record.painNext !== '' && Number(record.painNext) > 2) return true;
+  return false;
+}
+function symptomStatus(record) {
+  if (!record || typeof record !== 'object') return 'pending';
+  if (symptomFlagged(record)) return 'flag';
+  if (record.painNext == null || record.swellingNext == null) return 'pending';
+  return 'clean';
+}
+function symptomRecords(state, phaseId) {
+  const symptoms = state && isPlainObject(state.symptoms) ? state.symptoms : {};
+  const phase = phaseId == null ? null : normalizePhase(phaseId);
+  return Object.keys(symptoms).filter(isDayKey).sort().map(day => {
+    return { day: day, record: symptoms[day] };
+  }).filter(row => {
+    if (!isPlainObject(row.record)) return false;
+    if (phase == null) return true;
+    return Number(row.record.phase) === phase;
+  });
+}
+/* Flagged sessions, and sessions still waiting on the morning check, do not
+ * move the week. Sessions with no symptom record still count (older saves). */
+function weekCredit(state, phaseId) {
+  const phase = normalizePhase(phaseId);
+  const total = Math.max(0, Math.floor(Number(state.phaseSessions && state.phaseSessions[phase]) || 0));
+  const held = symptomRecords(state, phase).filter(row => {
+    const status = symptomStatus(row.record);
+    return status === 'flag' || status === 'pending';
+  }).length;
+  return Math.max(0, total - held);
+}
+function programWeek(state, phaseId) {
+  return phaseWeek(weekCredit(state, phaseId));
+}
+/* Two flagged sessions in a row, skipping any still waiting on the morning
+ * check. A later clean session clears the lock. */
+function consecutiveFlagLock(state, phaseId) {
+  const rows = symptomRecords(state, phaseId).filter(row => symptomStatus(row.record) !== 'pending');
+  if (rows.length < 2) return false;
+  return symptomStatus(rows[rows.length - 1].record) === 'flag'
+    && symptomStatus(rows[rows.length - 2].record) === 'flag';
+}
+function advanceDecision(state) {
+  const phase = normalizePhase(state.phase);
+  if (phase >= 3) return { ok: false, reason: 'last-phase' };
+  const have = Math.max(0, Math.floor(Number(state.phaseSessions && state.phaseSessions[phase]) || 0));
+  if (have < SESSIONS_PER_PHASE) return { ok: false, reason: 'sessions', have: have, need: SESSIONS_PER_PHASE };
+  if (!checklistReady(state.checklist, phase)) return { ok: false, reason: 'checklist' };
+  if (consecutiveFlagLock(state, phase)) return { ok: false, reason: 'symptoms' };
+  return { ok: true, next: phase + 1 };
+}
+function grantAdvance(state, at) {
+  const decision = advanceDecision(state);
+  if (!decision.ok) return decision;
+  const from = normalizePhase(state.phase);
+  const priorUnlock = unlockedPhaseOf(state);
+  applyPhaseChange(state, decision.next);
+  state.unlockedPhase = Math.max(priorUnlock, decision.next);
+  if (!Array.isArray(state.history)) state.history = [];
+  state.history.push({
+    type: 'advance',
+    from: from,
+    to: decision.next,
+    at: at == null ? null : String(at),
+  });
+  return { ok: true, from: from, to: decision.next };
+}
+function advanceReason(decision) {
+  if (!decision || decision.ok) return 'Checklist complete and 9 sessions logged. Advance when you are ready.';
+  if (decision.reason === 'sessions') {
+    const have = Math.max(0, Math.floor(Number(decision.have) || 0));
+    if (have >= SESSIONS_PER_PHASE) return 'This phase has reached 9 of 9 sessions.';
+    return 'Logged ' + have + ' of 9 sessions in this phase. Advance stays off until you reach 9.';
+  }
+  if (decision.reason === 'checklist') return 'Confirm every checklist item before advancing.';
+  if (decision.reason === 'symptoms') {
+    return 'Advance is paused after two flagged sessions in a row. It stays off until a later session is clean.';
+  }
+  return '';
+}
+function symptomAdvice(state) {
+  const phase = normalizePhase(state.phase);
+  const rows = symptomRecords(state, phase);
+  const latest = rows.length ? rows[rows.length - 1].record : null;
+  const locked = consecutiveFlagLock(state, phase);
+  const swelling = locked
+    ? rows.filter(row => symptomStatus(row.record) !== 'pending').slice(-2).some(row => row.record.swellingNext === true)
+    : !!(latest && symptomStatus(latest) === 'flag' && latest.swellingNext === true);
+  if (locked) {
+    const change = swelling
+      ? 'Morning swelling: cut volume by about 30%.'
+      : 'Repeat this week or reduce your sets.';
+    return 'Two flagged sessions in a row. ' + change + ' Advance stays off until a later session is clean. Doses are not changed for you.';
+  }
+  if (latest && symptomStatus(latest) === 'flag') {
+    if (swelling) {
+      return 'This session is flagged. Morning swelling: cut volume by about 30%. The listed doses are not changed for you.';
+    }
+    return 'This session is flagged. Repeat this week or reduce your sets. The listed doses stay the same.';
+  }
+  return '';
+}
+/* Morning questions belong to a later calendar day, not the workout itself. */
+function pendingMorning(state, today) {
+  const todayKey = dayKey(today instanceof Date ? today : new Date(today || Date.now()));
+  const rows = symptomRecords(state, null).filter(row => {
+    if (row.day >= todayKey) return false;
+    return row.record.painNext == null || row.record.swellingNext == null;
+  });
+  return rows.length ? rows[rows.length - 1] : null;
+}
+function applyMorningCheck(state, day, painNext, swellingNext) {
+  const pain = clampPain(painNext);
+  if (pain == null) return { ok: false, reason: 'pain-next' };
+  if (swellingNext !== true && swellingNext !== false) return { ok: false, reason: 'swelling-next' };
+  if (!isDayKey(day) || !isPlainObject(state.symptoms) || !isPlainObject(state.symptoms[day])) {
+    return { ok: false, reason: 'no-record' };
+  }
+  state.symptoms[day].painNext = pain;
+  state.symptoms[day].swellingNext = swellingNext;
+  const status = symptomStatus(state.symptoms[day]);
+  return { ok: true, status: status, flagged: status === 'flag', day: day };
+}
+/* Stores the check-in, then logs the day. Refuses before it writes when the
+ * pain score or an included morning follow-up is invalid. Does not tick the
+ * checklist and does not rewrite dose text. */
+function applySessionCheckin(state, input) {
+  const session = state.session;
+  if (!sessionIsActive(session)) return { ok: false, reason: 'no-session' };
+  const day = session.day;
+  if (!isGymDayKey(day, state.thirdDay)) return { ok: false, reason: 'not-gym-day', day: day };
+  const painDuring = clampPain(input && input.painDuring);
+  if (painDuring == null) return { ok: false, reason: 'pain-during' };
+  let morningPatch = null;
+  if (input && input.morningDay) {
+    const painNext = clampPain(input.painNext);
+    if (painNext == null) return { ok: false, reason: 'pain-next' };
+    if (input.swellingNext !== true && input.swellingNext !== false) return { ok: false, reason: 'swelling-next' };
+    if (!isDayKey(input.morningDay) || !isPlainObject(state.symptoms) || !isPlainObject(state.symptoms[input.morningDay])) {
+      return { ok: false, reason: 'no-record' };
+    }
+    morningPatch = { day: input.morningDay, painNext: painNext, swellingNext: input.swellingNext };
+  }
+  if (!isPlainObject(state.symptoms)) state.symptoms = {};
+  state.symptoms[day] = {
+    painDuring: painDuring,
+    painNext: null,
+    swellingNext: null,
+    phase: normalizePhase(state.phase),
+  };
+  if (morningPatch) {
+    state.symptoms[morningPatch.day].painNext = morningPatch.painNext;
+    state.symptoms[morningPatch.day].swellingNext = morningPatch.swellingNext;
+  }
+  const logged = applyCompletion(state);
+  const status = symptomStatus(state.symptoms[day]);
+  return {
+    ok: logged.ok,
+    already: logged.already,
+    day: logged.day,
+    phase: logged.phase,
+    symptom: status,
+    flagged: status === 'flag',
+  };
 }
 
 function defaultStore(now) {
@@ -511,18 +890,68 @@ function sanitizeSession(raw, present) {
     repaired: repaired,
   };
 }
-function sanitizeJsonObject(raw, present, fallback, nullIsValid) {
-  if (!present) return { value: fallback, repaired: false };
-  if (raw == null) return { value: fallback, repaired: !nullIsValid };
-  if (!isPlainObject(raw)) return { value: fallback, repaired: true };
-  try { return { value: JSON.parse(JSON.stringify(raw)), repaired: false }; }
-  catch (e) { return { value: fallback, repaired: true }; }
+function sanitizeSymptoms(raw, present) {
+  if (!present) return { value: {}, repaired: false };
+  if (raw == null) return { value: {}, repaired: false };
+  if (!isPlainObject(raw)) return { value: {}, repaired: true };
+  const out = {};
+  let repaired = false;
+  Object.keys(raw).forEach(day => {
+    const rec = raw[day];
+    if (!isDayKey(day) || !isPlainObject(rec)) { repaired = true; return; }
+    const painDuring = clampPain(rec.painDuring);
+    if (painDuring == null) { repaired = true; return; }
+    let painNext = null;
+    if (rec.painNext != null && rec.painNext !== '') {
+      painNext = clampPain(rec.painNext);
+      if (painNext == null) { repaired = true; return; }
+    }
+    let swelling = null;
+    if (rec.swellingNext === true || rec.swellingNext === false) swelling = rec.swellingNext;
+    else if (rec.swellingNext != null) { repaired = true; return; }
+    let phase = null;
+    if (rec.phase === 1 || rec.phase === 2 || rec.phase === 3) phase = rec.phase;
+    else if (rec.phase != null) repaired = true;
+    const clean = { painDuring: painDuring, painNext: painNext, swellingNext: swelling, phase: phase };
+    const same = rec.painDuring === painDuring
+      && (rec.painNext == null ? null : rec.painNext) === painNext
+      && (rec.swellingNext == null ? null : rec.swellingNext) === swelling
+      && (rec.phase == null ? null : rec.phase) === phase
+      && Object.keys(rec).length === 4;
+    if (!same) repaired = true;
+    out[day] = clean;
+  });
+  return { value: out, repaired: repaired };
+}
+function sanitizeClearance(raw, present) {
+  if (!present || raw == null) return { value: null, repaired: false };
+  if (!isPlainObject(raw) || raw.accepted !== true || !isDayKey(raw.date)) {
+    return { value: null, repaired: true };
+  }
+  const clean = { accepted: true, date: raw.date };
+  const extra = Object.keys(raw).some(key => key !== 'accepted' && key !== 'date');
+  return { value: clean, repaired: extra };
 }
 function sanitizeHistory(raw, present) {
   if (!present || raw == null) return { value: [], repaired: false };
   if (!Array.isArray(raw)) return { value: [], repaired: true };
-  try { return { value: JSON.parse(JSON.stringify(raw)), repaired: false }; }
-  catch (e) { return { value: [], repaired: true }; }
+  const out = [];
+  let repaired = false;
+  raw.forEach(item => {
+    if (!isPlainObject(item) || item.type !== 'advance') { repaired = true; return; }
+    const from = Number(item.from);
+    const to = Number(item.to);
+    if ((from !== 1 && from !== 2 && from !== 3) || (to !== 1 && to !== 2 && to !== 3)) {
+      repaired = true;
+      return;
+    }
+    const at = typeof item.at === 'string' ? item.at : null;
+    if (item.at != null && typeof item.at !== 'string') repaired = true;
+    const extra = Object.keys(item).some(key => key !== 'type' && key !== 'from' && key !== 'to' && key !== 'at');
+    if (extra || item.from !== from || item.to !== to) repaired = true;
+    out.push({ type: 'advance', from: from, to: to, at: at });
+  });
+  return { value: out, repaired: repaired };
 }
 function hasOwn(raw, key) {
   return Object.prototype.hasOwnProperty.call(raw, key);
@@ -565,8 +994,8 @@ function migrate(raw, now) {
   const dayInfo = sanitizeActiveDay(raw.activeDay, hasOwn(raw, 'activeDay'), today);
   const thirdInfo = sanitizeThirdDay(raw.thirdDay, hasOwn(raw, 'thirdDay'));
   const sessionInfo = sanitizeSession(raw.session, hasOwn(raw, 'session'));
-  const symptomsInfo = sanitizeJsonObject(raw.symptoms, hasOwn(raw, 'symptoms'), {}, false);
-  const clearanceInfo = sanitizeJsonObject(raw.clearance, hasOwn(raw, 'clearance'), null, true);
+  const symptomsInfo = sanitizeSymptoms(raw.symptoms, hasOwn(raw, 'symptoms'));
+  const clearanceInfo = sanitizeClearance(raw.clearance, hasOwn(raw, 'clearance'));
   const historyInfo = sanitizeHistory(raw.history, hasOwn(raw, 'history'));
 
   [checksInfo, collapsedInfo, completionsInfo, checklistInfo, dayInfo, thirdInfo, sessionInfo, symptomsInfo, clearanceInfo, historyInfo].forEach(info => {
@@ -622,6 +1051,33 @@ function backupRawBeforeSave(storage, rawString, now) {
   const key = rawBackupKey(now);
   storage.setItem(key, rawString);
   return key;
+}
+function backupStamp(key) {
+  const prefix = LS_KEY + '.bak-';
+  if (typeof key !== 'string' || key.indexOf(prefix) !== 0) return null;
+  const n = Number(key.slice(prefix.length));
+  return Number.isFinite(n) ? n : null;
+}
+function listBackupKeys(storage) {
+  const keys = [];
+  if (!storage || typeof storage.length !== 'number' || typeof storage.key !== 'function') return keys;
+  for (let i = 0; i < storage.length; i++) {
+    const key = storage.key(i);
+    if (backupStamp(key) != null) keys.push(key);
+  }
+  keys.sort((a, b) => backupStamp(b) - backupStamp(a));
+  return keys;
+}
+/* Keep the newest backups and drop the rest. */
+function pruneBackups(storage, keep) {
+  const limit = keep == null ? BACKUP_KEEP : keep;
+  const keys = listBackupKeys(storage);
+  const removed = [];
+  keys.slice(Math.max(0, limit)).forEach(key => {
+    storage.removeItem(key);
+    removed.push(key);
+  });
+  return { kept: keys.slice(0, Math.max(0, limit)), removed: removed };
 }
 /* The on-screen target and any later goal check stop at 9. Storage does not. */
 function cappedSessionCount(count) {
@@ -693,7 +1149,8 @@ function currentPhaseId() {
   return normalizePhase(store.phase);
 }
 function currentProgram() {
-  return resolvePhase(currentPhaseId()).exercises;
+  const phase = currentPhaseId();
+  return resolvePhase(phase, programWeek(store, phase)).exercises;
 }
 function checkedCount() {
   return currentProgram().filter(e => store.checks[e.id]).length;
@@ -710,6 +1167,7 @@ function gymDows() {
 }
 function showMessage(text) {
   const el = $('sessionMessage');
+  if (!el) return;
   el.textContent = text;
   el.classList.add('show');
   if (messageTimer) clearTimeout(messageTimer);
@@ -720,7 +1178,10 @@ function showMessage(text) {
 function startSession() {
   const decision = canStartSession(store);
   if (!decision.ok) {
-    if (decision.reason === 'not-gym-day') {
+    if (decision.reason === 'no-clearance') {
+      showMessage('Confirm training clearance before you start a session.');
+      openClearance();
+    } else if (decision.reason === 'not-gym-day') {
       showMessage('Pick a gym day before starting. This program trains Tuesday, Thursday, and your optional third day.');
     }
     return;
@@ -759,11 +1220,19 @@ function resumeSession() {
   renderAll();
 }
 
+function hideCheckin() {
+  checkinMode = null;
+  const modal = $('checkinModal');
+  if (modal) modal.hidden = true;
+}
+
 function endSession(message) {
   store.session = null;
   store.checks = {};
   pendingPhase = null;
   pendingPhaseMessage = null;
+  pendingAdvance = false;
+  hideCheckin();
   save();
   renderAll();
   if (message) showMessage(message);
@@ -787,24 +1256,97 @@ function discardExpired() {
   endSession('Session discarded. Nothing was logged.');
 }
 
-function completeWorkout() {
-  const result = applyCompletion(store);
-  if (!result.ok) {
-    if (result.reason === 'no-session') {
-      showMessage('Start a session before logging a workout.');
-    } else if (result.reason === 'not-gym-day') {
-      const when = isDayKey(result.day) ? prettyDay(result.day) : 'that day';
-      showMessage('Nothing was logged. This program does not train on ' + when + '.');
-    }
+function openFinishCheckin() {
+  if (!sessionIsActive(store.session)) {
+    showMessage('Start a session before logging a workout.');
     renderAll();
     return;
   }
-  pendingPhase = null;
-  pendingPhaseMessage = null;
+  if (!isGymDayKey(store.session.day, store.thirdDay)) {
+    const when = isDayKey(store.session.day) ? prettyDay(store.session.day) : 'that day';
+    showMessage('Nothing was logged. This program does not train on ' + when + '.');
+    return;
+  }
+  openCheckin('finish');
+}
+
+function openCheckin(mode) {
+  checkinMode = mode;
+  const modal = $('checkinModal');
+  if (!modal) return;
+  const morning = pendingMorning(store, new Date());
+  const sessionDay = store.session && store.session.day;
+  const showMorning = mode === 'morning' || (morning && morning.day !== sessionDay);
+  const follow = morning && showMorning ? morning : (mode === 'morning' ? pendingMorning(store, new Date()) : null);
+  $('checkinTitle').textContent = mode === 'morning' ? 'Next-morning check-in' : 'Session check-in';
+  $('painDuringWrap').hidden = mode === 'morning';
+  $('painDuring').value = '';
+  $('morningFields').hidden = !follow;
+  if (follow) {
+    $('morningPrompt').textContent = 'For ' + prettyDay(follow.day) + ': how did the knee feel this morning?';
+    $('morningFields').setAttribute('data-day', follow.day);
+    $('swellingNext').value = '';
+    $('painNext').value = '';
+  } else {
+    $('morningFields').removeAttribute('data-day');
+  }
+  $('checkinLead').textContent = mode === 'morning'
+    ? 'Pain at or below 2 out of 10 that settles by this morning is acceptable. Swelling is a reason to cut volume by about 30%. This does not change your doses.'
+    : 'Pain at or below 2 out of 10 that settles by the next morning is acceptable. The score is stored in this browser only.';
+  $('btnCheckinSave').textContent = mode === 'morning' ? 'Save morning check-in' : 'Save and log workout';
+  modal.hidden = false;
+}
+
+function saveCheckin() {
+  if (checkinMode === 'morning') {
+    const day = $('morningFields').getAttribute('data-day');
+    const swelling = $('swellingNext').value;
+    const result = applyMorningCheck(
+      store,
+      day,
+      $('painNext').value,
+      swelling === 'yes' ? true : swelling === 'no' ? false : null
+    );
+    if (!result.ok) {
+      showMessage('Choose swelling and a morning pain score from 0 to 10.');
+      return;
+    }
+    hideCheckin();
+    save();
+    renderAll();
+    const advice = symptomAdvice(store);
+    showMessage(advice || ('Morning check saved for ' + prettyDay(result.day) + '.'));
+    return;
+  }
+  const payload = { painDuring: $('painDuring').value };
+  if (!$('morningFields').hidden) {
+    const swellingValue = $('swellingNext').value;
+    const painNext = $('painNext').value;
+    const morningReady = (swellingValue === 'yes' || swellingValue === 'no') && painNext !== '';
+    if (morningReady) {
+      payload.morningDay = $('morningFields').getAttribute('data-day');
+      payload.painNext = painNext;
+      payload.swellingNext = swellingValue === 'yes';
+    }
+  }
+  const result = applySessionCheckin(store, payload);
+  if (!result.ok) {
+    if (result.reason === 'pain-during') showMessage('Choose a pain score from 0 to 10 before logging.');
+    else if (result.reason === 'pain-next' || result.reason === 'swelling-next') {
+      showMessage('Finish the morning questions, or they stay for your next visit.');
+    } else if (result.reason === 'no-session') showMessage('Start a session before logging a workout.');
+    else if (result.reason === 'not-gym-day') showMessage('Nothing was logged. This program does not train on that day.');
+    return;
+  }
+  hideCheckin();
   save();
   renderAll();
-  if (result.already) showMessage('Already logged for ' + prettyDay(result.day) + '. This day counts once.');
-  else showMessage('Workout complete: logged for ' + prettyDay(result.day) + '. Nice work.');
+  let text = result.already
+    ? 'Already logged for ' + prettyDay(result.day) + '. This day counts once.'
+    : 'Workout complete: logged for ' + prettyDay(result.day) + '.';
+  const advice = symptomAdvice(store);
+  if (advice) text = text + ' ' + advice;
+  showMessage(text);
 }
 
 function toggleCheck(id) {
@@ -825,31 +1367,40 @@ function confirmClear() {
   endSession('Session cleared: timer, checkboxes, and progress reset.');
 }
 
+function somethingWrong() {
+  endSession('Session stopped. Nothing was logged. Contact your clinician before you train again.');
+}
+
 /* ---------------- Phase actions ---------------- */
 function checklistConfirmed(phaseId) {
+  const items = checklistForPhase(phaseId) || [];
   const c = store.checklist[String(phaseId)] || {};
-  return ADVANCEMENT_CHECKLIST.map(i => ({ id: i.id, label: i.label, confirmed: c[i.id] === true }));
-}
-function requestPhaseChange(n, successMessage) {
-  const decision = phaseChangeDecision(store, n);
-  if (decision.action === 'noop') {
-    pendingPhase = null;
-    pendingPhaseMessage = null;
-    renderPrompts();
-    return;
-  }
-  if (decision.action === 'confirm') {
-    pendingPhase = decision.phase;
-    pendingPhaseMessage = successMessage || null;
-    renderPrompts();
-    return;
-  }
-  commitPhase(decision.phase, successMessage);
+  return items.map(i => ({ id: i.id, label: i.label, confirmed: c[i.id] === true }));
 }
 function commitPhase(n, successMessage) {
+  const from = currentPhaseId();
+  const priorUnlock = unlockedPhaseOf(store);
+  const advancing = pendingAdvance && n > from;
+  if (advancing) {
+    const decision = advanceDecision(store);
+    if (!decision.ok || decision.next !== n) {
+      pendingPhase = null;
+      pendingPhaseMessage = null;
+      pendingAdvance = false;
+      renderAll();
+      showMessage(decision.ok ? 'Stay on this phase for now.' : (advanceReason(decision) || 'Stay on this phase for now.'));
+      return;
+    }
+  }
   applyPhaseChange(store, n);
+  if (advancing) {
+    store.unlockedPhase = Math.max(priorUnlock, n);
+    if (!Array.isArray(store.history)) store.history = [];
+    store.history.push({ type: 'advance', from: from, to: n, at: new Date().toISOString() });
+  }
   pendingPhase = null;
   pendingPhaseMessage = null;
+  pendingAdvance = false;
   save();
   renderAll();
   showMessage(successMessage || 'Phase selected. Your session starts fresh when you press Start.');
@@ -861,6 +1412,7 @@ function confirmPhaseChange() {
 function cancelPhaseChange() {
   pendingPhase = null;
   pendingPhaseMessage = null;
+  pendingAdvance = false;
   renderPrompts();
 }
 function toggleChecklistItem(id, confirmed) {
@@ -873,13 +1425,58 @@ function toggleChecklistItem(id, confirmed) {
   renderPhase();
 }
 function advancePhase() {
-  const p = currentPhaseId();
-  if (p >= 3) return;
-  if (!checklistReady(store.checklist, p)) {
-    showMessage('Confirm all three checklist items first.');
+  const decision = advanceDecision(store);
+  if (!decision.ok) {
+    showMessage(advanceReason(decision) || 'Stay on this phase for now.');
+    renderPhase();
     return;
   }
-  requestPhaseChange(p + 1, 'Advanced to Phase ' + (p + 1) + '.');
+  pendingAdvance = true;
+  const next = decision.next;
+  const message = 'Advanced to Phase ' + next + '.';
+  if (sessionIsActive(store.session)) {
+    pendingPhase = next;
+    pendingPhaseMessage = message;
+    renderPrompts();
+    return;
+  }
+  commitPhase(next, message);
+}
+
+function clearanceFormReady() {
+  return !!($('clearanceAccept') && $('clearanceAccept').checked && isDayKey($('clearanceDate').value));
+}
+function openClearance() {
+  const modal = $('clearanceModal');
+  if (!modal) return;
+  const c = store.clearance;
+  $('clearanceAccept').checked = !!(c && c.accepted === true);
+  $('clearanceDate').value = c && isDayKey(c.date) ? c.date : '';
+  $('btnClearanceSave').disabled = !clearanceFormReady();
+  modal.hidden = false;
+}
+function closeClearance() {
+  const modal = $('clearanceModal');
+  if (modal) modal.hidden = true;
+}
+function saveClearance() {
+  if (!$('clearanceAccept').checked || !isDayKey($('clearanceDate').value)) {
+    $('btnClearanceSave').disabled = true;
+    return;
+  }
+  store.clearance = { accepted: true, date: $('clearanceDate').value };
+  save();
+  closeClearance();
+  renderAll();
+  showMessage('Clearance saved for ' + prettyDay(store.clearance.date) + '.');
+  if (!(store.session && store.session.state === 'expired')) {
+    const morning = pendingMorning(store, new Date());
+    if (morning) openCheckin('morning');
+  }
+}
+function refreshClearanceButton() {
+  const btn = $('btnClearanceSave');
+  if (btn) btn.disabled = !clearanceFormReady();
 }
 
 /* ---------------- Rendering ---------------- */
@@ -906,15 +1503,20 @@ function renderTimer() {
   else t.textContent = fmtTime(remainingMs(s, Date.now()));
   const active = sessionIsActive(s);
   $('btnStart').hidden = !!s;
+  $('btnStart').disabled = !hasClearance(store);
   $('btnPause').hidden = !(s && s.state === 'running');
   $('btnResume').hidden = !(s && s.state === 'paused');
   $('btnFinish').hidden = !active || expired;
   let detail = 'in progress';
   if (s && s.state === 'paused') detail = 'paused';
   else if (expired) detail = 'time is up';
-  $('sessionDate').textContent = s
-    ? 'Session: ' + prettyDay(s.day) + ' (' + detail + ')'
-    : 'No active session: pick a gym day and press Start.';
+  if (!s && !hasClearance(store)) {
+    $('sessionDate').textContent = 'Clearance is required before the first session.';
+  } else {
+    $('sessionDate').textContent = s
+      ? 'Session: ' + prettyDay(s.day) + ' (' + detail + ')'
+      : 'No active session: pick a gym day and press Start.';
+  }
 }
 
 function renderProgress() {
@@ -935,6 +1537,11 @@ function renderPrompts() {
   $('finishConfirm').classList.toggle('show', active && allChecked() && !expired);
   $('expiryConfirm').classList.toggle('show', expired);
   $('phaseConfirm').classList.toggle('show', pendingPhase != null);
+  if ($('phaseConfirmText')) {
+    $('phaseConfirmText').textContent = pendingAdvance
+      ? 'Advance phase? This ends the current session and clears its checkboxes.'
+      : 'Change phase? This ends the current session and clears its checkboxes.';
+  }
 }
 
 function demoHtml(ex) {
@@ -977,12 +1584,13 @@ function renderSections() {
         '<span class="dose">' + esc(e.dose) + '</span></label>' +
         demoHtml(e) + '</li>';
     }).join('');
+    const countLabel = exs.length === 1 ? '1 exercise' : exs.length + ' exercises';
     return '<section class="section' + (collapsed ? ' collapsed' : '') + (done ? ' complete' : '') + '">' +
       '<button class="section-head" data-section="' + esc(sec.id) + '">' +
       '<span class="section-title"><span class="step-no">' + String(stepNo).padStart(2, '0') + '</span>' +
       '<h3 class="section-heading">' + esc(sec.title) + '</h3>' +
       '<span class="block-tag">' + (sec.block === 'foundation' ? 'foundation block' : 'accessory block') + '</span></span>' +
-      '<span class="duration">' + esc(sec.duration) + '</span></button>' +
+      '<span class="duration">' + countLabel + '</span></button>' +
       '<ul class="exercise-list">' + rows + '</ul></section>';
   }).join('');
 }
@@ -1031,11 +1639,41 @@ function renderFeatured() {
 function renderPhase() {
   const p = currentPhaseId();
   const phase = PHASES.find(x => x.id === p);
+  const week = programWeek(store, p);
   $('phaseTitle').textContent = 'Phase ' + p + ': ' + phase.name + ' (' + phase.weeks + ')';
   $('phaseGoal').textContent = phase.goal;
+  const doseDraft = $('doseDraftNote');
+  if (doseDraft) doseDraft.textContent = 'Draft: doses not confirmed by a clinician';
+  const redFlagNote = $('redFlagNote');
+  if (redFlagNote) redFlagNote.textContent = 'These are general rules of thumb.';
+  const unlocked = unlockedPhaseOf(store);
   document.querySelectorAll('#phasePicker .phase-btn').forEach(b => {
-    b.classList.toggle('active', Number(b.getAttribute('data-phase')) === p);
+    const id = Number(b.getAttribute('data-phase'));
+    const locked = id > unlocked;
+    b.classList.toggle('active', id === p);
+    b.classList.toggle('locked', locked);
+    const nameEl = b.querySelector('.phase-name');
+    const named = PHASES.find(x => x.id === id);
+    if (nameEl && named) nameEl.textContent = named.name;
+    b.setAttribute('aria-disabled', locked ? 'true' : 'false');
+    const lock = b.querySelector('.phase-lock');
+    if (lock) {
+      lock.textContent = locked ? 'Locked. Complete Phase ' + (id - 1) + ' criteria.' : '';
+    }
   });
+
+  const credit = weekCredit(store, p);
+  const total = Math.max(0, Math.floor(Number(store.phaseSessions[p]) || 0));
+  let weekText = 'Week ' + week + ' doses for this phase. Weeks are minimums; the checklist decides when you move on.';
+  if (total > credit) {
+    weekText += ' A flagged session, or one still waiting on the next-morning check, keeps this week in place. Listed doses are not changed for you.';
+  }
+  $('weekNote').textContent = weekText;
+
+  const advice = symptomAdvice(store);
+  const adviceEl = $('symptomAdvice');
+  adviceEl.hidden = !advice;
+  adviceEl.textContent = advice;
 
   let prog = '';
   for (let id = 1; id <= 3; id++) {
@@ -1054,16 +1692,17 @@ function renderPhase() {
     wrap.hidden = true;
   } else {
     wrap.hidden = false;
-    $('checklistTitle').textContent = 'Before advancing to Phase ' + (p + 1) + ', confirm all three';
     const items = checklistConfirmed(p);
+    $('checklistTitle').textContent = 'Before advancing to Phase ' + (p + 1) + ', confirm every item';
     $('checklistItems').innerHTML = items.map(it =>
       '<label class="check-item"><input type="checkbox" data-checklist-item="' + it.id + '"' +
       (it.confirmed ? ' checked' : '') + '><span>' + esc(it.label) + '</span></label>'
     ).join('');
-    const ready = items.every(it => it.confirmed);
+    const decision = advanceDecision(store);
     const btn = $('advanceBtn');
-    btn.disabled = !ready;
+    btn.disabled = !decision.ok;
     btn.textContent = 'Advance to Phase ' + (p + 1);
+    $('advanceNote').textContent = advanceReason(decision);
   }
 }
 
@@ -1088,6 +1727,9 @@ function tick() {
     renderCalendar();
     renderStatus();
     renderTimer();
+    if (checkinMode == null && hasClearance(store) && pendingMorning(store, new Date(now)) && !(store.session && store.session.state === 'expired')) {
+      openCheckin('morning');
+    }
   }
   const s = store.session;
   if (!s || s.state !== 'running') return;
@@ -1133,18 +1775,40 @@ function onClick(ev) {
   }
   const phaseBtn = ev.target.closest('[data-phase]');
   if (phaseBtn) {
-    requestPhaseChange(Number(phaseBtn.getAttribute('data-phase')));
+    const n = Number(phaseBtn.getAttribute('data-phase'));
+    const decision = phaseChangeDecision(store, n);
+    if (decision.action === 'noop') {
+      pendingPhase = null;
+      pendingPhaseMessage = null;
+      pendingAdvance = false;
+      renderPrompts();
+      return;
+    }
+    if (decision.action === 'advance') {
+      advancePhase();
+      return;
+    }
+    pendingAdvance = false;
+    if (decision.action === 'confirm') {
+      pendingPhase = decision.phase;
+      pendingPhaseMessage = null;
+      renderPrompts();
+      return;
+    }
+    commitPhase(decision.phase, null);
     return;
   }
-  if (ev.target.id === 'advanceBtn') {
-    advancePhase();
-  }
+  if (ev.target.id === 'advanceBtn') advancePhase();
 }
 function onChange(ev) {
   const box = ev.target.closest('[data-check]');
   if (box) { toggleCheck(box.getAttribute('data-check')); return; }
   const item = ev.target.closest('[data-checklist-item]');
   if (item) { toggleChecklistItem(item.getAttribute('data-checklist-item'), item.checked); return; }
+  if (ev.target.id === 'clearanceAccept' || ev.target.id === 'clearanceDate') {
+    refreshClearanceButton();
+    return;
+  }
   if (ev.target.id === 'thirdDay') {
     const picked = thirdDaySelection(store, ev.target.value, new Date());
     store.thirdDay = picked.thirdDay;
@@ -1155,6 +1819,9 @@ function onChange(ev) {
     renderTimer();
   }
 }
+function onInput(ev) {
+  if (ev.target.id === 'clearanceDate') refreshClearanceButton();
+}
 function onKey(ev) {
   if (ev.key === 'Enter' || ev.key === ' ') {
     const day = ev.target.closest && ev.target.closest('[data-day]');
@@ -1164,19 +1831,26 @@ function onKey(ev) {
 function bindUi() {
   document.addEventListener('click', onClick);
   document.addEventListener('change', onChange);
+  document.addEventListener('input', onInput);
   document.addEventListener('keydown', onKey);
   $('btnStart').addEventListener('click', startSession);
   $('btnPause').addEventListener('click', pauseSession);
   $('btnResume').addEventListener('click', resumeSession);
-  $('btnFinish').addEventListener('click', completeWorkout);
-  $('btnFinishNow').addEventListener('click', completeWorkout);
+  $('btnFinish').addEventListener('click', openFinishCheckin);
+  $('btnFinishNow').addEventListener('click', openFinishCheckin);
   $('btnClear').addEventListener('click', requestClear);
   $('btnClearYes').addEventListener('click', confirmClear);
   $('btnClearNo').addEventListener('click', cancelClear);
-  $('btnExpireLog').addEventListener('click', completeWorkout);
+  $('btnExpireLog').addEventListener('click', openFinishCheckin);
   $('btnExpireDiscard').addEventListener('click', discardExpired);
   $('btnPhaseYes').addEventListener('click', confirmPhaseChange);
   $('btnPhaseNo').addEventListener('click', cancelPhaseChange);
+  $('btnCheckinSave').addEventListener('click', saveCheckin);
+  $('btnCheckinCancel').addEventListener('click', hideCheckin);
+  $('btnClearanceSave').addEventListener('click', saveClearance);
+  $('btnClearanceLater').addEventListener('click', closeClearance);
+  $('btnReviewClearance').addEventListener('click', openClearance);
+  $('btnSomethingWrong').addEventListener('click', somethingWrong);
 }
 
 /* ---------------- Init ---------------- */
@@ -1189,22 +1863,32 @@ function boot() {
   renderedDayKey = dayKey(today);
   const rolled = rolloverActiveDay(store, today);
   if (rolled.changed) bootDirty = true;
-  if (bootDirty) {
-    if (bootNeedsBackup) {
-      try { backupRawBeforeSave(localStorage, bootRaw, Date.now()); }
-      catch (e) { bootDirty = false; }
+  let backupMade = false;
+  if (bootNeedsBackup && bootRaw != null && bootRaw !== '') {
+    try {
+      backupRawBeforeSave(localStorage, bootRaw, Date.now());
+      backupMade = true;
+    } catch (e) {
+      bootDirty = false;
     }
+  }
+  try { pruneBackups(localStorage, BACKUP_KEEP); } catch (e) { /* ignore */ }
+  if (bootDirty) {
     if (bootDirty) save();
     bootNeedsBackup = false;
   }
+  if (backupMade) bootNotice = bootNotice ? (bootNotice + ' ' + BACKUP_NOTICE) : BACKUP_NOTICE;
   // Featured demos and the organization note render even when a stored
   // session has already expired. Expiry used to return before this call.
   renderFeatured();
-  if (!offerExpiryChoice()) {
+  const expired = offerExpiryChoice();
+  if (!expired) {
     renderAll();
     if (bootNotice) showMessage(bootNotice);
   }
   bootNotice = null;
+  if (!hasClearance(store)) openClearance();
+  else if (!expired && pendingMorning(store, today)) openCheckin('morning');
   setInterval(tick, 250);
 }
 boot();
@@ -1215,8 +1899,10 @@ if (typeof module !== 'undefined') {
     SESSIONS_PER_PHASE: SESSIONS_PER_PHASE,
     STORE_VERSION: STORE_VERSION,
     LS_KEY: LS_KEY,
+    BACKUP_KEEP: BACKUP_KEEP,
     NOTICE_CORRUPT: NOTICE_CORRUPT,
     NOTICE_PARTIAL: NOTICE_PARTIAL,
+    BACKUP_NOTICE: BACKUP_NOTICE,
     resolvePhase: resolvePhase,
     resolveDemoList: resolveDemoList,
     remainingMs: remainingMs,
@@ -1239,14 +1925,30 @@ if (typeof module !== 'undefined') {
     shouldExpireOnLoad: shouldExpireOnLoad,
     expireIfDue: expireIfDue,
     canStartSession: canStartSession,
+    hasClearance: hasClearance,
     toggleCheckState: toggleCheckState,
     applyCompletion: applyCompletion,
     phaseChangeDecision: phaseChangeDecision,
     applyPhaseChange: applyPhaseChange,
     checklistReady: checklistReady,
+    checklistForPhase: checklistForPhase,
     normalizePhase: normalizePhase,
     cappedSessionCount: cappedSessionCount,
     rawBackupKey: rawBackupKey,
     backupRawBeforeSave: backupRawBeforeSave,
+    listBackupKeys: listBackupKeys,
+    pruneBackups: pruneBackups,
+    phaseWeek: phaseWeek,
+    weekCredit: weekCredit,
+    programWeek: programWeek,
+    symptomFlagged: symptomFlagged,
+    symptomStatus: symptomStatus,
+    consecutiveFlagLock: consecutiveFlagLock,
+    advanceDecision: advanceDecision,
+    grantAdvance: grantAdvance,
+    applySessionCheckin: applySessionCheckin,
+    applyMorningCheck: applyMorningCheck,
+    pendingMorning: pendingMorning,
+    symptomAdvice: symptomAdvice,
   };
 }
