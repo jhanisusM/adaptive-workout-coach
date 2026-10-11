@@ -1,6 +1,6 @@
 # Features
 
-What the app in `docs/` does today. The page is static HTML, CSS, and JavaScript with no build step. Progress is stored in this browser under the key `awc-demo-v1` (schema version 2).
+What the app in `docs/` does today. The page is static HTML, CSS, and JavaScript with no build step. Progress is stored in this browser under the key `awc-demo-v1` (schema version 3).
 
 Status is one of: planned, in progress, done, removed.
 
@@ -24,13 +24,13 @@ Run the tests with `npm test` (dev-only; nothing from `node_modules` is shipped 
 | Feature | Status | Location | Notes |
 | --- | --- | --- | --- |
 | 30 minute timer with one stored deadline | done | `remainingMs`, `startSession` | Reopening subtracts elapsed time once. |
-| Start, pause, resume, and clear | done | `#btnStart`, `#btnPause`, `#btnResume`, `#btnClear` | Clear asks first. Start stays off until clearance is saved. |
+| Start, pause, resume, and clear | done | `#btnStart`, `#btnPause`, `#btnResume`, `#btnClear` | Clear asks first. Start does not wait on a clearance pop-up. |
 | Check off exercises only during a session | done | `toggleCheckState`, `renderSections` | Boxes stay disabled until a session starts. |
 | Finish workout opens a check-in, then logs the day | done | `#btnFinish`, `#checkinModal` | Ticking the last box does not log by itself. |
 | Each gym day counts at most once | done | `applyCompletion` | |
 | Rest days are not logged | done | `canStartSession`, `isGymDayKey` | Start is refused, and Finish does not write a completion. |
 | Timer expiry keeps checkboxes and asks | done | `expireIfDue`, `#expiryConfirm` | Log anyway opens the same check-in, or discard. |
-| Something's wrong stops without logging | done | `#btnSomethingWrong` | Ends the session and leaves the completion count alone. |
+| Something's wrong stops without logging | removed | | The button left with the red-flag banner. Clear still discards a session. |
 
 ## Checklist
 
@@ -48,8 +48,8 @@ Run the tests with `npm test` (dev-only; nothing from `node_modules` is shipped 
 | Feature | Status | Location | Notes |
 | --- | --- | --- | --- |
 | Train-smart banner | done | `.safety` | Comfortable range, sharp pain is a stop, not medical advice, no running or plyometrics until cleared. |
-| First-run clearance | done | `#clearanceModal`, `store.clearance` | Checkbox plus date. Start stays disabled until it is saved. Review clearance opens it again. |
-| Red-flag panel on every screen size | done | `#redFlags` | Giving way, locking or catching, a hot or markedly swollen knee, night pain, fever or numbness, and calf pain, swelling, warmth, or redness (possible blood clot; shortness of breath or chest pain is urgent). These lines are placeholder rules of thumb pending professional confirmation. |
+| First-run clearance | removed | | The pop-up is gone. Older saves that stored clearance still load, and that field is dropped. Start is not blocked by it. |
+| Red-flag panel on every screen size | removed | | The top banner is gone. Draft dose text and the Phase 3 Draft badge stay. |
 
 ## Symptoms
 
@@ -65,17 +65,20 @@ Run the tests with `npm test` (dev-only; nothing from `node_modules` is shipped 
 
 | Feature | Status | Location | Notes |
 | --- | --- | --- | --- |
-| Tue-Sat week, with Sundays and Mondays off | done | `renderCalendar` | |
-| Optional third gym day | done | `#thirdDay` | Friday morning and Friday night both make Friday a gym day. Phase 1 stays at 3 days, not 4 or 5. |
-| Tap a gym day to select it | done | `[data-day]` | |
-| Stale selected day from another week resets | done | `resolveActiveDay`, `tick` | Runs on load and when the date changes. |
+| Sun-Sat week | done | `renderCalendar`, `weekStart` | Every weekday can be a workout day. |
+| Workout days in Settings | done | `#btnMenu`, `#settingsPanel`, `workoutDays` | Default Tuesday and Thursday. At least one day stays on. Saved in this browser. The calendar, the selected day, rest days, and once-per-day logging follow the choice. |
+| Optional third gym day | removed | | Replaced by the weekday checkboxes. An older Friday or Saturday choice becomes those weekdays. |
+| Tap a workout day to select it | done | `[data-day]` | Rest days are not selectable. |
+| Stale selected day from another week resets | done | `resolveActiveDay`, `tick` | Runs on load and when the date changes. Changing days while idle moves a selected rest day to the next workout day. A running session stays on its day until it ends. |
 
 ## Demo videos
 
 | Feature | Status | Location | Notes |
 | --- | --- | --- | --- |
-| Per-exercise demos from the video library | done | `docs/video-library.js`, `demo_ids` | New exercises ship with an empty list. URLs are not invented. |
-| Featured demos and "How it's organized" | done | `renderFeatured` | Also renders when a stored session has already expired. |
+| Per-exercise demos from the video library | done | `docs/video-library.js`, `demo_ids` | In-session clips. New exercises ship with an empty list. URLs are not invented. |
+| Demo videos section | done | `#demoVideos`, `video_url` | One link per exercise. Empty until a checked URL is added. The row then says "No demo link yet." |
+| How it's organized | done | `#btnInfo`, `#infoPanel`, `#blockNote` | Header info panel, not a card in the main flow. Also fills when a stored session has already expired. |
+| Featured demo cards | removed | | The sidebar cards are gone. The Demo videos section lists the catalog instead. |
 | Unknown video id is skipped | done | `resolveVideo`, `resolveDemoList` | A console warning is logged and the page still loads. |
 
 ## Storage
@@ -83,7 +86,7 @@ Run the tests with `npm test` (dev-only; nothing from `node_modules` is shipped 
 | Feature | Status | Location | Notes |
 | --- | --- | --- | --- |
 | localStorage key `awc-demo-v1` | done | `LS_KEY` | The key name is unchanged so existing browsers keep their data. |
-| Version 2 migration | done | `migrate` | Missing or older saves are validated and written back. Phase, checklist, completions, session deadline, symptoms, clearance, and history are kept when they are valid. |
+| Version 3 migration | done | `migrate` | Missing or older saves are validated and written back. Phase, checklist, completions, session deadline, symptoms, and history are kept when they are valid. An older third-day choice becomes `workoutDays`. A stored clearance is dropped and does not by itself count as a partial repair. |
 | Current phase stored on `unlockedPhase` | done | `migrate` | Set to the current phase on older saves. The picker reads it. |
 | Session counts above the 9-session target | done | `sanitizePhaseSessions`, `cappedSessionCount` | The stored count is kept. The progress line shows at most 9. Week doses and the Advance gate use the real count. |
 | Corrupt JSON or a broken field | done | `loadStoreFromRaw` | Fresh defaults, or that field reset, plus a one-time message. The page is not left blank. |
@@ -92,11 +95,12 @@ Run the tests with `npm test` (dev-only; nothing from `node_modules` is shipped 
 
 ## Notes
 
-The prompt file was truncated, so most doses, all of Phase 3, the symptom thresholds, and the red flags are not from the PT's full program. None of that content is presented as approved.
+The prompt file was truncated, so most doses, all of Phase 3, and the symptom thresholds are not from the PT's full program. None of that content is presented as approved.
 
 - Every set, rep, hold, and week dose is a placeholder rule of thumb pending professional confirmation.
 - All of Phase 3 is a placeholder, including the Bulgarian split squat and the week-3 dumbbells on that exercise.
-- The red-flag lines, including "Pain that wakes you at night", fever or numbness, and the calf warning, are placeholder rules of thumb pending professional confirmation.
+- The red-flag list was removed from the page. Lines such as "Pain that wakes you at night", fever or numbness, and the calf warning were placeholder rules of thumb and are not shown.
+- The README Disclaimer is placeholder wording until final text arrives: not medical advice, provided as-is with no warranty, use at your own risk, consult a clinician before starting.
 - Pain at or below 2/10 that settles to 2/10 or less within 24 hours is an acceptable rule of thumb. Next-morning swelling is advice to cut volume by about 30%. The app does not change a dose on its own.
 - Low-load holds are a starting point, not a treatment for pain.
 - The gate is not tamper-proof against localStorage edits.

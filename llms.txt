@@ -10,10 +10,11 @@ demo video links where verified demos exist. No expertise required.
 
 ## The program
 
-A 3-phase program, about 3 weeks per phase, 3 sessions per week. It is a
-workout companion for someone returning after a long time off their feet,
-not a personal prescription. Start only after a physical therapist or
-physician has cleared resistance training.
+A 3-phase program, about 3 weeks per phase. The default week is Tuesday and
+Thursday, and the user can choose other workout days. It is a workout
+companion for someone returning after a long time off their feet, not a
+personal prescription and not medical advice. It is provided as-is with no
+warranty. Use it at your own risk and consult a clinician before starting.
 
 Phase 1 "Stability & Tissue Tolerance" (14 exercises): low-load holds, glute
 activation, balance, and a high-box sit-to-stand. Holds are a starting
@@ -44,22 +45,20 @@ No running or plyometrics until separately cleared.
 
 - Runs a guided 30-minute workout with a single stored timer deadline, so
   closing and reopening the browser resumes with the correct time left.
-- Full session lifecycle: start (after a clearance confirmation), pause,
-  resume, clear (with confirmation), finish (pain check-in, then log),
-  timer expiry, and "Something's wrong" (stop without logging).
+- Full session lifecycle: start, pause, resume, clear (with confirmation),
+  finish (pain check-in, then log), and timer expiry. Start does not wait
+  on a clearance pop-up. A rest day is not logged.
 - Per-exercise checklists, accordion sections, progress bar, sticky status
   bar, big dose labels.
-- Tue-Sat gym calendar (Sundays are for church, Mondays are rest) with a
-  configurable third gym day; completed days log toward the 3-per-week goal.
-- A red-flag panel stays on the page: giving way, locking or catching, a hot
-  or markedly swollen knee, night pain, fever or numbness, and calf pain,
-  swelling, warmth, or redness. Shortness of breath or chest pain with calf
-  symptoms needs urgent care. These lines are placeholder rules of thumb
-  pending professional confirmation.
-- Demo videos come from a topic-organized video library
-  (docs/video-library.js). To swap an exercise's videos, edit only that file
-  or the exercise's demo_ids. Demo URLs are only added when verified, never
-  invented.
+- A Sun-Sat calendar. Workout days are chosen in the header settings panel
+  and saved in this browser. The default is Tuesday and Thursday. The
+  calendar, the selected day, rest days, and once-per-day logging follow
+  that choice.
+- "How it's organized" is in a header info panel, not in the main flow.
+- A Demo videos section lists every exercise. Each exercise has one
+  video_url, empty until a checked link is added. In-session clips still
+  come from docs/video-library.js through demo_ids. URLs are only added
+  when verified, never invented.
 - All progress is stored in the browser's localStorage under awc-demo-v1.
   No accounts, no analytics, no tracking, no personal data. Unreadable saves
   are backed up in the browser, the user is told, and only the latest few
@@ -68,8 +67,8 @@ No running or plyometrics until separately cleared.
 ## Project layout
 
 - docs/index.html: app shell (status bar, timer, routine, calendar,
-  phase picker, checklist, clearance, red flags). A Content-Security-Policy
-  meta tag limits the page to its own files.
+  phase picker, checklist, settings, info panel, demo videos). A
+  Content-Security-Policy meta tag limits the page to its own files.
 - docs/styles.css: styles, native CSS, light/dark aware.
 - docs/app.js: all app logic: phases, timer, calendar, checklist,
   progression, symptoms. Progress persists in localStorage.

@@ -6,13 +6,18 @@
 no plan, and no experience.** Pure HTML, CSS, and JavaScript. No build step,
 no server, no accounts, no tracking. Open the URL and work out.
 
+## Disclaimer
+
+This is not medical advice. The program is provided as-is with no warranty.
+Use it at your own risk. Consult a clinician before starting.
+
 ## The program
 
-A 3-phase program, about 3 weeks per phase, 3 sessions per week. It follows
-a stability, then supported single-leg, then loaded single-leg progression
+A 3-phase program, about 3 weeks per phase. The default week is Tuesday and
+Thursday, and you can choose other workout days in Settings. It follows a
+stability, then supported single-leg, then loaded single-leg progression
 for someone coming back after a long time off their feet. It is a workout
-companion, not a personal prescription. Start only after a physical therapist
-or physician has cleared you for resistance training.
+companion, not a personal prescription.
 
 - **Phase 1 "Stability & Tissue Tolerance"** (14 exercises): low-load
   holds, glute activation, and balance. Holds are a starting point, not a
@@ -52,22 +57,25 @@ No running or plyometrics until you are cleared for them separately.
   day is logged. The next visit asks about morning swelling and pain.
 - **Per-exercise checklists**, accordion sections, progress bar, sticky status
   bar, big legible dose labels.
-- **Tue-Sat gym calendar** (Sundays are for church, Mondays are rest) with a
-  configurable third gym day. Tap a gym day to open that day's session.
-- **Clearance and red flags.** The first run asks you to confirm clearance
-  for resistance training. A panel stays on the page: stop and contact your
-  clinician for giving way, locking, a hot or swollen knee, night pain, or
-  calf pain or swelling. "Something's wrong" ends the session without logging it.
+- **Weekly calendar.** The full week is shown. Choose which weekdays are
+  workout days in Settings (the menu in the header). The default is Tuesday
+  and Thursday. A day that is off is a rest day and is not logged. Each
+  chosen day counts once.
+- **How it's organized.** The foundation and accessory note lives in the
+  info panel in the header, not in the main flow.
+- **Demo videos.** A section on the page lists every exercise with one demo
+  link slot. Those links stay empty until a checked URL is added.
 - **Symptom flags.** Pain at or below 2/10 that settles to 2/10 or less
   within 24 hours is an acceptable rule of thumb. Pain above that, or
   next-morning swelling, is a flag. Swelling advice says to cut volume by
   about 30%. Two flagged sessions in a row turn Advance off until a later
   session is clean. The app does not tick the checklist for you and does
   not rewrite doses.
-- **Demo videos from a topic-organized video library**
-  (`docs/video-library.js`). To swap an exercise's videos, edit only that
-  file or that exercise's `demo_ids`. Demo URLs are only added when verified;
-  they are never invented.
+- **In-session demos from a topic-organized video library**
+  (`docs/video-library.js`). To swap an exercise's in-session videos, edit
+  only that file or that exercise's `demo_ids`. The separate `video_url`
+  field is one link per exercise for the Demo videos section. URLs are only
+  added when verified; they are never invented.
 - **Privacy by design.** Progress lives in the browser's localStorage under
   `awc-demo-v1`. Nothing leaves the device.
 

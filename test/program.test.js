@@ -11,7 +11,6 @@ const TUE = new Date(2026, 9, 6);
 function clearedState(extra) {
   const state = app.defaultStore(TUE);
   state.activeDay = '2026-10-06';
-  state.thirdDay = 'none';
   state.phase = 1;
   state.unlockedPhase = 1;
   state.phaseSessions = { 1: 0, 2: 0, 3: 0 };
@@ -20,7 +19,6 @@ function clearedState(extra) {
   state.checklist = {};
   state.symptoms = {};
   state.history = [];
-  state.clearance = { accepted: true, date: '2026-10-01' };
   state.session = {
     state: 'running',
     startedAt: 1_000,
@@ -245,10 +243,32 @@ test('older checklist keys survive and new phase criteria stay unticked', () => 
   assert.equal(app.advanceDecision(migrated.state).reason, 'checklist');
 });
 
-test('clearance is required for a new start and backups keep only the latest few', () => {
-  assert.equal(app.hasClearance(app.defaultStore(TUE)), false);
-  assert.equal(app.hasClearance({ clearance: { accepted: true, date: '2026-10-01' } }), true);
-  assert.equal(app.hasClearance({ clearance: { accepted: true, date: 'nope' } }), false);
+test('an older clearance does not block start and backups keep only the latest few', () => {
+  const fresh = app.defaultStore(TUE);
+  fresh.session = null;
+  fresh.activeDay = '2026-10-06';
+  assert.equal(app.canStartSession(fresh).action, 'start');
+  const old = app.migrate({
+    version: 2,
+    phase: 1,
+    unlockedPhase: 1,
+    phaseSessions: { 1: 4, 2: 0, 3: 0 },
+    checks: {},
+    collapsed: {},
+    thirdDay: 'fri-morning',
+    completions: { '2026-10-06': true },
+    activeDay: '2026-10-06',
+    checklist: { 1: { 'no-swelling': true } },
+    session: null,
+    symptoms: {},
+    clearance: { accepted: true, date: '2026-10-01' },
+    history: [],
+  }, TUE);
+  assert.equal(old.notice, null);
+  assert.equal(Object.prototype.hasOwnProperty.call(old.state, 'clearance'), false);
+  assert.deepEqual(old.state.workoutDays, [2, 4, 5]);
+  assert.equal(old.state.phaseSessions[1], 4);
+  assert.equal(app.canStartSession(old.state).action, 'start');
 
   const storage = {
     data: {},
@@ -282,10 +302,19 @@ test('the page policy, docs, and workflow stay free of dev-only inline code', ()
   const workflow = fs.readFileSync(path.join(root, '.github', 'workflows', 'test.yml'), 'utf8');
   assert.match(workflow, /pull_request/);
   assert.match(workflow, /permissions:\n  contents: read/);
-  assert.match(workflow, /actions\/checkout@[0-9a-f]{40} # v4\.4\.0/);
-  assert.match(workflow, /actions\/setup-node@[0-9a-f]{40} # v4\.4\.0/);
+  assert.match(workflow, /actions\/checkout@[0-9a-f]{40} # v\d+\.\d+\.\d+/);
+  assert.match(workflow, /actions\/setup-node@[0-9a-f]{40} # v\d+\.\d+\.\d+/);
   assert.match(workflow, /npm ci/);
   assert.match(workflow, /npm test/);
+  const readme = fs.readFileSync(path.join(root, 'README.md'), 'utf8');
+  const disclaimerAt = readme.indexOf('## Disclaimer');
+  const programAt = readme.indexOf('## The program');
+  assert.ok(disclaimerAt !== -1 && disclaimerAt < programAt);
+  assert.match(readme, /not medical advice/);
+  assert.match(readme, /as-is/);
+  assert.match(readme, /no warranty/);
+  assert.match(readme, /own risk/);
+  assert.match(readme, /consult a clinician/i);
   const features = fs.readFileSync(path.join(root, 'FEATURES.md'), 'utf8');
   assert.match(features, /Stability & Tissue Tolerance/);
   assert.match(features, /Every set, rep, hold, and week dose is a placeholder/);
