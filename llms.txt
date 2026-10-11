@@ -97,4 +97,7 @@ Tests: `npm test` from the repository root.
 This is a workout companion, not medical advice. The app tells users to train
 within a comfortable range, that sharp pain is a stop sign, and to follow
 their clinician's guidance when training around an injury or condition.
-The source is public on GitHub. All rights reserved.
+A fixed footer line says it is not medical advice, to check with a clinician
+before starting, and that exercise is at your own risk. That line links to
+the README Disclaimer on GitHub. The source is public on GitHub. All rights
+reserved.

@@ -48,6 +48,7 @@ Run the tests with `npm test` (dev-only; nothing from `node_modules` is shipped 
 | Feature | Status | Location | Notes |
 | --- | --- | --- | --- |
 | Train-smart banner | done | `.safety` | Comfortable range, sharp pain is a stop, not medical advice, no running or plyometrics until cleared. |
+| Disclaimer footer | done | `#disclaimerFooter` | One fixed line: not medical advice, check with your clinician, exercise at your own risk, with a link to the README Disclaimer on GitHub. No pop-up. |
 | First-run clearance | removed | | The pop-up is gone. Older saves that stored clearance still load, and that field is dropped. Start is not blocked by it. |
 | Red-flag panel on every screen size | removed | | The top banner is gone. Draft dose text and the Phase 3 Draft badge stay. |
 
@@ -100,7 +101,7 @@ The prompt file was truncated, so most doses, all of Phase 3, and the symptom th
 - Every set, rep, hold, and week dose is a placeholder rule of thumb pending professional confirmation.
 - All of Phase 3 is a placeholder, including the Bulgarian split squat and the week-3 dumbbells on that exercise.
 - The red-flag list was removed from the page. Lines such as "Pain that wakes you at night", fever or numbness, and the calf warning were placeholder rules of thumb and are not shown.
-- The README Disclaimer says the app is general fitness information, not medical advice, and that use is voluntary and at your own risk. There is no in-app disclaimer footer yet.
+- The README Disclaimer says the app is general fitness information, not medical advice, and that use is voluntary and at your own risk. The page keeps one fixed footer line that links to that section.
 - Pain at or below 2/10 that settles to 2/10 or less within 24 hours is an acceptable rule of thumb. Next-morning swelling is advice to cut volume by about 30%. The app does not change a dose on its own.
 - Low-load holds are a starting point, not a treatment for pain.
 - The gate is not tamper-proof against localStorage edits.

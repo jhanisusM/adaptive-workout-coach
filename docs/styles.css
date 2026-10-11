@@ -43,7 +43,7 @@ button, input, select { font: inherit; }
 :focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
 a { color: var(--blue); }
 
-.page { width: min(1060px, calc(100% - 32px)); margin: 0 auto; padding: 22px 0 48px; }
+.page { width: min(1060px, calc(100% - 32px)); margin: 0 auto; padding: 22px 0 120px; }
 
 /* Sticky status bar */
 .status-bar {
@@ -210,6 +210,9 @@ h1 { font-size: clamp(2rem, 5vw, 3.6rem); letter-spacing: -.03em; margin: 0 0 10
 .demo-missing { color: var(--muted); font-size: .86rem; }
 
 .footer-note { margin-top: 26px; border-top: 1px solid var(--line); padding-top: 14px; display: flex; justify-content: space-between; gap: 12px; color: var(--muted); font-size: .76rem; flex-wrap: wrap; }
+.disclaimer-footer { position: fixed; left: 0; right: 0; bottom: 0; z-index: 25; background: var(--paper); border-top: 1px solid var(--line); padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); text-align: center; }
+.disclaimer-footer p { margin: 0; font-size: .95rem; line-height: 1.45; color: var(--ink); }
+.disclaimer-footer a { font-weight: 700; text-decoration: underline; }
 
 .red-flags { background: var(--red-soft); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 20px; }
 .red-flags h2 { margin: 0 0 4px; font-size: 1rem; color: var(--red); }

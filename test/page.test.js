@@ -147,7 +147,27 @@ test('each exercise embeds one nocookie demo beside its description', () => {
     assert.ok(quad.querySelector('.exercise-note'));
     assert.equal(quad.querySelector('.exercise-video iframe').getAttribute('src'), 'https://www.youtube-nocookie.com/embed/5TUK4uT2nnw');
     assert.equal(window.document.querySelectorAll('.exercise .exercise-video iframe').length, 14);
-    assert.equal(window.document.body.textContent.includes('Check with your clinician before starting'), false);
+  } finally {
+    dom.window.close();
+  }
+});
+
+test('the disclaimer footer renders and links to the README', () => {
+  const { dom, window, errors } = boot();
+  try {
+    assert.deepEqual(errors, []);
+    const footer = window.document.getElementById('disclaimerFooter');
+    assert.ok(footer);
+    assert.equal(footer.hidden, false);
+    assert.equal(footer.classList.contains('disclaimer-footer'), true);
+    assert.match(footer.textContent, /Not medical advice\. Check with your clinician before starting; you exercise at your own risk\./);
+    const link = footer.querySelector('a');
+    assert.equal(link.textContent, 'Full disclaimer');
+    assert.equal(link.getAttribute('href'), 'https://github.com/jhanisusM/adaptive-workout-coach#disclaimer');
+    assert.equal(window.document.getElementById('redFlags'), null);
+    assert.equal(window.document.getElementById('clearanceModal'), null);
+    const css = fs.readFileSync(path.join(docs, 'styles.css'), 'utf8');
+    assert.match(css, /\.disclaimer-footer \{[^}]*position: fixed/);
   } finally {
     dom.window.close();
   }
