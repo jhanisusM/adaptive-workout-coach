@@ -20,7 +20,7 @@
   <header class="intro">
     <div>
       <h1>30-minute workout</h1>
-      <p class="lede">A 3-phase program: reactivate, reload, return. It rebuilds capacity after a long time off your feet. Move up only with Advance, after 9 sessions and the checklist.</p>
+      <p class="lede">A 3-phase program: stability and tissue tolerance, then supported unilateral work, then complex unilateral loading. It rebuilds capacity after a long time off your feet. Move up only with Advance, after 9 sessions and the checklist.</p>
       <p class="demo-badge">Live demo: progress is stored in this browser only.</p>
     </div>
     <div class="frequency"><span>Weekly rhythm</span><strong>3 sessions</strong></div>
@@ -34,6 +34,7 @@
       <li>The knee gives way</li>
       <li>Locking or catching in the knee</li>
       <li>The knee is hot or markedly swollen</li>
+      <!-- Placeholder pending the PT's full program: pain that wakes you at night. -->
       <li>Pain that wakes you at night</li>
       <li>Calf pain or swelling. This can be a blood clot and needs urgent care.</li>
     </ul>
@@ -42,13 +43,13 @@
 
   <section class="card phase-card" aria-label="Program phase">
     <div class="panel-label">Your program</div>
-    <h2 id="phaseTitle">Phase 1: Reactivate</h2>
+    <h2 id="phaseTitle">Phase 1: Stability &amp; Tissue Tolerance</h2>
     <p class="muted" id="phaseGoal"></p>
     <p class="week-note" id="weekNote"></p>
     <div class="phase-picker" id="phasePicker" role="group" aria-label="Choose your phase">
-      <button type="button" class="phase-btn" data-phase="1"><strong>Phase 1</strong><span class="phase-name">Reactivate</span><span class="phase-lock"></span></button>
-      <button type="button" class="phase-btn" data-phase="2"><strong>Phase 2</strong><span class="phase-name">Reload</span><span class="phase-lock"></span></button>
-      <button type="button" class="phase-btn" data-phase="3"><strong>Phase 3</strong><span class="phase-name">Return</span><span class="phase-lock"></span></button>
+      <button type="button" class="phase-btn" data-phase="1"><strong>Phase 1</strong><span class="phase-name">Stability &amp; Tissue Tolerance</span><span class="phase-lock"></span></button>
+      <button type="button" class="phase-btn" data-phase="2"><strong>Phase 2</strong><span class="phase-name">Supported Unilateral</span><span class="phase-lock"></span></button>
+      <button type="button" class="phase-btn" data-phase="3"><strong>Phase 3</strong><span class="phase-name">Complex Unilateral Loading</span><span class="phase-lock"></span></button>
     </div>
     <div class="phase-progress" id="phaseProgress" aria-live="polite"></div>
     <p class="advice" id="symptomAdvice" hidden></p>
@@ -178,7 +179,7 @@
 <div class="modal" id="checkinModal" hidden>
   <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="checkinTitle">
     <h2 id="checkinTitle">Session check-in</h2>
-    <p id="checkinLead">Pain during this session, from 0 to 10. This is stored in this browser only.</p>
+    <p id="checkinLead">Pain at or below 2 out of 10 that settles by the next morning is acceptable. The score is stored in this browser only.</p>
     <div class="field" id="painDuringWrap">
       <label for="painDuring">Pain during this session (0 to 10)</label>
       <select id="painDuring">

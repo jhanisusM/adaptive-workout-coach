@@ -14,16 +14,19 @@ for someone coming back after a long time off their feet. It is a workout
 companion, not a personal prescription. Start only after a physical therapist
 or physician has cleared you for resistance training.
 
-- **Phase 1 "Reactivate"** (12 exercises): isometric strength, glute
-  activation, and balance. No deep, loaded knee bending. Includes a shallow
-  Spanish squat hold, band terminal knee extension, clamshells, and calf
-  raises.
-- **Phase 2 "Reload"** (11 exercises): light loaded patterns, bilateral
-  before unilateral, with support reduced before load is added.
-- **Phase 3 "Return"** (14 exercises): the full routine. The Bulgarian split
-  squat starts here at bodyweight, low rear foot, 3 x 6 each side, and only
-  then adds reps and load. Lateral step-downs and reverse lunges are in this
-  phase.
+- **Phase 1 "Stability & Tissue Tolerance"** (13 exercises): isometric
+  strength, glute activation, and balance. No deep, loaded knee bending.
+  Includes a shallow Spanish squat hold, band terminal knee extension,
+  clamshells, calf raises, and a high-box sit-to-stand.
+- **Phase 2 "Supported Unilateral"** (11 exercises): light loaded patterns,
+  bilateral before unilateral, with support reduced before load is added.
+- **Phase 3 "Complex Unilateral Loading"** (14 exercises): a placeholder
+  until the full program is available. The Bulgarian split squat starts here
+  at bodyweight, low rear foot, 3 x 6 each side. Week-3 dumbbells on that
+  exercise are a placeholder too. Lateral step-downs and reverse lunges are
+  in this phase.
+
+Sets, reps, holds, and week doses are placeholders pending the full program.
 
 Weeks inside a phase are minimums. The checklist decides when you move on.
 Moving up happens only through Advance, after 9 logged sessions and every
@@ -51,10 +54,11 @@ No running or plyometrics until you are cleared for them separately.
   for resistance training. A panel stays on the page: stop and contact your
   clinician for giving way, locking, a hot or swollen knee, night pain, or
   calf pain or swelling. "Something's wrong" ends the session without logging it.
-- **Symptom flags.** Pain above 2/10 during, next-morning pain, or next-morning
-  swelling suggests repeating the week or reducing sets. Two flagged sessions
-  in a row turn Advance off until a later session is clean. The app does not
-  tick the checklist for you and does not rewrite doses.
+- **Symptom flags.** Pain at or below 2/10 that settles to 2/10 or less
+  within 24 hours is acceptable. Pain above that, or next-morning swelling,
+  is a flag. Swelling advice says to cut volume by about 30%. Two flagged
+  sessions in a row turn Advance off until a later session is clean. The app
+  does not tick the checklist for you and does not rewrite doses.
 - **Demo videos from a topic-organized video library**
   (`docs/video-library.js`). To swap an exercise's videos, edit only that
   file or that exercise's `demo_ids`. Demo URLs are only added when verified;

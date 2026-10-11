@@ -10,10 +10,10 @@ Run the tests with `npm test` (dev-only; nothing from `node_modules` is shipped 
 
 | Feature | Status | Location | Notes |
 | --- | --- | --- | --- |
-| Three phases: Reactivate, Reload, Return | done | `docs/app.js` `PHASES`, `docs/index.html` `#phasePicker` | Phase 1 has 12 exercises, Phase 2 has 11, Phase 3 has 14. |
-| Phase 1 avoids loaded knee bending | done | `PHASES[0]`, `loaded_knee_flexion` | Spanish squat hold, band TKE, clamshell, and two-foot calf raises are in. Sit-to-stand is a checklist item, not a Phase 1 exercise. |
-| Bulgarian split squat starts in Phase 3 | done | Phase 3 `bulgarian-split-squat` | Bodyweight, low rear foot, `3 x 6` each side in week 1. Lateral step-down and reverse lunge are in this phase only. |
-| Week doses inside a phase | done | `doses`, `phaseWeek`, `weekCredit` | Sessions 0-2 use week 1, 3-5 use week 2, 6 or more use week 3. The count is the real stored total, minus flagged or unfinished morning checks. One variable changes per week. |
+| Three phases: Stability & Tissue Tolerance, Supported Unilateral, Complex Unilateral Loading | done | `docs/app.js` `PHASES`, `docs/index.html` `#phasePicker` | Names follow the prompt heading and its description of the later phases. Phase 1 has 13 exercises, Phase 2 has 11, Phase 3 has 14. |
+| Phase 1 avoids deep loaded knee bending | done | `PHASES[0]`, `loaded_knee_flexion` | Spanish squat hold, band TKE, clamshell, two-foot calf raises, and high-box sit-to-stand are in. Chair sit-to-stand with no hands stays a checklist item too. |
+| Bulgarian split squat starts in Phase 3 | done | Phase 3 `bulgarian-split-squat` | Placeholder phase. Bodyweight, low rear foot, `3 x 6` each side in week 1. Week-3 dumbbells are a placeholder. Lateral step-down and reverse lunge are in this phase only. |
+| Week doses inside a phase | done | `doses`, `phaseWeek`, `weekCredit` | Placeholder sets, reps, holds, and week steps. Sessions 0-2 use week 1, 3-5 use week 2, 6 or more use week 3. The count is the real stored total, minus flagged or unfinished morning checks. One variable changes per week. |
 | Weeks are minimums | done | phase `goal`, `#weekNote` | The checklist decides when a phase changes. No running or plyometrics until separately cleared. |
 | Move up only through Advance | done | `advanceDecision`, `#advanceBtn`, `commitPhase` | Needs 9 logged sessions in the phase, every checklist item, and no two-flag lock. There is no early override. A pending advance is checked again when the confirmation is accepted. The gate is not tamper-proof against localStorage edits. |
 | Moving back is always available | done | `phaseChangeDecision` | A phase Advance has already unlocked can be selected again. Higher phases stay locked until then. |
@@ -49,7 +49,7 @@ Run the tests with `npm test` (dev-only; nothing from `node_modules` is shipped 
 | --- | --- | --- | --- |
 | Train-smart banner | done | `.safety` | Comfortable range, sharp pain is a stop, not medical advice, no running or plyometrics until cleared. |
 | First-run clearance | done | `#clearanceModal`, `store.clearance` | Checkbox plus date. Start stays disabled until it is saved. Review clearance opens it again. |
-| Red-flag panel on every screen size | done | `#redFlags` | Giving way, locking or catching, a hot or markedly swollen knee, night pain, and calf pain or swelling (possible blood clot, urgent). |
+| Red-flag panel on every screen size | done | `#redFlags` | Giving way, locking or catching, a hot or markedly swollen knee, calf pain or swelling (possible blood clot, urgent), and pain that wakes you at night. The night-pain line is a placeholder pending the PT's full program. |
 
 ## Symptoms
 
@@ -57,7 +57,7 @@ Run the tests with `npm test` (dev-only; nothing from `node_modules` is shipped 
 | --- | --- | --- | --- |
 | Pain during the session, 0 to 10 | done | `#painDuring`, `applySessionCheckin` | Stored at `store.symptoms[day]` in this browser only. |
 | Next-morning swelling and pain | done | `#morningFields`, `pendingMorning` | Asked on a later calendar day, or with the next check-in if it is still open. |
-| Flag advice | done | `symptomFlagged`, `#symptomAdvice` | Pain above 2 during, any next-morning pain, or next-morning swelling. The note says to repeat the week or reduce sets. |
+| Flag advice | done | `symptomFlagged`, `#symptomAdvice` | Pain at or below 2/10 that settles to 2/10 or less within 24 hours is acceptable. Pain above 2 during, next-morning pain above 2, or next-morning swelling is a flag. Swelling advice says to cut volume by about 30%. The listed doses are not changed. |
 | Flagged work does not move the week | done | `weekCredit` | The listed dose text is not rewritten. |
 | Two flags in a row lock Advance | done | `consecutiveFlagLock` | A later clean session turns Advance back on. Flags never tick the checklist. A skipped next-morning check does not count toward the two-in-a-row lock. |
 
@@ -89,3 +89,14 @@ Run the tests with `npm test` (dev-only; nothing from `node_modules` is shipped 
 | Corrupt JSON or a broken field | done | `loadStoreFromRaw` | Fresh defaults, or that field reset, plus a one-time message. The page is not left blank. |
 | Backup before replacing unreadable saved data | done | `backupRawBeforeSave`, `boot` | The original string is copied to `awc-demo-v1.bak-<timestamp>`. The page says when that backup was stored. |
 | Old backups are trimmed | done | `pruneBackups` | The newest 3 backup keys are kept. |
+
+## Notes
+
+The prompt file was truncated, so most doses, all of Phase 3, the symptom thresholds, and the red flags are not from the PT's full program. None of that content is presented as approved.
+
+- Every set, rep, hold, and week dose is a placeholder pending the PT's full program.
+- All of Phase 3 is a placeholder, including the Bulgarian split squat and the week-3 dumbbells on that exercise.
+- "Pain that wakes you at night" on the red-flag panel is a placeholder pending the PT's full program.
+- Pain at or below 2/10 that settles to 2/10 or less within 24 hours is acceptable. Next-morning swelling is advice to cut volume by about 30%. The app does not change a dose on its own.
+- The gate is not tamper-proof against localStorage edits.
+- A skipped next-morning check does not count toward the two-in-a-row lock.

@@ -46,10 +46,11 @@ function readyToAdvance(extra) {
 test('phase 1 keeps the prompt boundary and phase 3 owns the split squat', () => {
   const phase1 = app.resolvePhase(1).exercises;
   assert.equal(phase1.some(e => e.loaded_knee_flexion), false);
-  ['spanish-squat-hold', 'tke-band', 'clamshell', 'calf-raise-bilateral'].forEach(id => {
+  ['spanish-squat-hold', 'tke-band', 'clamshell', 'calf-raise-bilateral', 'sit-to-stand-high'].forEach(id => {
     assert.equal(phase1.some(e => e.id === id), true, id);
   });
-  ['goblet-squat', 'bulgarian-split-squat', 'step-ups', 'reverse-lunge', 'lateral-step-down', 'split-squat-hold', 'sit-to-stand-high'].forEach(id => {
+  assert.equal(phase1.find(e => e.id === 'sit-to-stand-high').loaded_knee_flexion, false);
+  ['goblet-squat', 'bulgarian-split-squat', 'step-ups', 'reverse-lunge', 'lateral-step-down', 'split-squat-hold'].forEach(id => {
     assert.equal(phase1.some(e => e.id === id), false, id);
   });
   assert.equal(app.resolvePhase(2).exercises.some(e => e.id === 'bulgarian-split-squat'), false);
@@ -98,11 +99,13 @@ test('week doses follow the uncapped session count and change one variable', () 
 
 test('symptom rules flag pain, swelling, and two flags in a row', () => {
   assert.equal(app.symptomStatus({ painDuring: 2, painNext: 0, swellingNext: false }), 'clean');
+  assert.equal(app.symptomStatus({ painDuring: 2, painNext: 2, swellingNext: false }), 'clean');
+  assert.equal(app.symptomStatus({ painDuring: 0, painNext: 1, swellingNext: false }), 'clean');
   assert.equal(app.symptomStatus({ painDuring: 3, painNext: 0, swellingNext: false }), 'flag');
-  assert.equal(app.symptomStatus({ painDuring: 0, painNext: 1, swellingNext: false }), 'flag');
+  assert.equal(app.symptomStatus({ painDuring: 2, painNext: 3, swellingNext: false }), 'flag');
   assert.equal(app.symptomStatus({ painDuring: 0, painNext: 0, swellingNext: true }), 'flag');
   assert.equal(app.symptomStatus({ painDuring: 1, painNext: null, swellingNext: null }), 'pending');
-  assert.equal(app.symptomFlagged({ painDuring: 2, painNext: 0, swellingNext: false }), false);
+  assert.equal(app.symptomFlagged({ painDuring: 2, painNext: 2, swellingNext: false }), false);
 
   const state = clearedState({ session: null });
   state.symptoms = {
@@ -115,14 +118,31 @@ test('symptom rules flag pain, swelling, and two flags in a row', () => {
   state.symptoms['2026-10-08'] = { painDuring: 1, painNext: 0, swellingNext: false, phase: 1 };
   assert.equal(app.consecutiveFlagLock(state, 1), false);
 
+  const settled = clearedState({ session: null });
+  settled.symptoms = {
+    '2026-10-01': { painDuring: 6, painNext: 0, swellingNext: false, phase: 1 },
+    '2026-10-03': { painDuring: 1, painNext: 2, swellingNext: false, phase: 1 },
+  };
+  assert.equal(app.symptomStatus(settled.symptoms['2026-10-03']), 'clean');
+  assert.equal(app.consecutiveFlagLock(settled, 1), false);
+
   const paired = clearedState({ session: null });
   paired.symptoms = {
     '2026-10-01': { painDuring: 6, painNext: 0, swellingNext: false, phase: 1 },
-    '2026-10-03': { painDuring: 1, painNext: 2, swellingNext: false, phase: 1 },
+    '2026-10-03': { painDuring: 1, painNext: 3, swellingNext: false, phase: 1 },
   };
   assert.equal(app.consecutiveFlagLock(paired, 1), true);
   assert.match(app.symptomAdvice(paired), /Repeat this week or reduce your sets/);
   assert.match(app.symptomAdvice(paired), /not changed for you|doses stay the same|Doses are not changed/i);
+
+  const swollen = clearedState({ session: null });
+  swollen.symptoms = {
+    '2026-10-06': { painDuring: 1, painNext: 0, swellingNext: true, phase: 1 },
+  };
+  const doseBefore = app.resolvePhase(1, 1).exercises.find(e => e.id === 'quad-sets').dose;
+  assert.match(app.symptomAdvice(swollen), /about 30%/);
+  assert.match(app.symptomAdvice(swollen), /not changed for you|doses stay the same|Doses are not changed/i);
+  assert.equal(app.resolvePhase(1, 1).exercises.find(e => e.id === 'quad-sets').dose, doseBefore);
 });
 
 test('a check-in can block advance and cannot tick the checklist or rewrite a dose', () => {
@@ -256,11 +276,19 @@ test('the page policy, docs, and workflow stay free of dev-only inline code', ()
   assert.match(workflow, /actions\/setup-node@[0-9a-f]{40} # v4\.4\.0/);
   assert.match(workflow, /npm ci/);
   assert.match(workflow, /npm test/);
+  const features = fs.readFileSync(path.join(root, 'FEATURES.md'), 'utf8');
+  assert.match(features, /Stability & Tissue Tolerance/);
+  assert.match(features, /Every set, rep, hold, and week dose is a placeholder/);
+  assert.match(features, /week-3 dumbbells/);
+  assert.match(features, /Pain that wakes you at night/);
+  assert.match(features, /not tamper-proof against localStorage edits/);
+  assert.match(features, /skipped next-morning check does not count/);
   [html, fs.readFileSync(path.join(root, 'docs', 'app.js'), 'utf8'),
     fs.readFileSync(path.join(root, 'README.md'), 'utf8'),
     fs.readFileSync(path.join(root, 'FEATURES.md'), 'utf8'),
     fs.readFileSync(path.join(root, 'llms.txt'), 'utf8')].forEach(text => {
     assert.equal(text.includes('\u2014'), false);
     assert.equal(text.includes('\u2013'), false);
+    assert.equal(/PT-approved/i.test(text), false);
   });
 });

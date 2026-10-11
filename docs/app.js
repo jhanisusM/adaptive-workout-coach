@@ -20,6 +20,9 @@ const SECTIONS = [
   { id: 'cooldown',  title: 'Cool-down',                   block: 'foundation' },
 ];
 
+/* Placeholder doses. The prompt was truncated before any set, rep, hold, or
+ * week progression, so every dose string in this catalog is a stand-in
+ * pending the PT's full program. */
 const EXERCISES = [
   { id: 'ankle-pumps-heel-slides', section: 'warmup',
     name: 'Ankle pumps + heel slides',
@@ -86,6 +89,10 @@ const EXERCISES = [
     name: 'Calf raise, both feet',
     note: 'Slow up and down. Hold a wall if you need balance.',
     dose: '2 × 10', muscle_groups: ['calves'], demo_ids: [] },
+  { id: 'sit-to-stand-high', section: 'strength',
+    name: 'High-box sit-to-stand',
+    note: 'Use a high box or a high chair so the knee stays out of a deep bend. Hands on the thighs are fine.',
+    dose: '2 × 8', muscle_groups: ['quads', 'glutes'], demo_ids: [] },
   { id: 'spanish-squat-hold', section: 'stability',
     name: 'Spanish squat hold with band',
     note: 'Anchor the band behind both knees and sit back into the hold. For more load, hold a dumbbell goblet-style.',
@@ -133,17 +140,25 @@ EXERCISES.forEach(function (ex) { ex.demos = resolveDemoList(ex.demo_ids); });
  * replace the catalog note, or append a coaching cue. Week doses change one
  * variable at a time. New exercises have empty demo_ids.
  *
- * Phase 1 does not include loaded knee bending (goblet squat, step-ups,
- * split squat, lunge, step-down, or sit-to-stand). The prompt keeps Phase 1
- * off deep loaded flexion. Sit-to-stand is an advancement check, not a
- * Phase 1 exercise.
+ * Placeholder doses. Every dose override and every doses map below (sets,
+ * reps, holds, and week steps) is a stand-in. The prompt was truncated
+ * before those numbers. They are pending the PT's full program.
+ *
+ * Phase 1 keeps deep loaded knee bending out (goblet squat, step-ups, split
+ * squat, lunge, step-down). High-box sit-to-stand is in Phase 1, as the
+ * summary listed it, because the box stays high. Sit-to-stand from a chair
+ * with no hands remains an advancement check as well.
+ *
+ * Phase titles. Phase 1 uses the prompt heading. The file ends before the
+ * Phase 2 and Phase 3 headings, so those names follow the prompt's own
+ * description: supported unilateral movements, then complex unilateral loading.
  */
 const SESSIONS_PER_PHASE = 9;
 
 const PHASES = [
   {
     id: 1,
-    name: 'Reactivate',
+    name: 'Stability & Tissue Tolerance',
     weeks: 'Weeks 1-3',
     goal: 'Motor control, isometric strength, and glute activation. No deep, loaded knee bending. Weeks are minimums; the checklist decides when you move on.',
     exercises: [
@@ -166,6 +181,9 @@ const PHASES = [
       { exercise_id: 'calf-raise-bilateral',
         dose: '2 × 10',
         doses: { 1: '2 × 10', 2: '3 × 10', 3: '3 × 12' } },
+      { exercise_id: 'sit-to-stand-high',
+        dose: '2 × 8',
+        doses: { 1: '2 × 8', 2: '3 × 8', 3: '3 × 10' } },
       { exercise_id: 'spanish-squat-hold',
         dose: '3 × 20 sec',
         doses: { 1: '3 × 20 sec', 2: '4 × 20 sec', 3: '4 × 30 sec' },
@@ -178,7 +196,7 @@ const PHASES = [
   },
   {
     id: 2,
-    name: 'Reload',
+    name: 'Supported Unilateral',
     weeks: 'Weeks 4-6',
     goal: 'Reintroduce load with support. Bilateral patterns come before unilateral ones. Weeks are minimums; the checklist decides when you move on.',
     exercises: [
@@ -214,8 +232,10 @@ const PHASES = [
     ],
   },
   {
+    /* Placeholder phase. The prompt was truncated before Phase 3, so this
+     * list and its doses are not from the PT's full program. */
     id: 3,
-    name: 'Return',
+    name: 'Complex Unilateral Loading',
     weeks: 'Weeks 7-9',
     goal: 'Complex single-leg loading. The Bulgarian split squat starts here at bodyweight. No running or plyometrics until you are cleared for them separately.',
     exercises: [
@@ -229,6 +249,7 @@ const PHASES = [
         doses: {
           1: '3 × 6 each side',
           2: '3 × 8 each side',
+          /* Placeholder: week-3 dumbbells are not from the PT's full program. */
           3: '3 × 8 each side, light dumbbells if the last week was quiet',
         },
         note_append: 'Bodyweight, low rear foot first. Add dumbbells only after 3 × 8 is clean and the next day is quiet.' },
@@ -265,7 +286,7 @@ const PHASES = [
  * control and even weight in a squat. Symptom scores never tick these. */
 const SHARED_CHECKLIST = [
   { id: 'no-swelling', label: 'No swelling after sessions' },
-  { id: 'pain-ok', label: 'Pain 2/10 or less during, and zero the next morning' },
+  { id: 'pain-ok', label: 'Pain at or below 2/10 during, and it settles to 2/10 or less within 24 hours' },
   { id: 'good-control', label: 'Every set completed with good control' },
 ];
 
@@ -536,13 +557,15 @@ function clampPain(value) {
   if (!Number.isFinite(n) || n < 0 || n > 10) return null;
   return Math.round(n);
 }
-/* Pain above 2 during, any next-morning pain, or next-morning swelling. */
+/* Pain at or below 2/10 that is still at or below 2 the next morning has
+ * settled within 24 hours and is acceptable. Pain above 2 during the session,
+ * pain above 2 the next morning, or next-morning swelling is a flag. */
 function symptomFlagged(record) {
   if (!record || typeof record !== 'object') return false;
   const during = Number(record.painDuring);
   if (Number.isFinite(during) && during > 2) return true;
   if (record.swellingNext === true) return true;
-  if (record.painNext != null && record.painNext !== '' && Number(record.painNext) > 0) return true;
+  if (record.painNext != null && record.painNext !== '' && Number(record.painNext) > 2) return true;
   return false;
 }
 function symptomStatus(record) {
@@ -624,12 +647,22 @@ function advanceReason(decision) {
 }
 function symptomAdvice(state) {
   const phase = normalizePhase(state.phase);
-  if (consecutiveFlagLock(state, phase)) {
-    return 'Two flagged sessions in a row. Repeat this week or reduce your sets. Advance stays off until a later session is clean. Doses are not changed for you.';
-  }
   const rows = symptomRecords(state, phase);
-  if (!rows.length) return '';
-  if (symptomStatus(rows[rows.length - 1].record) === 'flag') {
+  const latest = rows.length ? rows[rows.length - 1].record : null;
+  const locked = consecutiveFlagLock(state, phase);
+  const swelling = locked
+    ? rows.filter(row => symptomStatus(row.record) !== 'pending').slice(-2).some(row => row.record.swellingNext === true)
+    : !!(latest && symptomStatus(latest) === 'flag' && latest.swellingNext === true);
+  if (locked) {
+    const change = swelling
+      ? 'Morning swelling: cut volume by about 30%.'
+      : 'Repeat this week or reduce your sets.';
+    return 'Two flagged sessions in a row. ' + change + ' Advance stays off until a later session is clean. Doses are not changed for you.';
+  }
+  if (latest && symptomStatus(latest) === 'flag') {
+    if (swelling) {
+      return 'This session is flagged. Morning swelling: cut volume by about 30%. The listed doses are not changed for you.';
+    }
     return 'This session is flagged. Repeat this week or reduce your sets. The listed doses stay the same.';
   }
   return '';
@@ -1215,8 +1248,8 @@ function openCheckin(mode) {
     $('morningFields').removeAttribute('data-day');
   }
   $('checkinLead').textContent = mode === 'morning'
-    ? 'This does not change your doses. It only records how the last session settled.'
-    : 'Pain during this session, from 0 to 10. This is stored in this browser only.';
+    ? 'Pain at or below 2 out of 10 that settles by this morning is acceptable. Swelling is a reason to cut volume by about 30%. This does not change your doses.'
+    : 'Pain at or below 2 out of 10 that settles by the next morning is acceptable. The score is stored in this browser only.';
   $('btnCheckinSave').textContent = mode === 'morning' ? 'Save morning check-in' : 'Save and log workout';
   modal.hidden = false;
 }
@@ -1572,6 +1605,9 @@ function renderPhase() {
     const locked = id > unlocked;
     b.classList.toggle('active', id === p);
     b.classList.toggle('locked', locked);
+    const nameEl = b.querySelector('.phase-name');
+    const named = PHASES.find(x => x.id === id);
+    if (nameEl && named) nameEl.textContent = named.name;
     b.setAttribute('aria-disabled', locked ? 'true' : 'false');
     const lock = b.querySelector('.phase-lock');
     if (lock) {
