@@ -28,7 +28,7 @@ Run the tests with `npm test` (dev-only; nothing from `node_modules` is shipped 
 | Check off exercises only during a session | done | `toggleCheckState`, `renderSections` | Boxes stay disabled until a session starts. |
 | Finish workout opens a check-in, then logs the day | done | `#btnFinish`, `#checkinModal` | Ticking the last box does not log by itself. |
 | Each gym day counts at most once | done | `applyCompletion` | |
-| Rest days are not logged | done | `canStartSession`, `isGymDayKey` | Start is refused, and Finish does not write a completion. |
+| Rest days are not logged | done | `canStartSession` | Start is refused on a rest day. A session already running still logs its own day if that weekday is turned off before Finish. |
 | Timer expiry keeps checkboxes and asks | done | `expireIfDue`, `#expiryConfirm` | Log anyway opens the same check-in, or discard. |
 | Something's wrong stops without logging | removed | | The button left with the red-flag banner. Clear still discards a session. |
 
@@ -77,7 +77,7 @@ Run the tests with `npm test` (dev-only; nothing from `node_modules` is shipped 
 | Feature | Status | Location | Notes |
 | --- | --- | --- | --- |
 | Per-exercise demos from the video library | done | `docs/video-library.js`, `demo_ids` | In-session clips. New exercises ship with an empty list. URLs are not invented. |
-| Demo videos section | done | `#demoVideos`, `video_url` | One YouTube link per exercise, shown there and beside the exercise note. The player uses youtube-nocookie.com. |
+| Demo videos section | done | `#demoVideos`, `video_url` | One YouTube link per exercise, shown there and beside the exercise note. The player uses youtube-nocookie.com. Watch demo opens youtube.com/watch. Only YouTube hosts are accepted. |
 | How it's organized | done | `#btnInfo`, `#infoPanel`, `#blockNote` | Header info panel, not a card in the main flow. Also fills when a stored session has already expired. |
 | Featured demo cards | removed | | The sidebar cards are gone. The Demo videos section lists the catalog instead. |
 | Unknown video id is skipped | done | `resolveVideo`, `resolveDemoList` | A console warning is logged and the page still loads. |

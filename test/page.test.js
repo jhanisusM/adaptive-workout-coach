@@ -145,7 +145,11 @@ test('each exercise embeds one nocookie demo beside its description', () => {
     assert.equal(window.document.querySelectorAll('#demoVideoList .demo-watch').length, 26);
     const quad = window.document.querySelector('[data-check="quad-sets"]').closest('.exercise');
     assert.ok(quad.querySelector('.exercise-note'));
-    assert.equal(quad.querySelector('.exercise-video iframe').getAttribute('src'), 'https://www.youtube-nocookie.com/embed/5TUK4uT2nnw');
+    const quadFrame = quad.querySelector('.exercise-video iframe');
+    assert.equal(quadFrame.getAttribute('src'), 'https://www.youtube-nocookie.com/embed/5TUK4uT2nnw');
+    assert.equal(quadFrame.getAttribute('sandbox'), 'allow-scripts allow-same-origin allow-presentation allow-popups');
+    assert.equal(quad.querySelector('.demo-watch').getAttribute('href'), 'https://www.youtube.com/watch?v=5TUK4uT2nnw');
+    assert.equal(window.document.querySelector('#demoVideoList .demo-watch').getAttribute('href'), 'https://www.youtube.com/watch?v=iCYO16wzPMw');
     assert.equal(window.document.querySelectorAll('.exercise .exercise-video iframe').length, 14);
   } finally {
     dom.window.close();
@@ -708,7 +712,7 @@ test('settings, the info panel, and demo videos follow the chosen week', () => {
   }
 });
 
-test('turning off the selected day refuses a log and a rest day cannot start', () => {
+test('turning off the session weekday still logs that day, and a rest day cannot start', () => {
   const { dom, window, errors } = boot();
   try {
     assert.deepEqual(errors, []);
@@ -721,10 +725,13 @@ test('turning off the selected day refuses a log and a rest day cannot start', (
     setWorkoutDay(window, 2, false);
     assert.equal(readStore(window).session.day, tuesday.getAttribute('data-day'));
     click(window, doc.getElementById('btnFinish'));
-    assert.equal(doc.getElementById('checkinModal').hidden, true);
-    assert.match(doc.getElementById('sessionMessage').textContent, /Nothing was logged/);
-    assert.equal(readStore(window).phaseSessions['1'], 0);
-    assert.equal(readStore(window).session.state, 'running');
+    assert.equal(doc.getElementById('checkinModal').hidden, false);
+    saveCheckin(window, 1);
+    const logged = readStore(window);
+    assert.equal(logged.completions[tuesday.getAttribute('data-day')], true);
+    assert.equal(logged.phaseSessions['1'], 1);
+    assert.equal(logged.session, null);
+    assert.deepEqual(logged.workoutDays, [4]);
   } finally {
     dom.window.close();
   }

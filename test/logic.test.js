@@ -101,7 +101,7 @@ test('checking boxes does nothing without a session and does not log by itself',
   assert.equal(state.completions['2026-10-06'], true);
 });
 
-test('a day can be logged only once, and only from an active session on a gym day', () => {
+test('a day can be logged only once, and an active session logs its own day', () => {
   const state = gymState();
   assert.equal(app.applyCompletion(Object.assign(app.defaultStore(TUE), { session: null })).ok, false);
 
@@ -117,19 +117,20 @@ test('a day can be logged only once, and only from an active session on a gym da
   assert.equal(state.completions['2026-10-06'], true);
 
   const sunday = gymState('2026-10-11');
+  sunday.session = null;
+  sunday.activeDay = '2026-10-11';
+  assert.equal(app.canStartSession(sunday).reason, 'not-gym-day');
   sunday.session = session('2026-10-11');
-  const snapshot = JSON.parse(JSON.stringify(sunday));
-  const refused = app.applyCompletion(sunday);
-  assert.equal(refused.ok, false);
-  assert.equal(refused.reason, 'not-gym-day');
-  assert.deepEqual(sunday, snapshot);
+  assert.equal(app.applyCompletion(sunday).ok, true);
+  assert.equal(sunday.completions['2026-10-11'], true);
 
   const friday = gymState('2026-10-09');
-  friday.session = session('2026-10-09');
-  assert.equal(app.applyCompletion(friday).reason, 'not-gym-day');
-  friday.workoutDays = [2, 4, 5];
+  friday.session = null;
+  friday.activeDay = '2026-10-09';
+  assert.equal(app.canStartSession(friday).reason, 'not-gym-day');
   friday.session = session('2026-10-09');
   assert.equal(app.applyCompletion(friday).ok, true);
+  assert.equal(friday.completions['2026-10-09'], true);
 
   assert.equal(app.canStartSession(gymState('2026-10-10', { session: null, activeDay: '2026-10-10' })).reason, 'not-gym-day');
   assert.equal(app.canStartSession(gymState('2026-10-06', { session: null, activeDay: '2026-10-06' })).action, 'start');
@@ -312,6 +313,33 @@ test('a bad video id warns and is skipped', () => {
   }
   assert.match(warnings.join('\n'), /missing-video/);
   assert.match(warnings.join('\n'), /unknown video id: x/);
+});
+
+test('a session still logs its own day after that weekday is turned off', () => {
+  const state = gymState('2026-10-06');
+  state.session = session('2026-10-06');
+  state.workoutDays = [4];
+  const logged = app.applyCompletion(state);
+  assert.equal(logged.ok, true);
+  assert.equal(logged.day, '2026-10-06');
+  assert.equal(state.completions['2026-10-06'], true);
+  assert.equal(state.phaseSessions[1], 1);
+  assert.equal(state.session, null);
+
+  const broken = gymState('2026-10-06');
+  broken.session = session('not-a-day');
+  const before = JSON.parse(JSON.stringify(broken));
+  const refused = app.applyCompletion(broken);
+  assert.equal(refused.ok, false);
+  assert.deepEqual(broken.completions, before.completions);
+  assert.equal(broken.phaseSessions[1], before.phaseSessions[1]);
+
+  assert.equal(app.youtubeId('https://www.youtube.com/watch?v=5TUK4uT2nnw'), '5TUK4uT2nnw');
+  assert.equal(app.youtubeId('https://youtu.be/iCYO16wzPMw'), 'iCYO16wzPMw');
+  assert.equal(app.youtubeId('https://www.youtube-nocookie.com/embed/_r_vsI64pyw'), '_r_vsI64pyw');
+  assert.equal(app.youtubeId('https://evil.example/watch?v=5TUK4uT2nnw'), '');
+  assert.equal(app.youtubeId('https://youtube.com.evil.com/watch?v=5TUK4uT2nnw'), '');
+  assert.equal(app.youtubeId('javascript:alert(1)'), '');
 });
 
 test('changing workout days moves a rest-day selection when no session is running', () => {

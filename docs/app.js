@@ -587,13 +587,14 @@ function toggleCheckState(state, id) {
   const allDone = programExerciseIds(state.phase).every(eid => !!state.checks[eid]);
   return { ok: true, allChecked: allDone };
 }
-/* Log the session day once. Refuses a missing session or a non-gym day.
- * Does not mutate state when it refuses. */
+/* Log the session day once. A session that already started keeps its own day,
+ * even if that weekday is turned off before Finish. Refuses a missing session
+ * or a day that is not a real date. Does not mutate state when it refuses. */
 function applyCompletion(state) {
   const session = state.session;
   if (!sessionIsActive(session)) return { ok: false, reason: 'no-session' };
   const day = session.day;
-  if (!isGymDayKey(day, state.workoutDays)) return { ok: false, reason: 'not-gym-day', day: day };
+  if (!isDayKey(day)) return { ok: false, reason: 'not-gym-day', day: day };
   const phase = normalizePhase(state.phase);
   if (!isPlainObject(state.completions)) state.completions = {};
   if (!isPlainObject(state.phaseSessions)) state.phaseSessions = { 1: 0, 2: 0, 3: 0 };
@@ -780,7 +781,7 @@ function applySessionCheckin(state, input) {
   const session = state.session;
   if (!sessionIsActive(session)) return { ok: false, reason: 'no-session' };
   const day = session.day;
-  if (!isGymDayKey(day, state.workoutDays)) return { ok: false, reason: 'not-gym-day', day: day };
+  if (!isDayKey(day)) return { ok: false, reason: 'not-gym-day', day: day };
   const painDuring = clampPain(input && input.painDuring);
   if (painDuring == null) return { ok: false, reason: 'pain-during' };
   let morningPatch = null;
@@ -1292,9 +1293,8 @@ function openFinishCheckin() {
     renderAll();
     return;
   }
-  if (!isGymDayKey(store.session.day, store.workoutDays)) {
-    const when = isDayKey(store.session.day) ? prettyDay(store.session.day) : 'that day';
-    showMessage('Nothing was logged. This program does not train on ' + when + '.');
+  if (!isDayKey(store.session.day)) {
+    showMessage('Nothing was logged. This program does not train on that day.');
     return;
   }
   openCheckin('finish');
@@ -1558,20 +1558,35 @@ function renderPrompts() {
   }
 }
 
+function isYoutubeHost(hostname) {
+  const host = String(hostname || '').toLowerCase();
+  return host === 'youtu.be' || host === 'youtube.com' || host === 'www.youtube.com' || host === 'm.youtube.com' || host === 'youtube-nocookie.com' || host === 'www.youtube-nocookie.com';
+}
 function youtubeId(url) {
-  const text = String(url || '').trim();
-  const match = text.match(/(?:[?&]v=|youtu\.be\/|youtube(?:-nocookie)?\.com\/embed\/)([A-Za-z0-9_-]{11})/);
-  return match ? match[1] : '';
+  let parsed;
+  try { parsed = new URL(String(url || '').trim()); } catch (e) { return ''; }
+  if (!isYoutubeHost(parsed.hostname)) return '';
+  const host = parsed.hostname.toLowerCase();
+  let id = '';
+  if (host === 'youtu.be') id = parsed.pathname.replace(/^\//, '').split('/')[0];
+  else if (/^\/embed\//.test(parsed.pathname)) id = parsed.pathname.split('/')[2] || '';
+  else id = parsed.searchParams.get('v') || '';
+  return /^[A-Za-z0-9_-]{11}$/.test(id) ? id : '';
 }
 function nocookieEmbed(url) {
   const id = youtubeId(url);
   return id ? 'https://www.youtube-nocookie.com/embed/' + id : '';
 }
+function youtubeWatchUrl(url) {
+  const id = youtubeId(url);
+  return id ? 'https://www.youtube.com/watch?v=' + id : '';
+}
 function videoEmbedHtml(ex) {
   const embed = nocookieEmbed(ex && ex.video_url);
-  if (!embed) return '<p class="demo-missing">No demo link yet.</p>';
-  return '<div class="video-frame"><iframe src="' + esc(embed) + '" title="' + esc('Demo: ' + ex.name) + '" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>' +
-    '<a class="demo-watch" href="' + esc(embed) + '" target="_blank" rel="noopener noreferrer">Watch demo</a>';
+  const watch = youtubeWatchUrl(ex && ex.video_url);
+  if (!embed || !watch) return '<p class="demo-missing">No demo link yet.</p>';
+  return '<div class="video-frame"><iframe src="' + esc(embed) + '" title="' + esc('Demo: ' + ex.name) + '" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" sandbox="allow-scripts allow-same-origin allow-presentation allow-popups" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>' +
+    '<a class="demo-watch" href="' + esc(watch) + '" target="_blank" rel="noopener noreferrer">Watch demo</a>';
 }
 
 function demoHtml(ex) {
@@ -2000,6 +2015,7 @@ if (typeof module !== 'undefined') {
     shouldExpireOnLoad: shouldExpireOnLoad,
     expireIfDue: expireIfDue,
     canStartSession: canStartSession,
+    youtubeId: youtubeId,
     toggleCheckState: toggleCheckState,
     applyCompletion: applyCompletion,
     phaseChangeDecision: phaseChangeDecision,

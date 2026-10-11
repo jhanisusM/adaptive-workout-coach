@@ -57,7 +57,9 @@ No running or plyometrics until separately cleared.
 - "How it's organized" is in a header info panel, not in the main flow.
 - A Demo videos section lists every exercise, and the same clip sits next
   to that exercise in the routine. Each exercise has one video_url. Players
-  and links use the privacy-enhanced domain youtube-nocookie.com. In-session
+  use the privacy-enhanced domain youtube-nocookie.com. Watch demo opens
+  https://www.youtube.com/watch?v= for that clip. Only YouTube hosts are
+  accepted as video ids. In-session
   library clips still come from docs/video-library.js through demo_ids.
   URLs are only added when verified, never invented.
 - All progress is stored in the browser's localStorage under awc-demo-v1.
