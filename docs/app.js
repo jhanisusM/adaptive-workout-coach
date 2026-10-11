@@ -1642,6 +1642,10 @@ function renderPhase() {
   const week = programWeek(store, p);
   $('phaseTitle').textContent = 'Phase ' + p + ': ' + phase.name + ' (' + phase.weeks + ')';
   $('phaseGoal').textContent = phase.goal;
+  const doseDraft = $('doseDraftNote');
+  if (doseDraft) doseDraft.textContent = 'Draft: doses not confirmed by a clinician';
+  const redFlagNote = $('redFlagNote');
+  if (redFlagNote) redFlagNote.textContent = 'These are general rules of thumb.';
   const unlocked = unlockedPhaseOf(store);
   document.querySelectorAll('#phasePicker .phase-btn').forEach(b => {
     const id = Number(b.getAttribute('data-phase'));

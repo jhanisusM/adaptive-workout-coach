@@ -160,6 +160,8 @@ h1 { font-size: clamp(2rem, 5vw, 3.6rem); letter-spacing: -.03em; margin: 0 0 10
 .small { font-size: .82rem; }
 .phase-card { margin-bottom: 20px; }
 .phase-card h2 { margin: 4px 0 6px; font-size: 1.3rem; }
+.draft-note { color: var(--amber); font-size: .88rem; font-weight: 700; margin: 0 0 8px; line-height: 1.4; }
+.phase-btn .phase-draft { justify-self: center; font-size: .68rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--amber); background: var(--amber-soft); border-radius: 999px; padding: 2px 8px; }
 .phase-card .muted { margin: 0 0 4px; }
 .phase-picker { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 14px 0; }
 .phase-btn { border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 10px; padding: 10px 8px; cursor: pointer; display: grid; gap: 2px; text-align: center; font: inherit; }
@@ -190,7 +192,8 @@ h1 { font-size: clamp(2rem, 5vw, 3.6rem); letter-spacing: -.03em; margin: 0 0 10
 .footer-note { margin-top: 26px; border-top: 1px solid var(--line); padding-top: 14px; display: flex; justify-content: space-between; gap: 12px; color: var(--muted); font-size: .76rem; flex-wrap: wrap; }
 
 .red-flags { background: var(--red-soft); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 20px; }
-.red-flags h2 { margin: 0 0 8px; font-size: 1rem; color: var(--red); }
+.red-flags h2 { margin: 0 0 4px; font-size: 1rem; color: var(--red); }
+.red-flag-note { margin: 0 0 8px; font-size: .9rem; line-height: 1.4; }
 .red-flags ul { margin: 0 0 12px; padding-left: 18px; }
 .red-flags li { margin: 4px 0; line-height: 1.45; }
 .week-note { color: var(--muted); font-size: .88rem; line-height: 1.5; margin: 8px 0 0; }

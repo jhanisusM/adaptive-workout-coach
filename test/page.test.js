@@ -572,6 +572,33 @@ test('a flagged check-in repeats the week and two flags lock Advance', () => {
   }
 });
 
+test('draft labels show on the phase card, phase 3, and the red flags', () => {
+  const { dom, window, errors } = boot();
+  try {
+    assert.deepEqual(errors, []);
+    const doc = window.document;
+    const dose = doc.getElementById('doseDraftNote');
+    assert.ok(dose);
+    assert.equal(dose.hidden, false);
+    assert.equal(dose.textContent, 'Draft: doses not confirmed by a clinician');
+    assert.ok(doc.querySelector('.phase-card').contains(dose));
+    const badge = doc.querySelector('[data-phase="3"] .phase-draft');
+    assert.ok(badge);
+    assert.equal(badge.textContent, 'Draft');
+    assert.equal(doc.querySelector('[data-phase="1"] .phase-draft'), null);
+    assert.equal(doc.querySelector('[data-phase="2"] .phase-draft'), null);
+    const note = doc.getElementById('redFlagNote');
+    const heading = doc.querySelector('#redFlags h2');
+    assert.ok(note);
+    assert.equal(note.hidden, false);
+    assert.equal(note.textContent, 'These are general rules of thumb.');
+    assert.ok(heading.compareDocumentPosition(note) & window.Node.DOCUMENT_POSITION_FOLLOWING);
+    assert.ok(note.compareDocumentPosition(doc.querySelector('#redFlags ul')) & window.Node.DOCUMENT_POSITION_FOLLOWING);
+  } finally {
+    dom.window.close();
+  }
+});
+
 test('Something is wrong ends the session without logging', () => {
   const { dom, window, errors } = boot();
   try {

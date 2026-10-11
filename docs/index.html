@@ -30,6 +30,7 @@
 
   <section class="red-flags" id="redFlags" aria-label="Stop and contact your clinician">
     <h2>Stop and contact your clinician if you notice any of these</h2>
+    <p class="red-flag-note" id="redFlagNote">These are general rules of thumb.</p>
     <ul>
       <li>The knee gives way</li>
       <li>Locking or catching in the knee</li>
@@ -44,13 +45,14 @@
 
   <section class="card phase-card" aria-label="Program phase">
     <div class="panel-label">Your program</div>
+    <p class="draft-note" id="doseDraftNote">Draft: doses not confirmed by a clinician</p>
     <h2 id="phaseTitle">Phase 1: Stability &amp; Tissue Tolerance</h2>
     <p class="muted" id="phaseGoal"></p>
     <p class="week-note" id="weekNote"></p>
     <div class="phase-picker" id="phasePicker" role="group" aria-label="Choose your phase">
       <button type="button" class="phase-btn" data-phase="1"><strong>Phase 1</strong><span class="phase-name">Stability &amp; Tissue Tolerance</span><span class="phase-lock"></span></button>
       <button type="button" class="phase-btn" data-phase="2"><strong>Phase 2</strong><span class="phase-name">Supported Unilateral</span><span class="phase-lock"></span></button>
-      <button type="button" class="phase-btn" data-phase="3"><strong>Phase 3</strong><span class="phase-name">Complex Unilateral Loading</span><span class="phase-lock"></span></button>
+      <button type="button" class="phase-btn" data-phase="3"><strong>Phase 3</strong><span class="phase-name">Complex Unilateral Loading</span><span class="phase-draft">Draft</span><span class="phase-lock"></span></button>
     </div>
     <div class="phase-progress" id="phaseProgress" aria-live="polite"></div>
     <p class="advice" id="symptomAdvice" hidden></p>
