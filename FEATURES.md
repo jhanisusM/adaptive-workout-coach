@@ -15,7 +15,7 @@ Run the tests with `npm test` (dev-only; nothing from `node_modules` is shipped 
 | Bulgarian split squat starts in Phase 3 | done | Phase 3 `bulgarian-split-squat` | Bodyweight, low rear foot, `3 x 6` each side in week 1. Lateral step-down and reverse lunge are in this phase only. |
 | Week doses inside a phase | done | `doses`, `phaseWeek`, `weekCredit` | Sessions 0-2 use week 1, 3-5 use week 2, 6 or more use week 3. The count is the real stored total, minus flagged or unfinished morning checks. One variable changes per week. |
 | Weeks are minimums | done | phase `goal`, `#weekNote` | The checklist decides when a phase changes. No running or plyometrics until separately cleared. |
-| Move up only through Advance | done | `advanceDecision`, `#advanceBtn` | Needs 9 logged sessions in the phase, every checklist item, and no two-flag lock. There is no early override. |
+| Move up only through Advance | done | `advanceDecision`, `#advanceBtn`, `commitPhase` | Needs 9 logged sessions in the phase, every checklist item, and no two-flag lock. There is no early override. A pending advance is checked again when the confirmation is accepted. The gate is not tamper-proof against localStorage edits. |
 | Moving back is always available | done | `phaseChangeDecision` | A phase Advance has already unlocked can be selected again. Higher phases stay locked until then. |
 | Current phase is kept for existing saves | done | `migrate` `unlockedPhase` | An older save is not moved backward. `unlockedPhase` is at least the phase they were already on. |
 
@@ -59,7 +59,7 @@ Run the tests with `npm test` (dev-only; nothing from `node_modules` is shipped 
 | Next-morning swelling and pain | done | `#morningFields`, `pendingMorning` | Asked on a later calendar day, or with the next check-in if it is still open. |
 | Flag advice | done | `symptomFlagged`, `#symptomAdvice` | Pain above 2 during, any next-morning pain, or next-morning swelling. The note says to repeat the week or reduce sets. |
 | Flagged work does not move the week | done | `weekCredit` | The listed dose text is not rewritten. |
-| Two flags in a row lock Advance | done | `consecutiveFlagLock` | A later clean session turns Advance back on. Flags never tick the checklist. |
+| Two flags in a row lock Advance | done | `consecutiveFlagLock` | A later clean session turns Advance back on. Flags never tick the checklist. A skipped next-morning check does not count toward the two-in-a-row lock. |
 
 ## Calendar
 

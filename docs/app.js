@@ -1262,8 +1262,6 @@ function saveCheckin() {
     else if (result.reason === 'not-gym-day') showMessage('Nothing was logged. This program does not train on that day.');
     return;
   }
-  pendingPhase = null;
-  pendingPhaseMessage = null;
   hideCheckin();
   save();
   renderAll();
@@ -1307,6 +1305,17 @@ function commitPhase(n, successMessage) {
   const from = currentPhaseId();
   const priorUnlock = unlockedPhaseOf(store);
   const advancing = pendingAdvance && n > from;
+  if (advancing) {
+    const decision = advanceDecision(store);
+    if (!decision.ok || decision.next !== n) {
+      pendingPhase = null;
+      pendingPhaseMessage = null;
+      pendingAdvance = false;
+      renderAll();
+      showMessage(decision.ok ? 'Stay on this phase for now.' : (advanceReason(decision) || 'Stay on this phase for now.'));
+      return;
+    }
+  }
   applyPhaseChange(store, n);
   if (advancing) {
     store.unlockedPhase = Math.max(priorUnlock, n);

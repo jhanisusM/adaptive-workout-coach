@@ -462,6 +462,74 @@ test('Advance opens the next phase only after 9 sessions and the checklist', () 
   }
 });
 
+function runningSession(day) {
+  return {
+    state: 'running',
+    startedAt: Date.now(),
+    deadline: Date.now() + 10 * 60 * 1000,
+    remainingMs: null,
+    day: day,
+  };
+}
+
+test('confirming an advance checks the gate again', () => {
+  const day = thisTuesday();
+  const unticked = boot(baseStore({
+    phaseSessions: { 1: 9, 2: 0, 3: 0 },
+    checklist: phase1Checklist(),
+    activeDay: day,
+    session: runningSession(day),
+  }));
+  try {
+    const doc = unticked.window.document;
+    click(unticked.window, doc.getElementById('advanceBtn'));
+    assert.ok(doc.getElementById('phaseConfirm').classList.contains('show'));
+    assert.equal(readStore(unticked.window).phase, 1);
+    const box = doc.querySelector('[data-checklist-item="sit-to-stand"]');
+    box.checked = false;
+    box.dispatchEvent(new unticked.window.Event('change', { bubbles: true }));
+    click(unticked.window, doc.getElementById('btnPhaseYes'));
+    const stored = readStore(unticked.window);
+    assert.equal(stored.phase, 1);
+    assert.equal(stored.unlockedPhase, 1);
+    assert.deepEqual(stored.history, []);
+    assert.equal(stored.session.state, 'running');
+    assert.equal(doc.getElementById('phaseConfirm').classList.contains('show'), false);
+    assert.match(doc.getElementById('sessionMessage').textContent, /checklist/i);
+  } finally {
+    unticked.dom.window.close();
+  }
+
+  const flagged = boot(baseStore({
+    phaseSessions: { 1: 9, 2: 0, 3: 0 },
+    checklist: phase1Checklist(),
+    activeDay: day,
+    session: runningSession(day),
+    symptoms: {
+      '2020-01-07': { painDuring: 5, painNext: 0, swellingNext: false, phase: 1 },
+    },
+  }));
+  try {
+    const doc = flagged.window.document;
+    assert.equal(doc.getElementById('advanceBtn').disabled, false);
+    click(flagged.window, doc.getElementById('advanceBtn'));
+    assert.ok(doc.getElementById('phaseConfirm').classList.contains('show'));
+    click(flagged.window, doc.getElementById('btnFinish'));
+    saveCheckin(flagged.window, 6);
+    assert.equal(readStore(flagged.window).phaseSessions['1'], 10);
+    assert.ok(doc.getElementById('phaseConfirm').classList.contains('show'));
+    click(flagged.window, doc.getElementById('btnPhaseYes'));
+    const stored = readStore(flagged.window);
+    assert.equal(stored.phase, 1);
+    assert.equal(stored.unlockedPhase, 1);
+    assert.deepEqual(stored.history, []);
+    assert.equal(doc.getElementById('phaseConfirm').classList.contains('show'), false);
+    assert.match(doc.getElementById('sessionMessage').textContent, /two flagged sessions/i);
+  } finally {
+    flagged.dom.window.close();
+  }
+});
+
 test('a flagged check-in repeats the week and two flags lock Advance', () => {
   const flagged = boot(baseStore());
   try {

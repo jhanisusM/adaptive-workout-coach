@@ -244,12 +244,16 @@ test('the page policy, docs, and workflow stay free of dev-only inline code', ()
   assert.match(html, /http-equiv="Content-Security-Policy"/);
   assert.match(html, /default-src 'self'/);
   assert.match(html, /img-src 'self' https:/);
+  assert.match(html, /object-src 'none'/);
   assert.match(html, /base-uri 'none'/);
   assert.match(html, /form-action 'none'/);
   assert.equal(/<script(?![^>]*\bsrc=)/.test(html), false);
   assert.equal(/\son[a-z]+=/i.test(html), false);
   const workflow = fs.readFileSync(path.join(root, '.github', 'workflows', 'test.yml'), 'utf8');
   assert.match(workflow, /pull_request/);
+  assert.match(workflow, /permissions:\n  contents: read/);
+  assert.match(workflow, /actions\/checkout@[0-9a-f]{40} # v4\.4\.0/);
+  assert.match(workflow, /actions\/setup-node@[0-9a-f]{40} # v4\.4\.0/);
   assert.match(workflow, /npm ci/);
   assert.match(workflow, /npm test/);
   [html, fs.readFileSync(path.join(root, 'docs', 'app.js'), 'utf8'),
