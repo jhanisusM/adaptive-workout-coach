@@ -81,6 +81,7 @@ Run the tests with `npm test` (dev-only; nothing from `node_modules` is shipped 
 | How it's organized | done | `#btnInfo`, `#infoPanel`, `#blockNote` | Header info panel, not a card in the main flow. Also fills when a stored session has already expired. |
 | Featured demo cards | removed | | The sidebar cards are gone. The Demo videos section lists the catalog instead. |
 | Unknown video id is skipped | done | `resolveVideo`, `resolveDemoList` | A console warning is logged and the page still loads. |
+| Player allow list omits web-share | done | `videoEmbedHtml` | The iframe allow list is accelerometer, autoplay, clipboard-write, encrypted-media, gyroscope, and picture-in-picture. web-share is left out so the browser does not warn about an unrecognized permission. |
 
 ## Storage
 
@@ -93,6 +94,12 @@ Run the tests with `npm test` (dev-only; nothing from `node_modules` is shipped 
 | Corrupt JSON or a broken field | done | `loadStoreFromRaw` | Fresh defaults, or that field reset, plus a one-time message. The page is not left blank. |
 | Backup before replacing unreadable saved data | done | `backupRawBeforeSave`, `boot` | The original string is copied to `awc-demo-v1.bak-<timestamp>`. The page says when that backup was stored. |
 | Old backups are trimmed | done | `pruneBackups` | The newest 3 backup keys are kept. |
+
+## Page
+
+| Feature | Status | Location | Notes |
+| --- | --- | --- | --- |
+| Favicon | done | `docs/favicon.svg`, `docs/index.html` | The header info icon (`.icon-info`, a circle with the letter i) on the app green. The page CSP `img-src` already allows `'self'`, so the icon can load from this site. |
 
 ## Notes
 
