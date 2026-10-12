@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Adaptive Workout Coach">
+  <title>Adaptive Workout Coach</title>
+  <rect width="32" height="32" rx="8" fill="#147a5c"/>
+  <circle cx="16" cy="16" r="9.25" fill="none" stroke="#ffffff" stroke-width="2.25"/>
+  <rect x="14.55" y="13.7" width="2.9" height="8.5" rx="1.15" fill="#ffffff"/>
+  <circle cx="16" cy="10.15" r="1.65" fill="#ffffff"/>
+</svg>
