@@ -1,55 +1,55 @@
 /* Adaptive Workout Coach: static demo stylesheet (GitHub Pages) */
 :root {
-  --bg: #f4f7f5;
+  --bg: #eef2ff;
   --paper: #ffffff;
-  --ink: #182420;
-  --muted: #64716b;
-  --line: #dde5e1;
-  --green: #147a5c;
-  --green-soft: #ddf2e8;
-  --blue: #2a6d8a;
-  --blue-soft: #ddeff5;
-  --red: #b0483c;
-  --red-soft: #fbe7e3;
-  --amber: #9a6200;
-  --amber-soft: #fff1d4;
-  --radius: 14px;
-  --shadow: 0 14px 44px rgba(24, 40, 32, .09);
+  --ink: #1e1b4b;
+  --muted: #64748b;
+  --line: #ddd6fe;
+  --green: #6d28d9;
+  --green-soft: #ede9fe;
+  --blue: #2563eb;
+  --blue-soft: #dbeafe;
+  --red: #e11d48;
+  --red-soft: #fff1f2;
+  --amber: #b45309;
+  --amber-soft: #fef3c7;
+  --radius: 18px;
+  --shadow: 0 12px 32px rgba(76, 29, 149, .14), 0 2px 8px rgba(76, 29, 149, .08);
   font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
   color-scheme: light dark;
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #0f1513;
-    --paper: #182019;
-    --ink: #eef4f0;
-    --muted: #a9b5ae;
-    --line: #2c3833;
-    --green: #6fd6a8;
-    --green-soft: #16382c;
-    --blue: #7fc7de;
-    --blue-soft: #173642;
-    --red: #f0978b;
-    --red-soft: #452723;
-    --amber: #f5bd60;
-    --amber-soft: #43300f;
-    --shadow: 0 16px 50px rgba(0, 0, 0, .3);
+    --bg: #0B0B0F;
+    --paper: #17171D;
+    --ink: #f1f5f9;
+    --muted: #a5adcf;
+    --line: #2B2B35;
+    --green: #8b5cf6;
+    --green-soft: #23202E;
+    --blue: #818cf8;
+    --blue-soft: #1B1F2B;
+    --red: #fb7185;
+    --red-soft: #2B1A20;
+    --amber: #fbbf24;
+    --amber-soft: #29200F;
+    --shadow: 0 16px 50px rgba(0, 0, 0, .45), 0 2px 10px rgba(0, 0, 0, .35);
   }
 }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
-body { margin: 0; background: var(--bg); color: var(--ink); min-height: 100vh; }
+body { margin: 0; background: linear-gradient(135deg, #eef2ff 0%, #ecfeff 48%, #fff1f2 100%); background-attachment: fixed; background-color: #eef2ff; color: var(--ink); min-height: 100vh; }
 button, input, select { font: inherit; }
 :focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
 a { color: var(--blue); }
 
-.page { width: min(1060px, calc(100% - 32px)); margin: 0 auto; padding: 22px 0 120px; }
+.page { width: min(1060px, calc(100% - 32px)); margin: 0 auto; padding: 22px 0 120px; position: relative; z-index: 1; }
 
 /* Sticky status bar */
 .status-bar {
   position: sticky; top: 10px; z-index: 30;
   display: grid; grid-template-columns: auto 1fr; gap: 6px 20px; align-items: center;
-  background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--paper); background: rgba(255, 255, 255, .86); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid var(--line); border-radius: var(--radius);
   padding: 12px 16px 10px; margin-bottom: 26px; box-shadow: var(--shadow);
 }
 .status-state { display: flex; align-items: center; gap: 9px; font-size: .9rem; font-weight: 600; }
@@ -58,7 +58,7 @@ a { color: var(--blue); }
 .status-bar.complete .status-dot { background: var(--blue); }
 .status-detail { display: flex; justify-content: flex-end; gap: 20px; color: var(--muted); font-size: .8rem; font-weight: 600; }
 .status-track { grid-column: 1 / -1; height: 4px; border-radius: 99px; background: var(--line); overflow: hidden; }
-.status-fill { width: 0; height: 100%; background: var(--green); transition: width .25s ease; }
+.status-fill { width: 0; height: 100%; background: linear-gradient(135deg, #6d28d9 0%, #2563eb 100%); transition: width .25s ease; }
 
 .intro { display: grid; grid-template-columns: 1fr 220px; gap: 24px; align-items: end; margin-bottom: 20px; }
 .intro-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
@@ -69,15 +69,15 @@ a { color: var(--blue); }
 .hamburger span { display: block; height: 2px; background: currentColor; border-radius: 2px; }
 .icon-info { width: 18px; height: 18px; border: 2px solid currentColor; border-radius: 50%; display: grid; place-items: center; font-size: .72rem; font-weight: 800; line-height: 1; }
 .icon-info::before { content: "i"; }
-h1 { font-size: clamp(2rem, 5vw, 3.6rem); letter-spacing: -.03em; margin: 0 0 10px; line-height: 1; }
+h1 { font-size: clamp(2rem, 5vw, 3.6rem); letter-spacing: -.03em; margin: 0 0 10px; line-height: 1; color: var(--ink); background: linear-gradient(92deg, #6d28d9 0%, #4f46e5 42%, #0891b2 76%, #e11d48 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .lede { color: var(--muted); line-height: 1.6; margin: 0; max-width: 640px; }
-.demo-badge { display: inline-block; margin: 10px 0 0; font-size: .78rem; font-weight: 700; color: var(--blue); background: var(--blue-soft); border-radius: 20px; padding: 4px 12px; }
+.demo-badge { display: inline-block; margin: 10px 0 0; font-size: .78rem; font-weight: 700; color: #5b21b6; background: linear-gradient(135deg, #ede9fe 0%, #cffafe 100%); border-radius: 20px; padding: 4px 12px; }
 .frequency { border-top: 1px solid var(--line); padding-top: 12px; display: flex; justify-content: space-between; font-size: .88rem; color: var(--muted); }
 
 .safety { background: var(--red-soft); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 20px; font-size: .92rem; line-height: 1.5; }
 .safety strong { color: var(--red); }
 
-.dashboard { background: var(--paper); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow); display: grid; grid-template-columns: 1fr 1fr; overflow: hidden; margin-bottom: 26px; }
+.dashboard { position: relative; background: var(--paper); border: 1px solid var(--line); border-radius: 20px; box-shadow: var(--shadow); display: grid; grid-template-columns: 1fr 1fr; overflow: hidden; margin-bottom: 26px; }
 .timer-panel, .progress-panel { padding: 22px; }
 .timer-panel { border-right: 1px solid var(--line); }
 .panel-label { font-size: .72rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
@@ -87,8 +87,8 @@ h1 { font-size: clamp(2rem, 5vw, 3.6rem); letter-spacing: -.03em; margin: 0 0 10
 .timer-controls { display: flex; gap: 8px; flex-wrap: wrap; }
 .session-date { margin-top: 10px; font-size: .82rem; color: var(--muted); }
 
-.btn { min-height: 44px; border: 0; border-radius: 10px; padding: 0 18px; font-weight: 700; cursor: pointer; background: var(--green); color: #fff; }
-@media (prefers-color-scheme: dark) { .btn { color: #0d1a14; } }
+.btn { min-height: 44px; border: 0; border-radius: 12px; padding: 0 18px; font-weight: 700; cursor: pointer; background: linear-gradient(135deg, #6d28d9 0%, #2563eb 100%); color: #fff; box-shadow: 0 8px 20px rgba(79, 70, 229, .35); transition: transform .15s ease, box-shadow .15s ease, filter .15s ease; }
+@media (prefers-color-scheme: dark) { .btn { color: #fff; } }
 .btn.secondary { background: var(--line); color: var(--ink); }
 .btn.danger { background: var(--red-soft); color: var(--red); }
 
@@ -109,11 +109,11 @@ h1 { font-size: clamp(2rem, 5vw, 3.6rem); letter-spacing: -.03em; margin: 0 0 10
 .progress-top { display: flex; justify-content: space-between; align-items: baseline; }
 .progress-count { font: 700 1.15rem/1 ui-monospace, Menlo, monospace; }
 .progress-track { height: 8px; background: var(--line); border-radius: 99px; overflow: hidden; margin: 12px 0 10px; }
-.progress-fill { width: 0; height: 100%; background: var(--green); transition: width .25s ease; }
+.progress-fill { width: 0; height: 100%; background: linear-gradient(135deg, #6d28d9 0%, #2563eb 100%); transition: width .25s ease; }
 .progress-note { font-size: .84rem; color: var(--muted); }
 
 .layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 24px; align-items: start; }
-.section { background: var(--paper); border: 1px solid var(--line); border-radius: 16px; margin-bottom: 16px; overflow: hidden; }
+.section { background: var(--paper); border: 1px solid var(--line); border-radius: 18px; margin-bottom: 16px; overflow: hidden; }
 .section-head { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 14px; padding: 16px 18px; border: 0; border-bottom: 1px solid var(--line); background: transparent; color: var(--ink); cursor: pointer; text-align: left; }
 .section-head::after { content: ""; width: 8px; height: 8px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(45deg); transition: transform .2s; flex: 0 0 auto; }
 .section.collapsed .section-head { border-bottom-color: transparent; }
@@ -121,7 +121,7 @@ h1 { font-size: clamp(2rem, 5vw, 3.6rem); letter-spacing: -.03em; margin: 0 0 10
 .section.collapsed .exercise-list { display: none; }
 .section.complete .section-head { background: var(--green-soft); }
 .section-title { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.step-no { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-size: .75rem; font-weight: 800; background: var(--green-soft); color: var(--green); }
+.step-no { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-size: .75rem; font-weight: 800; background: linear-gradient(135deg, #6d28d9 0%, #2563eb 100%); color: #fff; }
 .section-heading { margin: 0; font-size: 1.02rem; }
 .duration { font-size: .8rem; color: var(--muted); font-weight: 600; white-space: nowrap; }
 .block-tag { font-size: .68rem; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--blue); background: var(--blue-soft); border-radius: 6px; padding: 3px 8px; }
@@ -132,7 +132,7 @@ h1 { font-size: clamp(2rem, 5vw, 3.6rem); letter-spacing: -.03em; margin: 0 0 10
 .check-row { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; gap: 12px; align-items: start; padding: 16px 18px; cursor: pointer; }
 .check-row input { appearance: none; width: 24px; height: 24px; margin: 1px 0 0; border: 2px solid var(--line); border-radius: 8px; cursor: pointer; display: grid; place-items: center; }
 .check-row input::after { content: ""; width: 6px; height: 11px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg) scale(0); }
-.check-row input:checked { background: var(--green); border-color: var(--green); }
+.check-row input:checked { background: linear-gradient(135deg, #6d28d9 0%, #2563eb 100%); border-color: #6d28d9; }
 .check-row input:checked::after { transform: rotate(45deg) scale(1); }
 .check-row input:disabled { cursor: not-allowed; opacity: .55; }
 .check-row:has(input:disabled) { cursor: not-allowed; }
@@ -156,7 +156,7 @@ h1 { font-size: clamp(2rem, 5vw, 3.6rem); letter-spacing: -.03em; margin: 0 0 10
 .demo-pos { font-size: .72rem; color: var(--muted); font-family: ui-monospace, Menlo, monospace; }
 
 .sidebar { position: sticky; top: 18px; }
-.side-card { background: var(--paper); border: 1px solid var(--line); border-radius: 16px; padding: 18px; margin-bottom: 16px; }
+.side-card { background: var(--paper); border: 1px solid var(--line); border-radius: 18px; padding: 18px; margin-bottom: 16px; }
 .side-card h2 { font-size: .98rem; margin: 0 0 4px; }
 .side-card p { margin: 0 0 10px; color: var(--muted); font-size: .84rem; line-height: 1.55; }
 .demo-card { display: block; padding: 10px 0; border-top: 1px solid var(--line); text-decoration: none; color: var(--ink); }
@@ -168,7 +168,7 @@ h1 { font-size: clamp(2rem, 5vw, 3.6rem); letter-spacing: -.03em; margin: 0 0 10
 .cal-progress { font: 700 1.4rem/1 ui-monospace, Menlo, monospace; }
 
 /* Program phase card */
-.card { background: var(--paper); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow); padding: 22px; }
+.card { background: var(--paper); border: 1px solid var(--line); border-radius: 20px; box-shadow: var(--shadow); padding: 22px; }
 .muted { color: var(--muted); }
 .small { font-size: .82rem; }
 .phase-card { margin-bottom: 20px; }
@@ -180,7 +180,7 @@ h1 { font-size: clamp(2rem, 5vw, 3.6rem); letter-spacing: -.03em; margin: 0 0 10
 .phase-btn { border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 10px; padding: 10px 8px; cursor: pointer; display: grid; gap: 2px; text-align: center; font: inherit; }
 .phase-btn strong { font-size: .85rem; }
 .phase-btn span { font-size: .75rem; color: var(--muted); }
-.phase-btn.active { border-color: var(--green); background: var(--green-soft); }
+.phase-btn.active { border-color: #6d28d9; background: linear-gradient(135deg, #ede9fe 0%, #dbeafe 100%); box-shadow: 0 6px 18px rgba(109, 40, 217, .22); }
 .phase-progress { display: grid; gap: 6px; margin-bottom: 14px; font-size: .88rem; }
 .phase-row { display: flex; justify-content: space-between; gap: 10px; }
 .phase-row .done { color: var(--green); font-weight: 700; }
@@ -225,7 +225,7 @@ h1 { font-size: clamp(2rem, 5vw, 3.6rem); letter-spacing: -.03em; margin: 0 0 10
 .modal[hidden] { display: none !important; }
 .modal { position: fixed; inset: 0; z-index: 40; background: rgba(15, 21, 19, .55); display: grid; place-items: center; padding: 18px; }
 .modal-backdrop { position: absolute; inset: 0; border: 0; padding: 0; background: transparent; cursor: pointer; }
-.modal-card { position: relative; z-index: 1; width: min(520px, 100%); max-height: min(92vh, 760px); overflow: auto; background: var(--paper); color: var(--ink); border-radius: 16px; padding: 22px; box-shadow: var(--shadow); }
+.modal-card { position: relative; z-index: 1; width: min(520px, 100%); max-height: min(92vh, 760px); overflow: auto; background: var(--paper); color: var(--ink); border-radius: 18px; padding: 22px; box-shadow: var(--shadow); }
 .modal-card h2 { margin: 0 0 8px; font-size: 1.25rem; }
 .modal-card p { margin: 0 0 12px; line-height: 1.5; }
 .modal-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
@@ -255,4 +255,111 @@ h1 { font-size: clamp(2rem, 5vw, 3.6rem); letter-spacing: -.03em; margin: 0 0 10
   .modal-card { padding: 16px; }
   .safety, .phase-card, .demo-directory { width: 100%; }
   .day-choices { grid-template-columns: 1fr 1fr; }
+}
+
+/* ---- Visual restyle v2 additions (CSS only; no layout, grid, breakpoint, or spacing-structure changes) ---- */
+
+/* Fixed decorative layer: 3 large saturated radial glows, drifting slowly, below content. */
+body::before {
+  content: "";
+  position: fixed; inset: -40px; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(600px 600px at 12% 8%, rgba(109, 40, 217, .28), transparent 70%),
+    radial-gradient(700px 500px at 88% 18%, rgba(6, 182, 212, .25), transparent 70%),
+    radial-gradient(650px 650px at 50% 95%, rgba(244, 63, 94, .22), transparent 70%);
+  animation: v2-bg-drift 36s ease-in-out infinite alternate;
+}
+@keyframes v2-bg-drift {
+  from { transform: translate3d(0, 0, 0) scale(1); opacity: .9; }
+  to { transform: translate3d(2%, -2%, 0) scale(1.05); opacity: 1; }
+}
+
+/* Thin gradient accent edges (bars, not full gradient backgrounds, so text stays readable). */
+.dashboard::before {
+  content: ""; position: absolute; top: 0; left: 0; right: 0; height: 4px; z-index: 1;
+  background: linear-gradient(90deg, #6d28d9 0%, #4f46e5 35%, #06b6d4 70%, #f43f5e 100%);
+  border-radius: 20px 20px 0 0;
+}
+.phase-card { position: relative; }
+.phase-card::before {
+  content: ""; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+  background: linear-gradient(90deg, #6d28d9 0%, #4f46e5 35%, #06b6d4 70%, #f43f5e 100%);
+  border-radius: 20px 20px 0 0;
+}
+
+/* Timer panel gradient wash (solid text on top; the timer itself stays solid ink). */
+.timer-panel {
+  background: linear-gradient(160deg, rgba(109, 40, 217, .10) 0%, rgba(6, 182, 212, .08) 55%, transparent 100%);
+}
+
+/* Primary button hover / press (secondary and danger keep their own kinds). */
+.btn:hover { transform: translateY(-1px); filter: brightness(1.06); box-shadow: 0 10px 24px rgba(79, 70, 229, .42), 0 0 22px rgba(109, 40, 217, .35); }
+.btn:active { transform: translateY(0); filter: brightness(.98); box-shadow: 0 4px 12px rgba(79, 70, 229, .30); }
+.btn.secondary:hover { filter: brightness(.97); }
+.btn.danger:hover { filter: brightness(.98); }
+
+/* Title fallback: if gradient-clipped text is unsupported, fall back to solid ink. */
+@supports not (background-clip: text) {
+  h1 { background: none; -webkit-background-clip: initial; background-clip: initial; color: var(--ink); }
+}
+
+/* Dark mode: deep indigo/charcoal base with vivid gradient glows. */
+@media (prefers-color-scheme: dark) {
+  body { background: linear-gradient(135deg, #0B0B0F 0%, #101016 48%, #17171D 100%); background-attachment: fixed; background-color: #0B0B0F; }
+  body::before {
+    background:
+      radial-gradient(600px 600px at 12% 8%, rgba(139, 92, 246, .38), transparent 70%),
+      radial-gradient(700px 500px at 88% 18%, rgba(34, 211, 238, .30), transparent 70%),
+      radial-gradient(650px 650px at 50% 95%, rgba(251, 113, 133, .28), transparent 70%);
+  }
+  .status-bar { background: var(--paper); background: rgba(23, 23, 29, .86); }
+  h1 { background: linear-gradient(92deg, #a78bfa 0%, #818cf8 42%, #22d3ee 76%, #fb7185 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .status-fill, .progress-fill { background: linear-gradient(135deg, #6d28d9 0%, #2563eb 100%); }
+  .phase-btn.active { background: linear-gradient(135deg, #211E2E 0%, #1A1C2B 100%); border-color: #8b5cf6; }
+  .timer-panel { background: linear-gradient(160deg, rgba(139, 92, 246, .18) 0%, rgba(34, 211, 238, .10) 55%, transparent 100%); }
+}
+
+/* Reduced motion: animation off, static gradients remain. */
+@media (prefers-reduced-motion: reduce) {
+  body::before { animation: none; }
+  .btn, .status-fill, .progress-fill { transition: none; }
+}
+
+/* Sparing amber highlight: left accent inside the advice box (no layout change). */
+.advice { box-shadow: inset 4px 0 0 #f59e0b; }
+
+/* ---- Visual restyle v2 refinements (additive; CSS only, no layout or wording changes) ---- */
+
+/* Single electric accent: fills share the primary-button gradient exactly (see .btn). */
+.status-fill, .progress-fill { box-shadow: 0 0 12px rgba(109, 40, 217, .45), 0 0 6px rgba(37, 99, 235, .35); }
+
+/* Signature timer: DIRECT gradient text (never a CSS variable). Solid ink first, then gradient + transparent. */
+.timer { color: var(--ink); background: linear-gradient(92deg, #6d28d9 0%, #4f46e5 50%, #2563eb 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+/* Active-session pulse: the status bar precedes the dashboard under the same .page parent, so the general sibling selector reaches the timer. Soft glow only; no layout change. Driven by the existing .active class (app.js toggles it while a session is running). */
+@keyframes v2-timer-pulse {
+  from { text-shadow: 0 0 14px rgba(124, 58, 237, .35), 0 0 28px rgba(37, 99, 235, .20); }
+  to { text-shadow: 0 0 24px rgba(124, 58, 237, .55), 0 0 42px rgba(37, 99, 235, .32); }
+}
+.status-bar.active ~ .dashboard .timer { animation: v2-timer-pulse 3s ease-in-out infinite alternate; }
+.status-bar.active ~ .dashboard .timer.done { animation: none; }
+
+/* Dark mode refinements: same single accent for buttons and fills; lighter timer gradient for near-black. */
+@media (prefers-color-scheme: dark) {
+  .btn, .status-fill, .progress-fill { background: linear-gradient(135deg, #6d28d9 0%, #2563eb 100%); }
+  .btn:hover { box-shadow: 0 10px 24px rgba(79, 70, 229, .50), 0 0 26px rgba(139, 92, 246, .45); }
+  .timer { background: linear-gradient(92deg, #a78bfa 0%, #818cf8 50%, #60a5fa 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+}
+
+/* Done timers stay solid red: placed after every gradient rule above, and higher specificity than .timer, so the gradient never shows through. */
+.timer.done { background: none; -webkit-background-clip: initial; background-clip: initial; color: var(--red); }
+
+/* Timer fallback: if gradient-clipped text is unsupported, fall back to solid ink. Placed last so it wins over both light and dark timer gradients in non-supporting browsers; .timer.done still wins for done timers by specificity. */
+@supports not (background-clip: text) {
+  .timer { background: none; -webkit-background-clip: initial; background-clip: initial; color: var(--ink); }
+}
+
+/* Reduced motion: disable the timer pulse as well as the background drift (static gradients remain). */
+@media (prefers-reduced-motion: reduce) {
+  .status-bar.active ~ .dashboard .timer { animation: none; }
 }
