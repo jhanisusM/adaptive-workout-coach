@@ -54,11 +54,10 @@ function click(window, el) {
   el.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
 }
 
-function selectGymDay(window) {
-  const day = window.document.querySelector('.day.gym');
-  assert.ok(day, 'expected a gym day on the calendar');
-  click(window, day);
-  return day.getAttribute('data-day');
+function startSession(window) {
+  click(window, window.document.getElementById('btnStart'));
+  const stored = readStore(window);
+  return stored.session && stored.session.day;
 }
 
 function checkAll(window) {
@@ -101,7 +100,8 @@ test('the demo list renders and boxes cannot log a workout before Start', () => 
     assert.match(window.document.querySelector('#demoVideoList iframe').getAttribute('src'), /youtube-nocookie\.com\/embed\//);
     assert.match(window.document.getElementById('blockNote').textContent, /foundation block/);
     assert.equal(window.document.getElementById('infoPanel').hidden, true);
-    assert.equal(window.document.getElementById('settingsPanel').hidden, true);
+    assert.equal(window.document.getElementById('settingsPanel'), null);
+    assert.equal(window.document.getElementById('btnMenu'), null);
     assert.ok(window.document.querySelector('input[data-check]').disabled);
 
     const box = window.document.querySelector('input[data-check]');
@@ -177,13 +177,12 @@ test('the disclaimer footer renders and links to the README', () => {
   }
 });
 
-test('Finish logs a gym day once, and ticking every box does not', async () => {
+test('Finish logs a day once, and ticking every box does not', async () => {
   const { dom, window, errors } = boot();
   try {
     assert.deepEqual(errors, []);
     acceptClearance(window);
-    const day = selectGymDay(window);
-    click(window, window.document.getElementById('btnStart'));
+    const day = startSession(window);
     checkAll(window);
     let stored = readStore(window);
     assert.equal(stored.phaseSessions['1'], 0);
@@ -202,8 +201,7 @@ test('Finish logs a gym day once, and ticking every box does not', async () => {
     assert.deepEqual(stored.checks, {});
     assert.deepEqual(stored.checklist, {});
 
-    selectGymDay(window);
-    click(window, window.document.getElementById('btnStart'));
+    startSession(window);
     click(window, window.document.getElementById('btnFinish'));
     stored = readStore(window);
     assert.equal(stored.phaseSessions['1'], 1);
@@ -277,8 +275,7 @@ test('the current phase does nothing and a locked phase cannot be opened', () =>
   try {
     assert.deepEqual(errors, []);
     acceptClearance(window);
-    selectGymDay(window);
-    click(window, window.document.getElementById('btnStart'));
+    startSession(window);
     const before = readStore(window);
     click(window, window.document.querySelector('[data-phase="1"]'));
     const afterSame = readStore(window);
@@ -348,7 +345,7 @@ test('moving back from an unlocked phase still asks before ending a session', ()
   }
 });
 
-test('a stale selected day is replaced on load and the calendar follows a new date', async () => {
+test('a stale stored day does not break load, and the calendar follows a new date', async () => {
   const { dom, window, errors } = boot({
     version: 2,
     phase: 1,
@@ -370,12 +367,11 @@ test('a stale selected day is replaced on load and the calendar follows a new da
     const stored = readStore(window);
     assert.equal(stored.phaseSessions['1'], 2);
     assert.equal(stored.completions['2020-01-07'], true);
-    assert.notEqual(stored.activeDay, '2020-01-01');
     assert.equal(stored.version, 3);
     assert.deepEqual(stored.workoutDays, [2, 4]);
     assert.equal(Object.prototype.hasOwnProperty.call(stored, 'clearance'), false);
     assert.equal(Object.prototype.hasOwnProperty.call(stored, 'thirdDay'), false);
-    assert.ok(app.weekDayKeys(new Date()).includes(stored.activeDay) || app.isGymDayKey(stored.activeDay, stored.workoutDays));
+    assert.equal(stored.activeDay, '2020-01-01');
     const before = window.document.getElementById('weekGrid').textContent;
     const RealDate = window.Date;
     const future = new RealDate(Date.now() + 8 * 24 * 60 * 60 * 1000);
@@ -392,7 +388,6 @@ test('a stale selected day is replaced on load and the calendar follows a new da
     await new Promise(resolve => setTimeout(resolve, 600));
     const after = window.document.getElementById('weekGrid').textContent;
     assert.notEqual(after, before);
-    assert.notEqual(readStore(window).activeDay, '2020-01-01');
   } finally {
     dom.window.close();
   }
@@ -590,8 +585,7 @@ test('a flagged check-in repeats the week and two flags lock Advance', () => {
   const flagged = boot(baseStore());
   try {
     acceptClearance(flagged.window, '2026-10-01');
-    selectGymDay(flagged.window);
-    click(flagged.window, flagged.window.document.getElementById('btnStart'));
+    startSession(flagged.window);
     click(flagged.window, flagged.window.document.getElementById('btnFinish'));
     const doseBefore = flagged.window.document.querySelector('.dose').textContent;
     saveCheckin(flagged.window, 6);
@@ -650,22 +644,18 @@ test('draft labels stay on the phase card and phase 3', () => {
   }
 });
 
-function setWorkoutDay(window, dow, on) {
-  const box = window.document.querySelector('[data-workout-day="' + dow + '"]');
-  assert.ok(box);
-  box.checked = on;
-  box.dispatchEvent(new window.Event('change', { bubbles: true }));
-}
-
-test('settings, the info panel, and demo videos follow the chosen week', () => {
+test('there is no settings modal, and the info panel still works', () => {
   const { dom, window, errors } = boot();
   try {
     assert.deepEqual(errors, []);
     const doc = window.document;
     assert.equal(doc.getElementById('btnStart').disabled, false);
-    assert.match(doc.getElementById('frequencyCount').textContent, /2 workout days/);
+    assert.equal(doc.getElementById('btnMenu'), null);
+    assert.equal(doc.getElementById('settingsPanel'), null);
     assert.equal(doc.querySelectorAll('.day').length, 7);
-    assert.equal(doc.querySelectorAll('.day.gym').length, 2);
+    assert.equal(doc.querySelectorAll('.day.gym').length, 0);
+    assert.equal(doc.querySelectorAll('[data-day]').length, 0);
+    assert.equal(doc.querySelectorAll('[data-workout-day]').length, 0);
 
     click(window, doc.getElementById('btnInfo'));
     assert.equal(doc.getElementById('infoPanel').hidden, false);
@@ -673,73 +663,39 @@ test('settings, the info panel, and demo videos follow the chosen week', () => {
     assert.match(doc.getElementById('blockNote').textContent, /foundation block/);
     assert.match(doc.getElementById('blockNote').textContent, /accessory block/);
 
-    click(window, doc.getElementById('btnMenu'));
-    assert.equal(doc.getElementById('settingsPanel').hidden, false);
+    doc.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     assert.equal(doc.getElementById('infoPanel').hidden, true);
-    assert.equal(doc.getElementById('btnMenu').getAttribute('aria-expanded'), 'true');
-    assert.equal(doc.querySelectorAll('[data-workout-day]').length, 7);
-    assert.equal(doc.querySelector('[data-workout-day="2"]').checked, true);
-    assert.equal(doc.querySelector('[data-workout-day="4"]').checked, true);
-    assert.equal(doc.querySelector('[data-workout-day="0"]').checked, false);
 
-    setWorkoutDay(window, 5, true);
-    assert.deepEqual(readStore(window).workoutDays, [2, 4, 5]);
-    assert.equal(doc.querySelectorAll('.day.gym').length, 3);
-    assert.match(doc.getElementById('frequencyCount').textContent, /3 workout days/);
-    const fridayEl = [...doc.querySelectorAll('.day.gym')].find(el => el.querySelector('.dow').textContent === 'Fri');
-    assert.ok(fridayEl);
-    click(window, fridayEl);
-    click(window, doc.getElementById('btnStart'));
+    const day = startSession(window);
     click(window, doc.getElementById('btnFinish'));
     saveCheckin(window, 1);
-    const fridayKey = fridayEl.getAttribute('data-day');
-    assert.equal(readStore(window).completions[fridayKey], true);
+    assert.equal(readStore(window).completions[day], true);
     assert.equal(readStore(window).phaseSessions['1'], 1);
-
-    setWorkoutDay(window, 2, false);
-    setWorkoutDay(window, 4, false);
-    assert.deepEqual(readStore(window).workoutDays, [5]);
-    setWorkoutDay(window, 5, false);
-    assert.equal(doc.querySelector('[data-workout-day="5"]').checked, true);
-    assert.deepEqual(readStore(window).workoutDays, [5]);
-    assert.match(doc.getElementById('sessionMessage').textContent, /Keep at least one workout day/);
-    assert.equal(doc.getElementById('workoutDaysNote').hidden, false);
-
-    doc.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-    assert.equal(doc.getElementById('settingsPanel').hidden, true);
+    assert.equal(doc.getElementById('calProgress').textContent, '1');
   } finally {
     dom.window.close();
   }
 });
 
-test('turning off the session weekday still logs that day, and a rest day cannot start', () => {
+test('a running session logs its own day, and any day can start', () => {
   const { dom, window, errors } = boot();
   try {
     assert.deepEqual(errors, []);
     const doc = window.document;
-    const tuesday = [...doc.querySelectorAll('.day.gym')].find(el => el.querySelector('.dow').textContent === 'Tue');
-    click(window, tuesday);
-    click(window, doc.getElementById('btnStart'));
+    const day = startSession(window);
     assert.equal(readStore(window).session.state, 'running');
-    click(window, doc.getElementById('btnMenu'));
-    setWorkoutDay(window, 2, false);
-    assert.equal(readStore(window).session.day, tuesday.getAttribute('data-day'));
     click(window, doc.getElementById('btnFinish'));
     assert.equal(doc.getElementById('checkinModal').hidden, false);
     saveCheckin(window, 1);
     const logged = readStore(window);
-    assert.equal(logged.completions[tuesday.getAttribute('data-day')], true);
+    assert.equal(logged.completions[day], true);
     assert.equal(logged.phaseSessions['1'], 1);
     assert.equal(logged.session, null);
-    assert.deepEqual(logged.workoutDays, [4]);
   } finally {
     dom.window.close();
   }
 
-  const today = new Date();
-  const start = app.weekStart(today);
-  const wednesday = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 3);
-  const rest = boot({
+  const stored = boot({
     version: 3,
     phase: 1,
     unlockedPhase: 1,
@@ -748,18 +704,17 @@ test('turning off the session weekday still logs that day, and a rest day cannot
     collapsed: {},
     workoutDays: [2, 4],
     completions: {},
-    activeDay: app.dayKey(wednesday),
+    activeDay: '2026-10-07',
     checklist: {},
     session: null,
     symptoms: {},
     history: [],
   });
   try {
-    click(rest.window, rest.window.document.getElementById('btnStart'));
-    assert.match(rest.window.document.getElementById('sessionMessage').textContent, /Rest days are not logged/);
-    assert.equal(readStore(rest.window).session, null);
-    assert.equal(readStore(rest.window).phaseSessions['1'], 0);
+    const day = startSession(stored.window);
+    assert.equal(readStore(stored.window).session.state, 'running');
+    assert.equal(day, app.dayKey(new Date()));
   } finally {
-    rest.dom.window.close();
+    stored.dom.window.close();
   }
 });

@@ -119,7 +119,7 @@ test('a day can be logged only once, and an active session logs its own day', ()
   const sunday = gymState('2026-10-11');
   sunday.session = null;
   sunday.activeDay = '2026-10-11';
-  assert.equal(app.canStartSession(sunday).reason, 'not-gym-day');
+  assert.equal(app.canStartSession(sunday).action, 'start');
   sunday.session = session('2026-10-11');
   assert.equal(app.applyCompletion(sunday).ok, true);
   assert.equal(sunday.completions['2026-10-11'], true);
@@ -127,12 +127,12 @@ test('a day can be logged only once, and an active session logs its own day', ()
   const friday = gymState('2026-10-09');
   friday.session = null;
   friday.activeDay = '2026-10-09';
-  assert.equal(app.canStartSession(friday).reason, 'not-gym-day');
+  assert.equal(app.canStartSession(friday).action, 'start');
   friday.session = session('2026-10-09');
   assert.equal(app.applyCompletion(friday).ok, true);
   assert.equal(friday.completions['2026-10-09'], true);
 
-  assert.equal(app.canStartSession(gymState('2026-10-10', { session: null, activeDay: '2026-10-10' })).reason, 'not-gym-day');
+  assert.equal(app.canStartSession(gymState('2026-10-10', { session: null, activeDay: '2026-10-10' })).action, 'start');
   assert.equal(app.canStartSession(gymState('2026-10-06', { session: null, activeDay: '2026-10-06' })).action, 'start');
   const paused = gymState();
   paused.session = session('2026-10-06', { state: 'paused', remainingMs: 1000 });
@@ -187,23 +187,32 @@ test('the current phase is a no-op and a different phase confirms before discard
   assert.deepEqual(app.phaseChangeDecision(idle, 99), { action: 'noop' });
 });
 
-test('a selected day outside the visible week moves to today or the next gym day', () => {
-  assert.equal(app.resolveActiveDay('2020-01-01', TUE, [2, 4]), '2026-10-06');
-  assert.equal(app.resolveActiveDay('2020-01-01', WED, [2, 4]), '2026-10-08');
-  assert.equal(app.resolveActiveDay('2020-01-01', SAT, [2, 4]), '2026-10-13');
-  assert.equal(app.resolveActiveDay('2026-10-10', SAT, [2, 4]), '2026-10-10');
-  assert.equal(app.resolveActiveDay('2026-10-06', SAT, [2, 4]), '2026-10-06');
-  assert.equal(app.nextGymDay(SUN, [2, 4]), '2026-10-13');
-  assert.equal(app.isGymDay(SAT, [2, 4, 6]), true);
-  assert.equal(app.isGymDay(SAT, [2, 4]), false);
+test('Start is allowed any day of the week, and an old save keeps its day fields without gating', () => {
+  ['2026-10-11', '2026-10-12', '2026-10-13', '2026-10-14', '2026-10-15', '2026-10-16', '2026-10-17'].forEach(key => {
+    const idle = app.defaultStore(TUE);
+    idle.session = null;
+    idle.activeDay = key;
+    idle.workoutDays = [];
+    assert.equal(app.canStartSession(idle).action, 'start');
+  });
 
-  const state = app.defaultStore(SAT);
-  state.activeDay = '2020-01-01';
-  state.thirdDay = 'none';
-  const rolled = app.rolloverActiveDay(state, new Date(2026, 9, 18));
-  assert.equal(rolled.changed, true);
-  assert.notEqual(state.activeDay, '2020-01-01');
-  assert.equal(app.weekDayKeys(new Date(2026, 9, 18)).indexOf('2020-01-01'), -1);
+  const migrated = app.migrate({
+    version: 2,
+    phase: 1,
+    phaseSessions: { 1: 0, 2: 0, 3: 0 },
+    checks: {},
+    collapsed: {},
+    thirdDay: 'none',
+    completions: {},
+    activeDay: '2020-01-01',
+    checklist: {},
+    session: null,
+    symptoms: {},
+    history: [],
+  }, TUE);
+  assert.deepEqual(migrated.state.workoutDays, [2, 4]);
+  assert.equal(migrated.state.activeDay, '2020-01-01');
+  assert.equal(app.canStartSession(migrated.state).action, 'start');
 });
 
 test('saved v1 progress survives migration and a second load is stable', () => {
@@ -315,7 +324,7 @@ test('a bad video id warns and is skipped', () => {
   assert.match(warnings.join('\n'), /unknown video id: x/);
 });
 
-test('a session still logs its own day after that weekday is turned off', () => {
+test('a session still logs its own day', () => {
   const state = gymState('2026-10-06');
   state.session = session('2026-10-06');
   state.workoutDays = [4];
@@ -342,20 +351,18 @@ test('a session still logs its own day after that weekday is turned off', () => 
   assert.equal(app.youtubeId('javascript:alert(1)'), '');
 });
 
-test('changing workout days moves a rest-day selection when no session is running', () => {
+test('stored workout days do not gate Start, and a session keeps its own day', () => {
   const state = app.defaultStore(SAT);
   state.activeDay = '2026-10-10';
   state.workoutDays = [2, 4, 6];
   state.session = null;
-  const picked = app.workoutDaySelection(state, [2, 4], SAT);
-  assert.deepEqual(picked.workoutDays, [2, 4]);
-  assert.equal(picked.activeDay, '2026-10-13');
+  assert.equal(app.canStartSession(state).action, 'start');
 
   state.session = session('2026-10-10');
-  state.activeDay = '2026-10-10';
-  const held = app.workoutDaySelection(state, [2, 4], SAT);
-  assert.equal(held.activeDay, '2026-10-10');
-  assert.deepEqual(app.workoutDaySelection(state, [], SAT).workoutDays, [2, 4, 6]);
+  const logged = app.applyCompletion(state);
+  assert.equal(logged.ok, true);
+  assert.equal(logged.day, '2026-10-10');
+  assert.equal(state.completions['2026-10-10'], true);
 });
 
 test('an old clearance or third-day choice migrates without a partial-repair notice', () => {

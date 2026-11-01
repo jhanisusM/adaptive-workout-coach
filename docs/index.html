@@ -26,15 +26,11 @@
           <button class="icon-btn" id="btnInfo" type="button" aria-label="How the workout is organized" aria-expanded="false" aria-controls="infoPanel">
             <span class="icon-info" aria-hidden="true"></span>
           </button>
-          <button class="icon-btn" id="btnMenu" type="button" aria-label="Open settings" aria-expanded="false" aria-controls="settingsPanel">
-            <span class="hamburger" aria-hidden="true"><span></span><span></span><span></span></span>
-          </button>
         </div>
       </div>
       <p class="lede">A 3-phase program: stability and tissue tolerance, then supported unilateral work, then complex unilateral loading. It rebuilds capacity after a long time off your feet. Move up only with Advance, after 9 sessions and the checklist.</p>
       <p class="demo-badge">Live demo: progress is stored in this browser only.</p>
     </div>
-    <div class="frequency"><span>Weekly rhythm</span><strong id="frequencyCount">2 workout days</strong></div>
   </header>
 
   <div class="safety"><strong>Train smart:</strong> stay inside a comfortable range. Sharp pain is a stop sign. Skip the move. Low-load holds are a starting point, not a treatment for pain. This demo is a workout companion, not medical advice. No running, plyometrics, or deep squats below parallel until you are cleared for them separately.</div>
@@ -117,9 +113,9 @@
     <aside class="sidebar">
       <div class="side-card">
         <h2>Weekly calendar</h2>
-        <p>Tap a workout day. Change which days you train in Settings.</p>
+        <p>Days you worked out this week.</p>
         <div class="cal-head">
-          <div><span class="cal-progress" id="calProgress">0 / 2</span><div class="muted small">workout days done this week</div></div>
+          <div><span class="cal-progress" id="calProgress">0</span><div class="muted small">days worked out this week</div></div>
         </div>
         <div class="week-grid" id="weekGrid"></div>
       </div>
@@ -142,19 +138,6 @@
 <footer class="disclaimer-footer" id="disclaimerFooter">
   <p><a href="https://github.com/jhanisusM/adaptive-workout-coach#disclaimer">Personal research project. Not medical advice; use at your own risk.</a></p>
 </footer>
-
-<div class="modal" id="settingsPanel" hidden>
-  <button class="modal-backdrop" type="button" data-close-panel aria-label="Close settings"></button>
-  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
-    <h2 id="settingsTitle">Settings</h2>
-    <p>Choose which days you train. A day that is off stays a rest day and is not logged.</p>
-    <div class="day-choices" id="workoutDays" role="group" aria-label="Workout days"></div>
-    <p class="muted small" id="workoutDaysNote" hidden>Keep at least one workout day.</p>
-    <div class="modal-actions">
-      <button class="btn" id="btnSettingsClose" type="button" data-close-panel>Close</button>
-    </div>
-  </div>
-</div>
 
 <div class="modal" id="infoPanel" hidden>
   <button class="modal-backdrop" type="button" data-close-panel aria-label="Close info"></button>

@@ -481,26 +481,6 @@ function workoutDaysFromThird(thirdDay) {
   if (thirdDay === 'sat-morning') return [2, 4, 6];
   return DEFAULT_WORKOUT_DAYS.slice();
 }
-function daysOf(workoutDays) {
-  return normalizeWorkoutDays(workoutDays) || DEFAULT_WORKOUT_DAYS.slice();
-}
-function isGymDow(dow, workoutDays) {
-  return daysOf(workoutDays).indexOf(dow) !== -1;
-}
-function isGymDay(date, workoutDays) {
-  return isGymDow(date.getDay(), workoutDays);
-}
-function isGymDayKey(key, workoutDays) {
-  return isDayKey(key) && isGymDay(parseDay(key), workoutDays);
-}
-function nextGymDay(fromDate, workoutDays) {
-  const d = new Date(fromDate.getFullYear(), fromDate.getMonth(), fromDate.getDate());
-  for (let i = 0; i < 14; i++) {
-    if (isGymDay(d, workoutDays)) return dayKey(d);
-    d.setDate(d.getDate() + 1);
-  }
-  return dayKey(fromDate);
-}
 function weekStart(date) {
   const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
   d.setDate(d.getDate() - d.getDay());
@@ -515,29 +495,6 @@ function weekDayKeys(today) {
     keys.push(dayKey(d));
   }
   return keys;
-}
-/* Keep a day that is still in the visible week. Otherwise use today when it
- * is a workout day, or the next workout day. */
-function resolveActiveDay(activeDay, today, workoutDays) {
-  const todayDate = today instanceof Date ? today : new Date(today);
-  if (isDayKey(activeDay) && weekDayKeys(todayDate).indexOf(activeDay) !== -1) return activeDay;
-  if (isGymDay(todayDate, workoutDays)) return dayKey(todayDate);
-  return nextGymDay(todayDate, workoutDays);
-}
-function rolloverActiveDay(state, now) {
-  const today = now instanceof Date ? now : new Date(now);
-  const next = resolveActiveDay(state.activeDay, today, state.workoutDays);
-  const changed = next !== state.activeDay;
-  if (changed) state.activeDay = next;
-  return { changed: changed, activeDay: state.activeDay, todayKey: dayKey(today) };
-}
-function workoutDaySelection(state, workoutDays, today) {
-  const nextDays = normalizeWorkoutDays(workoutDays) || daysOf(state.workoutDays);
-  let activeDay = state.activeDay;
-  if (!sessionIsActive(state.session) && !isGymDayKey(activeDay, nextDays)) {
-    activeDay = resolveActiveDay(null, today, nextDays);
-  }
-  return { workoutDays: nextDays, activeDay: activeDay };
 }
 function normalizePhase(phase) {
   const n = Number(phase);
@@ -573,7 +530,6 @@ function canStartSession(state) {
   if (session && session.state === 'paused') return { ok: true, action: 'resume' };
   if (session && session.state === 'running') return { ok: false, reason: 'already-running' };
   if (session && session.state === 'expired') return { ok: false, reason: 'expired' };
-  if (!isGymDayKey(state.activeDay, state.workoutDays)) return { ok: false, reason: 'not-gym-day' };
   return { ok: true, action: 'start' };
 }
 function programExerciseIds(phaseId) {
@@ -998,7 +954,8 @@ function hasOwn(raw, key) {
 /* v1 (no version) and v2 -> v3. Validates each field, keeps good progress,
  * and grandfathers unlockedPhase at the current phase. Session counts are
  * kept as stored, including totals above 9. An older third-day choice becomes
- * workoutDays. Clearance is dropped and does not block Start. Corrupt roots
+ * workoutDays. workoutDays and activeDay are kept for loading older saves
+ * but no longer gate Start or the calendar. Clearance is dropped and does not block Start. Corrupt roots
  * become a fresh store plus a one-time notice. */
 function migrate(raw, now) {
   const today = now instanceof Date ? now : new Date();
@@ -1196,9 +1153,6 @@ function checkedCount() {
 function allChecked() {
   return currentProgram().every(e => store.checks[e.id]);
 }
-function gymDows() {
-  return daysOf(store.workoutDays);
-}
 function showMessage(text) {
   const el = $('sessionMessage');
   if (!el) return;
@@ -1211,12 +1165,7 @@ function showMessage(text) {
 /* ---------------- Session lifecycle ---------------- */
 function startSession() {
   const decision = canStartSession(store);
-  if (!decision.ok) {
-    if (decision.reason === 'not-gym-day') {
-      showMessage('Pick a workout day before starting. Rest days are not logged.');
-    }
-    return;
-  }
+  if (!decision.ok) return;
   if (decision.action === 'resume') { resumeSession(); return; }
   if (decision.action !== 'start') return;
   const now = Date.now();
@@ -1225,7 +1174,7 @@ function startSession() {
     startedAt: now,
     deadline: now + SESSION_MS,
     remainingMs: null,
-    day: store.activeDay,
+    day: dayKey(new Date()),
   };
   save();
   renderAll();
@@ -1470,30 +1419,20 @@ function advancePhase() {
 }
 
 function openPanel(which) {
-  const settings = $('settingsPanel');
   const info = $('infoPanel');
-  if (which === 'settings') {
-    if (info) info.hidden = true;
-    if (settings) settings.hidden = false;
-  } else if (which === 'info') {
-    if (settings) settings.hidden = true;
+  if (which === 'info') {
     if (info) info.hidden = false;
   }
   syncPanelButtons();
 }
 function closePanels() {
-  const settings = $('settingsPanel');
   const info = $('infoPanel');
-  if (settings) settings.hidden = true;
   if (info) info.hidden = true;
   syncPanelButtons();
 }
 function syncPanelButtons() {
-  const menu = $('btnMenu');
   const info = $('btnInfo');
-  const settingsOpen = !!($('settingsPanel') && !$('settingsPanel').hidden);
   const infoOpen = !!($('infoPanel') && !$('infoPanel').hidden);
-  if (menu) menu.setAttribute('aria-expanded', settingsOpen ? 'true' : 'false');
   if (info) info.setAttribute('aria-expanded', infoOpen ? 'true' : 'false');
 }
 
@@ -1507,7 +1446,7 @@ function renderStatus() {
   const n = checkedCount(), total = currentProgram().length;
   $('statusCount').textContent = n + ' / ' + total;
   $('statusFill').style.width = (total ? n / total * 100 : 0) + '%';
-  $('statusDay').textContent = prettyDay(s ? s.day : store.activeDay);
+  $('statusDay').textContent = prettyDay(s ? s.day : dayKey(new Date()));
   if (!s) $('statusText').textContent = 'Ready';
   else if (s.state === 'paused') $('statusText').textContent = 'Paused';
   else if (s.state === 'expired') $('statusText').textContent = 'Time is up';
@@ -1530,7 +1469,7 @@ function renderTimer() {
   else if (expired) detail = 'time is up';
   $('sessionDate').textContent = s
     ? 'Session: ' + prettyDay(s.day) + ' (' + detail + ')'
-    : 'No active session: pick a workout day and press Start.';
+    : 'No active session: press Start to begin.';
 }
 
 function renderProgress() {
@@ -1645,40 +1584,21 @@ function renderCalendar() {
   if (!grid) return;
   const start = weekStart(new Date());
   const today = dayKey(new Date());
-  const gyms = gymDows();
   let html = '';
-  const weekKeys = [];
+  let doneCount = 0;
   for (let i = 0; i < 7; i++) {
     const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
     const key = dayKey(d);
-    const isGym = gyms.indexOf(d.getDay()) !== -1;
-    if (isGym) weekKeys.push(key);
     const done = !!store.completions[key];
-    const cls = 'day' + (isGym ? ' gym' : '') + (key === today ? ' today' : '') + (key === store.activeDay ? ' selected' : '');
-    html += '<div class="' + cls + '"' + (isGym ? ' data-day="' + key + '" role="button" tabindex="0"' : '') + '>' +
+    if (done) doneCount++;
+    const cls = 'day' + (key === today ? ' today' : '');
+    html += '<div class="' + cls + '">' +
       '<span class="dow">' + WEEKDAY_NAMES[i] + '</span>' +
       '<span class="dnum">' + d.getDate() + '</span>' +
       '<span class="dmark">' + (done ? '\u2713 done' : '') + '</span></div>';
   }
   grid.innerHTML = html;
-  const doneCount = weekKeys.filter(k => store.completions[k]).length;
-  if ($('calProgress')) $('calProgress').textContent = doneCount + ' / ' + weekKeys.length;
-}
-
-function renderSettings() {
-  const group = $('workoutDays');
-  const days = gymDows();
-  if (group) {
-    group.innerHTML = WEEKDAY_NAMES.map(function (name, dow) {
-      const on = days.indexOf(dow) !== -1;
-      return '<label class="day-choice"><input type="checkbox" data-workout-day="' + dow + '"' +
-        (on ? ' checked' : '') + '><span>' + name + '</span></label>';
-    }).join('');
-  }
-  const freq = $('frequencyCount');
-  if (freq) {
-    freq.textContent = days.length === 1 ? '1 workout day' : days.length + ' workout days';
-  }
+  if ($('calProgress')) $('calProgress').textContent = String(doneCount);
 }
 
 function renderInfo() {
@@ -1775,7 +1695,6 @@ function renderAll() {
   renderPrompts();
   renderSections();
   renderCalendar();
-  renderSettings();
   renderInfo();
   renderDemoDirectory();
 }
@@ -1786,8 +1705,6 @@ function tick() {
   const todayKey = dayKey(new Date(now));
   if (renderedDayKey !== todayKey) {
     renderedDayKey = todayKey;
-    const rolled = rolloverActiveDay(store, new Date(now));
-    if (rolled.changed) save();
     renderCalendar();
     renderStatus();
     renderTimer();
@@ -1830,17 +1747,6 @@ function onClick(ev) {
     }
     return;
   }
-  const day = ev.target.closest('[data-day]');
-  if (day) {
-    store.activeDay = day.getAttribute('data-day');
-    save(); renderCalendar(); renderStatus(); renderTimer();
-    const routine = $('routine');
-    if (routine && typeof routine.scrollIntoView === 'function') {
-      try { routine.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
-      catch (e) { /* ignore */ }
-    }
-    return;
-  }
   const phaseBtn = ev.target.closest('[data-phase]');
   if (phaseBtn) {
     const n = Number(phaseBtn.getAttribute('data-phase'));
@@ -1873,45 +1779,12 @@ function onChange(ev) {
   if (box) { toggleCheck(box.getAttribute('data-check')); return; }
   const item = ev.target.closest('[data-checklist-item]');
   if (item) { toggleChecklistItem(item.getAttribute('data-checklist-item'), item.checked); return; }
-  const dayBox = ev.target.closest('[data-workout-day]');
-  if (dayBox) {
-    const dow = Number(dayBox.getAttribute('data-workout-day'));
-    const current = gymDows().slice();
-    const idx = current.indexOf(dow);
-    if (dayBox.checked) {
-      if (idx === -1) current.push(dow);
-    } else if (idx !== -1) {
-      if (current.length === 1) {
-        dayBox.checked = true;
-        const note = $('workoutDaysNote');
-        if (note) note.hidden = false;
-        showMessage('Keep at least one workout day.');
-        return;
-      }
-      current.splice(idx, 1);
-    }
-    const picked = workoutDaySelection(store, current, new Date());
-    store.workoutDays = picked.workoutDays;
-    store.activeDay = picked.activeDay;
-    const note = $('workoutDaysNote');
-    if (note) note.hidden = true;
-    save();
-    renderCalendar();
-    renderStatus();
-    renderTimer();
-    renderSettings();
-  }
 }
 function onKey(ev) {
   if (ev.key === 'Escape') {
-    const settingsOpen = $('settingsPanel') && !$('settingsPanel').hidden;
     const infoOpen = $('infoPanel') && !$('infoPanel').hidden;
-    if (settingsOpen || infoOpen) closePanels();
+    if (infoOpen) closePanels();
     return;
-  }
-  if (ev.key === 'Enter' || ev.key === ' ') {
-    const day = ev.target.closest && ev.target.closest('[data-day]');
-    if (day) { ev.preventDefault(); day.click(); }
   }
 }
 function bindUi() {
@@ -1919,10 +1792,6 @@ function bindUi() {
   document.addEventListener('change', onChange);
   document.addEventListener('keydown', onKey);
   $('btnStart').addEventListener('click', startSession);
-  $('btnMenu').addEventListener('click', function () {
-    if ($('settingsPanel').hidden) openPanel('settings');
-    else closePanels();
-  });
   $('btnInfo').addEventListener('click', function () {
     if ($('infoPanel').hidden) openPanel('info');
     else closePanels();
@@ -1950,8 +1819,6 @@ function boot() {
   bindUi();
   const today = new Date();
   renderedDayKey = dayKey(today);
-  const rolled = rolloverActiveDay(store, today);
-  if (rolled.changed) bootDirty = true;
   let backupMade = false;
   if (bootNeedsBackup && bootRaw != null && bootRaw !== '') {
     try {
@@ -2003,13 +1870,7 @@ if (typeof module !== 'undefined') {
     isDayKey: isDayKey,
     prettyDay: prettyDay,
     mondayOf: mondayOf,
-    isGymDay: isGymDay,
-    isGymDayKey: isGymDayKey,
-    nextGymDay: nextGymDay,
     weekDayKeys: weekDayKeys,
-    resolveActiveDay: resolveActiveDay,
-    rolloverActiveDay: rolloverActiveDay,
-    workoutDaySelection: workoutDaySelection,
     weekStart: weekStart,
     sessionIsActive: sessionIsActive,
     shouldExpireOnLoad: shouldExpireOnLoad,

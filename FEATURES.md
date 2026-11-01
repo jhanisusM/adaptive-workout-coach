@@ -24,11 +24,12 @@ Run the tests with `npm test` (dev-only; nothing from `node_modules` is shipped 
 | Feature | Status | Location | Notes |
 | --- | --- | --- | --- |
 | 30 minute timer with one stored deadline | done | `remainingMs`, `startSession` | Reopening subtracts elapsed time once. |
-| Start, pause, resume, and clear | done | `#btnStart`, `#btnPause`, `#btnResume`, `#btnClear` | Clear asks first. Start does not wait on a clearance pop-up. |
+| Start, pause, resume, and clear | done | `#btnStart`, `#btnPause`, `#btnResume`, `#btnClear` | Clear asks first. Start does not wait on a clearance pop-up. Start works any day and logs today, with no day to pick first. |
+| Start works any day | done | `canStartSession`, `startSession` | No day gate. The session day is today. |
 | Check off exercises only during a session | done | `toggleCheckState`, `renderSections` | Boxes stay disabled until a session starts. |
-| Finish workout opens a check-in, then logs the day | done | `#btnFinish`, `#checkinModal` | Ticking the last box does not log by itself. |
-| Each gym day counts at most once | done | `applyCompletion` | |
-| Rest days are not logged | done | `canStartSession` | Start is refused on a rest day. A session already running still logs its own day if that weekday is turned off before Finish. |
+| Finish workout opens a check-in, then logs today | done | `#btnFinish`, `#checkinModal` | Ticking the last box does not log by itself. |
+| Each day counts at most once | done | `applyCompletion` | |
+| Rest days are not logged | removed | | Day selection is gone. Start works any day and logs today. A session already running still logs its own day. |
 | Timer expiry keeps checkboxes and asks | done | `expireIfDue`, `#expiryConfirm` | Log anyway opens the same check-in, or discard. |
 | Something's wrong stops without logging | removed | | Removed from the app. It now lives only in the README Disclaimer. |
 
@@ -66,11 +67,11 @@ Run the tests with `npm test` (dev-only; nothing from `node_modules` is shipped 
 
 | Feature | Status | Location | Notes |
 | --- | --- | --- | --- |
-| Sun-Sat week | done | `renderCalendar`, `weekStart` | Every weekday can be a workout day. |
-| Workout days in Settings | done | `#btnMenu`, `#settingsPanel`, `workoutDays` | Default Tuesday and Thursday. At least one day stays on. Saved in this browser. The calendar, the selected day, rest days, and once-per-day logging follow the choice. |
+| Sun-Sat week | done | `renderCalendar`, `weekStart` | Read-only progress view. Logged days show a check mark and today is highlighted. No day is selectable. |
+| Workout days in Settings | removed | | The Settings modal and the hamburger button are gone. Every day is a workout day now. Older saves that stored workoutDays still load, and that field is no longer consulted. |
 | Optional third gym day | removed | | Replaced by the weekday checkboxes. An older Friday or Saturday choice becomes those weekdays. |
-| Tap a workout day to select it | done | `[data-day]` | Rest days are not selectable. |
-| Stale selected day from another week resets | done | `resolveActiveDay`, `tick` | Runs on load and when the date changes. Changing days while idle moves a selected rest day to the next workout day. A running session stays on its day until it ends. |
+| Tap a workout day to select it | removed | | The calendar is read-only. Tapping a day does nothing. |
+| Stale selected day from another week resets | removed | | There is no selected day anymore. The calendar re-renders when the date changes. |
 
 ## Demo videos
 
