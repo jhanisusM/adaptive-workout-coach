@@ -10,7 +10,7 @@ Run the tests with `npm test` (dev-only; nothing from `node_modules` is shipped 
 
 | Feature | Status | Location | Notes |
 | --- | --- | --- | --- |
-| Three phases: Stability & Tissue Tolerance, Supported Unilateral, Complex Unilateral Loading | done | `docs/app.js` `PHASES`, `docs/index.html` `#phasePicker` | Names follow the prompt heading and its description of the later phases. Phase 1 has 14 exercises, Phase 2 has 13, Phase 3 has 15. |
+| Three phases: Stability & Tissue Tolerance, Supported Unilateral, Complex Unilateral Loading | done | `docs/app.js` `PHASES`, `docs/index.html` `#phasePicker` | Names follow the prompt heading and its description of the later phases. Phase 1 has 14 exercises, Phase 2 has 13, Phase 3 has 15. The routine view now shows the selected workout type list instead of a phase program; PHASES still drives the phase card, checklist, and knee session counts. |
 | Phase 1 avoids deep loaded knee bending | done | `PHASES[0]`, `loaded_knee_flexion` | Spanish squat hold at about 30 to 45 degrees, band TKE, clamshell, side-lying hip abduction, two-foot calf raises, and high-box sit-to-stand are in. Holds are a starting point, not a treatment for pain. Chair sit-to-stand with no hands stays a checklist item too. |
 | Bulgarian split squat starts in Phase 3 | done | Phase 3 `bulgarian-split-squat` | Placeholder phase. Bodyweight, low rear foot, `3 x 6` each side in week 1. Week-3 dumbbells are a placeholder. Lateral step-down and reverse lunge are in this phase only. |
 | Week doses inside a phase | done | `doses`, `phaseWeek`, `weekCredit` | Placeholder sets, reps, holds, and week steps. Sessions 0-2 use week 1, 3-5 use week 2, 6 or more use week 3. The count is the real stored total, minus flagged or unfinished morning checks. One variable changes per week. |
@@ -18,6 +18,17 @@ Run the tests with `npm test` (dev-only; nothing from `node_modules` is shipped 
 | Move up only through Advance | done | `advanceDecision`, `#advanceBtn`, `commitPhase` | Needs 9 logged sessions in the phase, every checklist item, and no two-flag lock. There is no early override. A pending advance is checked again when the confirmation is accepted. The gate is not tamper-proof against localStorage edits. |
 | Moving back is always available | done | `phaseChangeDecision` | A phase Advance has already unlocked can be selected again. Higher phases stay locked until then. |
 | Current phase is kept for existing saves | done | `migrate` `unlockedPhase` | An older save is not moved backward. `unlockedPhase` is at least the phase they were already on. |
+
+## Workout types
+
+| Feature | Status | Location | Notes |
+| --- | --- | --- | --- |
+| Workout type pills: knee strengthening, upper body, lower body | done | `docs/index.html` `#typePicker`, `docs/app.js` `typeRoutine` | The selected pill chooses which 15-exercise list is shown. Rows show the exercise name plus its note. Doses are blank because the source array has none. |
+| Knee workouts keep phases | done | `docs/app.js` `typeRoutine`, `renderAll`, `#phaseCard` | The knee pill shows the new 15-exercise knee list no matter which phase is selected. The Phase 1 to 3 picker, advancement checklist, and 9-session counts stay and track progress. |
+| Upper and lower workouts are flat lists | done | `renderAll`, `#phaseCard` | The phase card is hidden while upper body or lower body is selected, and shown again for knees. |
+| Pills lock during a session | done | `selectWorkoutType`, `renderTypePicker` | Pills are disabled while a session is running, paused, or expired and unresolved. They unlock when the session ends, is logged or discarded after expiry, or is cleared. Switching is free with no session running. |
+| Selected type is stored | done | `migrate`, `sanitizeWorkoutType` | Stored as `workoutType` under the same key. Older saves load with knee strengthening. The legacy `workoutDays` and `activeDay` fields still load but are consulted by no behavior. |
+| Phase sessions count knee workouts only | done | `applyCompletion`, `sessionWorkoutType` | Finishing an upper-body or lower-body workout logs the day on the calendar but does not add to a phase session count. A session saved before types existed counts like a knee session. |
 
 ## Session and timer
 
@@ -37,7 +48,7 @@ Run the tests with `npm test` (dev-only; nothing from `node_modules` is shipped 
 
 | Feature | Status | Location | Notes |
 | --- | --- | --- | --- |
-| Per-exercise checkboxes, doses, notes, and muscle tags | done | `renderSections` | Section headings show how many exercises are in that phase, not a fixed minute guess. |
+| Per-exercise checkboxes, doses, notes, and muscle tags | done | `renderSections` | Section headings show how many exercises are in the list, not a fixed minute guess. New workout type rows show a name and note with a blank dose. |
 | Accordion sections | done | `[data-section]` | |
 | Progress bar and sticky status | done | `#progressFill`, `#statusBar` | |
 | Phase 1 advancement criteria | done | `PHASE_CHECKLISTS[1]` | Shared checks, plus full extension with no quad lag, plus sit-to-stand with no hands and no knee collapse. |
@@ -77,10 +88,11 @@ Run the tests with `npm test` (dev-only; nothing from `node_modules` is shipped 
 
 | Feature | Status | Location | Notes |
 | --- | --- | --- | --- |
-| Per-exercise demos from the video library | done | `docs/video-library.js`, `demo_ids` | In-session clips. New exercises ship with an empty list. URLs are not invented. |
-| Demo videos section | done | `#demoVideos`, `video_url` | One YouTube link per exercise, shown there and beside the exercise note. The player uses youtube-nocookie.com. Watch demo opens youtube.com/watch. Only YouTube hosts are accepted. |
+| Per-exercise demos from the video library | done | `docs/video-library.js`, `demo_ids` | In-session clips. Each workout type exercise has one verified demo. URLs are not invented. |
+| Workout type exercises have verified demos | done | `typeRoutine`, `docs/video-library.js` | All 45 exercises have one verified demo each. Routine rows show the player plus Watch demo. The Demo videos section lists the current workout's 15 demos and updates when the pills switch. |
+| Demo videos section | done | `#demoVideos`, `video_url` | One YouTube link per exercise, shown there and beside the exercise note. The section follows the selected workout type. The player uses youtube-nocookie.com. Watch demo opens youtube.com/watch. Only YouTube hosts are accepted. |
 | How it's organized | done | `#btnInfo`, `#infoPanel`, `#blockNote` | Header info panel, not a card in the main flow. Also fills when a stored session has already expired. |
-| Featured demo cards | removed | | The sidebar cards are gone. The Demo videos section lists the catalog instead. |
+| Featured demo cards | removed | | The sidebar cards are gone. The Demo videos section lists the current workout's 15 demos. |
 | Unknown video id is skipped | done | `resolveVideo`, `resolveDemoList` | A console warning is logged and the page still loads. |
 | Player allow list omits web-share | done | `videoEmbedHtml` | The iframe allow list is accelerometer, autoplay, clipboard-write, encrypted-media, gyroscope, and picture-in-picture. web-share is left out so the browser does not warn about an unrecognized permission. |
 
@@ -89,7 +101,7 @@ Run the tests with `npm test` (dev-only; nothing from `node_modules` is shipped 
 | Feature | Status | Location | Notes |
 | --- | --- | --- | --- |
 | localStorage key `awc-demo-v1` | done | `LS_KEY` | The key name is unchanged so existing browsers keep their data. |
-| Version 3 migration | done | `migrate` | Missing or older saves are validated and written back. Phase, checklist, completions, session deadline, symptoms, and history are kept when they are valid. An older third-day choice becomes `workoutDays`. A stored clearance is dropped and does not by itself count as a partial repair. |
+| Version 3 migration | done | `migrate` | Missing or older saves are validated and written back. Phase, checklist, completions, session deadline, symptoms, and history are kept when they are valid. An older third-day choice becomes `workoutDays`. A stored clearance is dropped and does not by itself count as a partial repair. A stored `workoutType` is kept, a missing or bad one becomes knee strengthening, and a stored session keeps its type or defaults to knees. |
 | Current phase stored on `unlockedPhase` | done | `migrate` | Set to the current phase on older saves. The picker reads it. |
 | Session counts above the 9-session target | done | `sanitizePhaseSessions`, `cappedSessionCount` | The stored count is kept. The progress line shows at most 9. Week doses and the Advance gate use the real count. |
 | Corrupt JSON or a broken field | done | `loadStoreFromRaw` | Fresh defaults, or that field reset, plus a one-time message. The page is not left blank. |

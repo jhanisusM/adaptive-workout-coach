@@ -178,6 +178,14 @@ h1 { font-size: clamp(2rem, 5vw, 3.6rem); letter-spacing: -.03em; margin: 0 0 10
 .phase-btn strong { font-size: .85rem; }
 .phase-btn span { font-size: .75rem; color: var(--muted); }
 .phase-btn.active { border-color: #6d28d9; background: linear-gradient(135deg, #ede9fe 0%, #dbeafe 100%); box-shadow: 0 6px 18px rgba(109, 40, 217, .22); }
+
+/* Workout type pills */
+.type-card { margin-bottom: 20px; }
+.type-card .muted { margin: 12px 0 0; }
+.type-picker { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 14px 0 0; }
+.type-btn { border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 999px; padding: 10px 8px; cursor: pointer; text-align: center; font: inherit; font-size: .85rem; font-weight: 700; }
+.type-btn.active { border-color: #6d28d9; background: linear-gradient(135deg, #ede9fe 0%, #dbeafe 100%); box-shadow: 0 6px 18px rgba(109, 40, 217, .22); }
+.type-btn:disabled { opacity: .5; cursor: not-allowed; }
 .phase-progress { display: grid; gap: 6px; margin-bottom: 14px; font-size: .88rem; }
 .phase-row { display: flex; justify-content: space-between; gap: 10px; }
 .phase-row .done { color: var(--green); font-weight: 700; }
@@ -306,6 +314,7 @@ body::before {
   h1 { background: linear-gradient(92deg, #a78bfa 0%, #818cf8 42%, #22d3ee 76%, #fb7185 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
   .status-fill, .progress-fill { background: linear-gradient(135deg, #6d28d9 0%, #2563eb 100%); }
   .phase-btn.active { background: linear-gradient(135deg, #211E2E 0%, #1A1C2B 100%); border-color: #8b5cf6; }
+  .type-btn.active { background: linear-gradient(135deg, #211E2E 0%, #1A1C2B 100%); border-color: #8b5cf6; }
   .timer-panel { background: linear-gradient(160deg, rgba(139, 92, 246, .18) 0%, rgba(34, 211, 238, .10) 55%, transparent 100%); }
 }
 

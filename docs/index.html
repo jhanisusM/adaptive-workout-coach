@@ -28,14 +28,24 @@
           </button>
         </div>
       </div>
-      <p class="lede">A 3-phase program: stability and tissue tolerance, then supported unilateral work, then complex unilateral loading. It rebuilds capacity after a long time off your feet. Move up only with Advance, after 9 sessions and the checklist.</p>
+      <p class="lede">Three workouts: knee strengthening, upper body, and lower body. Knee workouts follow 3 phases, stability and tissue tolerance, then supported unilateral work, then complex unilateral loading, and rebuild capacity after a long time off your feet. Move up only with Advance, after 9 sessions and the checklist.</p>
       <p class="demo-badge">Live demo: progress is stored in this browser only.</p>
     </div>
   </header>
 
   <div class="safety"><strong>Train smart:</strong> stay inside a comfortable range. Sharp pain is a stop sign. Skip the move. Low-load holds are a starting point, not a treatment for pain. This demo is a workout companion, not medical advice. No running, plyometrics, or deep squats below parallel until you are cleared for them separately.</div>
 
-  <section class="card phase-card" aria-label="Program phase">
+  <section class="card type-card" aria-label="Choose your workout">
+    <div class="panel-label">Your workout</div>
+    <div class="type-picker" id="typePicker" role="group" aria-label="Choose your workout">
+      <button type="button" class="type-btn" data-type="knee_strengthening">Knee strengthening</button>
+      <button type="button" class="type-btn" data-type="upper_body">Upper body</button>
+      <button type="button" class="type-btn" data-type="lower_body">Lower body</button>
+    </div>
+    <p class="muted small">Switching is free between sessions. A running session locks the workout until it ends or you clear it.</p>
+  </section>
+
+  <section class="card phase-card" id="phaseCard" aria-label="Program phase">
     <div class="panel-label">Your program</div>
     <p class="draft-note" id="doseDraftNote">Draft: doses not confirmed by a clinician</p>
     <h2 id="phaseTitle">Phase 1: Stability &amp; Tissue Tolerance</h2>

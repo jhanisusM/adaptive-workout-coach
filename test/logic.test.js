@@ -396,3 +396,104 @@ test('an old clearance or third-day choice migrates without a partial-repair not
   assert.equal(badDay.notice, app.NOTICE_PARTIAL);
   assert.deepEqual(badDay.state.workoutDays, [2, 4]);
 });
+
+test('workout types offer 15 flat exercises each with no dose and one verified demo', () => {
+  const seen = new Set();
+  app.WORKOUT_TYPE_IDS.forEach(type => {
+    const routine = app.typeRoutine(type);
+    assert.equal(routine.length, 15);
+    routine.forEach((e, i) => {
+      assert.equal(e.section, 'routine');
+      assert.equal(e.order, i);
+      assert.equal(e.dose, '');
+      assert.equal(e.demos.length, 1);
+      assert.match(e.video_url, /^https:\/\/www\.youtube\.com\/watch\?v=[A-Za-z0-9_-]{11}$/);
+      assert.equal(e.demos[0].url, e.video_url);
+      assert.ok(e.name);
+      assert.ok(e.note);
+      assert.equal(seen.has(e.id), false, e.id);
+      seen.add(e.id);
+    });
+  });
+  assert.equal(seen.size, 45);
+  assert.equal(app.normalizeWorkoutType('upper_body'), 'upper_body');
+  assert.equal(app.normalizeWorkoutType('bogus'), 'knee_strengthening');
+  assert.equal(app.normalizeWorkoutType(undefined), 'knee_strengthening');
+  assert.equal(app.defaultStore(TUE).workoutType, 'knee_strengthening');
+  assert.equal(app.routineIdsForState({ workoutType: 'lower_body' }).length, 15);
+  assert.equal(app.routineIdsForState({}).length, 15);
+});
+
+test('workoutType migrates with a knee default and repairs bad values', () => {
+  const missing = app.migrate({ phase: 1, phaseSessions: { 1: 0, 2: 0, 3: 0 } }, TUE);
+  assert.equal(missing.state.workoutType, 'knee_strengthening');
+  assert.equal(missing.changed, true);
+  const kept = app.migrate(Object.assign(app.defaultStore(TUE), { workoutType: 'upper_body' }), TUE);
+  assert.equal(kept.state.workoutType, 'upper_body');
+  assert.equal(kept.changed, false);
+  const bad = app.migrate({ workoutType: 'legs', phase: 1 }, TUE);
+  assert.equal(bad.state.workoutType, 'knee_strengthening');
+  assert.equal(bad.notice, app.NOTICE_PARTIAL);
+  const again = app.migrate(bad.state, TUE);
+  assert.equal(again.changed, false);
+  assert.deepEqual(again.state, bad.state);
+});
+
+test('a stored session keeps its workout type, and expiry keeps it too', () => {
+  const seeded = app.migrate({
+    phase: 1,
+    workoutType: 'upper_body',
+    session: session('2026-10-06', { type: 'upper_body' }),
+  }, TUE);
+  assert.equal(seeded.state.session.type, 'upper_body');
+  const legacy = app.migrate({
+    phase: 1,
+    session: session('2026-10-06'),
+  }, TUE);
+  assert.equal(legacy.state.session.type, 'knee_strengthening');
+  const exp = gymState();
+  exp.session = session('2026-10-06', { type: 'lower_body' });
+  assert.equal(app.expireIfDue(exp, exp.session.deadline), true);
+  assert.equal(exp.session.state, 'expired');
+  assert.equal(exp.session.type, 'lower_body');
+});
+
+test('only knee finishes add to phase sessions; other types still log the day', () => {
+  const knee = gymState();
+  knee.session = session('2026-10-06', { type: 'knee_strengthening' });
+  assert.equal(app.applyCompletion(knee).ok, true);
+  assert.equal(knee.phaseSessions[1], 1);
+  assert.equal(knee.completions['2026-10-06'], true);
+  assert.equal(knee.session, null);
+
+  const upper = gymState();
+  upper.workoutType = 'upper_body';
+  upper.session = session('2026-10-06', { type: 'upper_body' });
+  assert.equal(app.applyCompletion(upper).ok, true);
+  assert.equal(upper.phaseSessions[1], 0);
+  assert.equal(upper.completions['2026-10-06'], true);
+  assert.equal(upper.session, null);
+
+  upper.session = session('2026-10-06', { type: 'upper_body' });
+  const again = app.applyCompletion(upper);
+  assert.equal(again.already, true);
+  assert.equal(upper.phaseSessions[1], 0);
+
+  const legacy = gymState();
+  legacy.session = session('2026-10-06');
+  assert.equal(app.applyCompletion(legacy).ok, true);
+  assert.equal(legacy.phaseSessions[1], 1);
+});
+
+test('checking every box in the current type routine reports all checked', () => {
+  const state = gymState();
+  const ids = app.typeRoutine('knee_strengthening').map(e => e.id);
+  let last = null;
+  ids.forEach(id => { last = app.toggleCheckState(state, id); });
+  assert.equal(last.allChecked, true);
+
+  const other = gymState();
+  app.resolvePhase(1).exercises.forEach(e => { app.toggleCheckState(other, e.id); });
+  const extra = app.toggleCheckState(other, 'wt-knee-quad-sets');
+  assert.equal(extra.allChecked, false);
+});

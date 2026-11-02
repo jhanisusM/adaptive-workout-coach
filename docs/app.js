@@ -18,6 +18,7 @@ const SECTIONS = [
   { id: 'strength',  title: 'Strength',                    block: 'accessory' },
   { id: 'stability', title: 'Stability & shock absorbers', block: 'foundation' },
   { id: 'cooldown',  title: 'Cool-down',                   block: 'foundation' },
+  { id: 'routine',   title: 'Exercises',                   block: 'accessory' },
 ];
 
 /* Placeholder doses. The prompt was truncated before any set, rep, hold, or
@@ -181,6 +182,89 @@ EXERCISES.forEach(function (ex) {
   if (typeof ex.video_url !== 'string') ex.video_url = '';
   ex.demos = resolveDemoList(ex.demo_ids);
 });
+
+/* Workout types. The routine shows one flat list per type: 15 exercises
+ * each, name plus note, no dose, one verified demo each. The search-page URLs from
+ * the source array are deliberately not copied here: a demo link must be a
+ * verified video, never a search page. The phase program below still drives
+ * the phase card, the checklist, and the session counts for knee workouts. */
+const WORKOUT_TYPE_IDS = ['knee_strengthening', 'upper_body', 'lower_body'];
+const WORKOUT_TYPES = {
+  knee_strengthening: [
+    { id: "wt-knee-isometric-wall-sits", name: "Isometric Wall Sits", note: "Hold a squat position with your back supported against a wall, keeping your thighs parallel to the floor. This static hold builds immense strength in the quadriceps without requiring joint movement.", demo_ids: ['v-wt-knee-isometric-wall-sits'], video_url: 'https://www.youtube.com/watch?v=XULOKw4E4P4' },
+    { id: "wt-knee-quad-sets", name: "Quad Sets", note: "Sit with your leg straight and tighten the front thigh muscle by pressing the back of your knee downward. This foundational movement activates the quadriceps safely.", demo_ids: ['v-wt-knee-quad-sets'], video_url: 'https://www.youtube.com/watch?v=TVlWwUn_ZXw' },
+    { id: "wt-knee-straight-leg-raises", name: "Straight Leg Raises", note: "Lie on your back with one leg straight and the other bent, then lift the straight leg to the height of the opposite knee to strengthen hip flexors and quads.", demo_ids: ['v-wt-knee-straight-leg-raises'], video_url: 'https://www.youtube.com/watch?v=385OLFbpe6I' },
+    { id: "wt-knee-clamshells", name: "Clamshells", note: "Lie on your side with knees bent and feet together, lifting your top knee. This targets the gluteus medius to strengthen hip stabilizers and improve knee alignment.", demo_ids: ['v-wt-knee-clamshells'], video_url: 'https://www.youtube.com/watch?v=O2KPabIoPPk' },
+    { id: "wt-knee-glute-bridges", name: "Glute Bridges", note: "Lie on your back, engage your core, and lift your hips. Strong glutes are critical for reducing knee stress and supporting joint stability.", demo_ids: ['v-wt-knee-glute-bridges'], video_url: 'https://www.youtube.com/watch?v=wPM8icPu6H8' },
+    { id: "wt-knee-terminal-knee-extensions-tkes", name: "Terminal Knee Extensions (TKEs)", note: "Anchor a resistance band at knee height and loop it around the back of your knee. Step back and forcefully straighten the knee to build the VMO muscle.", demo_ids: ['v-wt-knee-terminal-knee-extensions-tkes'], video_url: 'https://www.youtube.com/watch?v=NATjG5HjtMw' },
+    { id: "wt-knee-swiss-ball-hamstring-curls", name: "Swiss Ball Hamstring Curls", note: "Lie on your back with your heels on a stability ball, lift hips, and roll the ball toward your glutes to build dynamic knee stability.", demo_ids: ['v-wt-knee-swiss-ball-hamstring-curls'], video_url: 'https://www.youtube.com/watch?v=XkESHgkTdFw' },
+    { id: "wt-knee-heel-slides", name: "Heel Slides", note: "Lie on your back and slowly slide your heel toward your glutes, then push it back out. Excellent for regaining pain-free flexion and mobility.", demo_ids: ['v-wt-knee-heel-slides'], video_url: 'https://www.youtube.com/watch?v=suCQoA3cdWg' },
+    { id: "wt-knee-poliquin-step-ups", name: "Poliquin Step-Ups", note: "Stand on a low step with an elevated heel, keep your torso upright, and slowly touch the opposite heel to the ground to isolate the lower quad.", demo_ids: ['v-wt-knee-poliquin-step-ups'], video_url: 'https://www.youtube.com/watch?v=l5IuYBdz114' },
+    { id: "wt-knee-patrick-step-ups", name: "Patrick Step-Ups", note: "Similar to Poliquin step-ups but with a flat foot. This allows the knee to track forward over the toe in a controlled, load-bearing way to bulletproof the patellar tendon.", demo_ids: ['v-wt-knee-patrick-step-ups'], video_url: 'https://www.youtube.com/watch?v=lTktLtISKek' },
+    { id: "wt-knee-tibialis-raises", name: "Tibialis Raises", note: "Lean against a wall and pull your toes up toward your shins. Strengthening the tibialis anterior muscle helps absorb impact before it reaches the knee.", demo_ids: ['v-wt-knee-tibialis-raises'], video_url: 'https://www.youtube.com/watch?v=fambZbEUVoo' },
+    { id: "wt-knee-single-leg-glute-bridges", name: "Single-Leg Glute Bridges", note: "Perform a standard glute bridge using only one leg. This corrects muscular imbalances and ensures both knees receive equal stabilizing support.", demo_ids: ['v-wt-knee-single-leg-glute-bridges'], video_url: 'https://www.youtube.com/watch?v=q98y9DmhqzA' },
+    { id: "wt-knee-banded-lateral-walks", name: "Banded Lateral Walks", note: "Place a resistance band around your thighs and step side to side. Highly effective for building the abductors to prevent knee valgus (caving inward).", demo_ids: ['v-wt-knee-banded-lateral-walks'], video_url: 'https://www.youtube.com/watch?v=tw3dUcw0xaU' },
+    { id: "wt-knee-assisted-nordic-hamstring-curls", name: "Assisted Nordic Hamstring Curls", note: "Kneel with ankles anchored and slowly lower your body forward. Use hands or a band to assist. Prevents hamstring strains which directly protect the knee joint.", demo_ids: ['v-wt-knee-assisted-nordic-hamstring-curls'], video_url: 'https://www.youtube.com/watch?v=o40Zd3WRbxg' },
+    { id: "wt-knee-reverse-lunges", name: "Reverse Lunges", note: "Step backward into a lunge. This shifts the deceleration force to the posterior chain, making it significantly safer for previously injured knees than forward lunges.", demo_ids: ['v-wt-knee-reverse-lunges'], video_url: 'https://www.youtube.com/watch?v=t88jlMKKvrU' },
+  ],
+  upper_body: [
+    { id: "wt-upper-dumbbell-bench-press", name: "Dumbbell Bench Press", note: "Press dumbbells over your chest on a flat bench. Allows for a more natural range of motion for the shoulders compared to a barbell.", demo_ids: ['v-wt-upper-dumbbell-bench-press'], video_url: 'https://www.youtube.com/watch?v=ufl6HV5NN9g' },
+    { id: "wt-upper-seated-cable-rows", name: "Seated Cable Rows", note: "Pull resistance toward your torso while seated to build upper back strength and balance out pressing movements for healthy posture.", demo_ids: ['v-wt-upper-seated-cable-rows'], video_url: 'https://www.youtube.com/watch?v=CsROhQ1onAg' },
+    { id: "wt-upper-incline-dumbbell-press", name: "Incline Dumbbell Press", note: "Press dumbbells upward on an angled bench to target the upper chest and front deltoids effectively.", demo_ids: ['v-wt-upper-incline-dumbbell-press'], video_url: 'https://www.youtube.com/watch?v=PZecKOpWOrk' },
+    { id: "wt-upper-seated-overhead-press", name: "Seated Overhead Press", note: "Press dumbbells vertically overhead while seated. Sitting isolates the shoulders and prevents momentum from the lower back.", demo_ids: ['v-wt-upper-seated-overhead-press'], video_url: 'https://www.youtube.com/watch?v=e4GP9M687zY' },
+    { id: "wt-upper-lat-pulldowns", name: "Lat Pulldowns", note: "Pull a wide cable bar down to your upper chest. This vertical pulling motion widens the back and strengthens the latissimus dorsi.", demo_ids: ['v-wt-upper-lat-pulldowns'], video_url: 'https://www.youtube.com/watch?v=SALxEARiMkw' },
+    { id: "wt-upper-push-ups", name: "Push-Ups", note: "A foundational bodyweight movement keeping the core tight and lowering the chest to the floor. Essential for chest, shoulder, and tricep health.", demo_ids: ['v-wt-upper-push-ups'], video_url: 'https://www.youtube.com/watch?v=zVU8lfAKuuI' },
+    { id: "wt-upper-assisted-pull-ups", name: "Assisted Pull-Ups", note: "Use a band or machine to perform pull-ups. Excellent for building absolute upper body pulling strength safely.", demo_ids: ['v-wt-upper-assisted-pull-ups'], video_url: 'https://www.youtube.com/watch?v=G1akmeQRM_E' },
+    { id: "wt-upper-single-arm-dumbbell-rows", name: "Single-Arm Dumbbell Rows", note: "Support one knee on a bench and pull a dumbbell up to your hip. Builds back thickness and corrects left/right imbalances.", demo_ids: ['v-wt-upper-single-arm-dumbbell-rows'], video_url: 'https://www.youtube.com/watch?v=ze6J_KJtJJ8' },
+    { id: "wt-upper-face-pulls", name: "Face Pulls", note: "Pull a high cable rope toward your face to strengthen the rear deltoids and rotator cuff, crucial for shoulder longevity over 40.", demo_ids: ['v-wt-upper-face-pulls'], video_url: 'https://www.youtube.com/watch?v=NEih7QoyjJ4' },
+    { id: "wt-upper-dumbbell-bicep-curls", name: "Dumbbell Bicep Curls", note: "Stand tall and curl dumbbells upward while keeping elbows pinned to your sides to build arm strength.", demo_ids: ['v-wt-upper-dumbbell-bicep-curls'], video_url: 'https://www.youtube.com/watch?v=XE_pHwbst04' },
+    { id: "wt-upper-triceps-cable-pushdowns", name: "Triceps Cable Pushdowns", note: "Use a cable rope to extend arms fully downward, isolating the triceps safely.", demo_ids: ['v-wt-upper-triceps-cable-pushdowns'], video_url: 'https://www.youtube.com/watch?v=vB5OHsJ3EME' },
+    { id: "wt-upper-dumbbell-lateral-raises", name: "Dumbbell Lateral Raises", note: "Raise light dumbbells out to your sides until they reach shoulder height. Widens the shoulders and builds medial deltoid strength.", demo_ids: ['v-wt-upper-dumbbell-lateral-raises'], video_url: 'https://www.youtube.com/watch?v=TM6se0vr1VA' },
+    { id: "wt-upper-cable-chest-flyes", name: "Cable Chest Flyes", note: "Bring two cable handles together in a hugging motion. Provides constant tension on the chest muscles with minimal shoulder joint stress.", demo_ids: ['v-wt-upper-cable-chest-flyes'], video_url: 'https://www.youtube.com/watch?v=JUDTGZh4rhg' },
+    { id: "wt-upper-dumbbell-pullovers", name: "Dumbbell Pullovers", note: "Lie across a bench and lower a dumbbell behind your head, then pull it back over your chest to stretch and expand the lats and ribcage.", demo_ids: ['v-wt-upper-dumbbell-pullovers'], video_url: 'https://www.youtube.com/watch?v=zUVzVXMh9Nc' },
+    { id: "wt-upper-bench-dips", name: "Bench Dips", note: "Place hands on a bench behind you and lower your hips toward the floor. Builds triceps and lower chest strength.", demo_ids: ['v-wt-upper-bench-dips'], video_url: 'https://www.youtube.com/watch?v=j_WpuVY3wbo' },
+  ],
+  lower_body: [
+    { id: "wt-lower-goblet-squats", name: "Goblet Squats", note: "Hold a dumbbell vertically at chest height and sit back into a squat. Keeps the torso upright and reduces shear stress on the knee.", demo_ids: ['v-wt-lower-goblet-squats'], video_url: 'https://www.youtube.com/watch?v=MywbtGRNbYg' },
+    { id: "wt-lower-romanian-deadlifts-rdls", name: "Romanian Deadlifts (RDLs)", note: "Hinge at the hips with a slight knee bend, pushing glutes back to deeply stretch and strengthen the hamstrings and lower back.", demo_ids: ['v-wt-lower-romanian-deadlifts-rdls'], video_url: 'https://www.youtube.com/watch?v=XOmFYME7ru4' },
+    { id: "wt-lower-bulgarian-split-squats", name: "Bulgarian Split Squats", note: "Rest your rear foot on a bench and drop your back knee down. Builds powerful unilateral leg strength and improves balance.", demo_ids: ['v-wt-lower-bulgarian-split-squats'], video_url: 'https://www.youtube.com/watch?v=je7lk51Vl8c' },
+    { id: "wt-lower-leg-press", name: "Leg Press", note: "Push a loaded sled upward with your feet. Placing feet slightly higher on the platform safely loads the glutes and hamstrings.", demo_ids: ['v-wt-lower-leg-press'], video_url: 'https://www.youtube.com/watch?v=ytYJcatOAxk' },
+    { id: "wt-lower-barbell-hip-thrusts", name: "Barbell Hip Thrusts", note: "Drive a padded barbell upward with your hips while your upper back rests on a bench. Maximizes glute development safely.", demo_ids: ['v-wt-lower-barbell-hip-thrusts'], video_url: 'https://www.youtube.com/watch?v=8twog5p2ObE' },
+    { id: "wt-lower-standing-calf-raises", name: "Standing Calf Raises", note: "Stand on a step edge and press up onto your toes. Builds lower leg power and aids in knee and ankle stability.", demo_ids: ['v-wt-lower-standing-calf-raises'], video_url: 'https://www.youtube.com/watch?v=xzhX4SQEMvM' },
+    { id: "wt-lower-seated-calf-raises", name: "Seated Calf Raises", note: "Perform calf raises while seated with bent knees to specifically target the soleus muscle in the lower calf.", demo_ids: ['v-wt-lower-seated-calf-raises'], video_url: 'https://www.youtube.com/watch?v=3ZRe_QpvRPg' },
+    { id: "wt-lower-lying-leg-curls", name: "Lying Leg Curls", note: "Lie face down and curl machine weight toward your glutes to safely rebuild direct hamstring contraction strength.", demo_ids: ['v-wt-lower-lying-leg-curls'], video_url: 'https://www.youtube.com/watch?v=YpB3pc1e88Q' },
+    { id: "wt-lower-kettlebell-swings", name: "Kettlebell Swings", note: "Hinge and explosively drive a kettlebell forward using your glutes. A powerful cardiovascular exercise that spares the knees.", demo_ids: ['v-wt-lower-kettlebell-swings'], video_url: 'https://www.youtube.com/watch?v=Nq02624lRjU' },
+    { id: "wt-lower-cable-pull-throughs", name: "Cable Pull-Throughs", note: "Face away from a low cable machine, holding a rope between your legs, and hinge forward. Excellent glute isolation with zero spinal compression.", demo_ids: ['v-wt-lower-cable-pull-throughs'], video_url: 'https://www.youtube.com/watch?v=Cuqf21hE-4g' },
+    { id: "wt-lower-trap-bar-deadlifts", name: "Trap Bar Deadlifts", note: "Stand inside a hexagonal bar and lift. This hybrid between a squat and deadlift is highly joint-friendly for older lifters.", demo_ids: ['v-wt-lower-trap-bar-deadlifts'], video_url: 'https://www.youtube.com/watch?v=FYx76NSijfU' },
+    { id: "wt-lower-glute-ham-raises", name: "Glute-Ham Raises", note: "Use a GHR machine to extend your torso and curl yourself back up. Top-tier exercise for posterior chain bulletproofing.", demo_ids: ['v-wt-lower-glute-ham-raises'], video_url: 'https://www.youtube.com/watch?v=Co7xAWe3hwo' },
+    { id: "wt-lower-walking-lunges", name: "Walking Lunges", note: "Take large, controlled steps forward, lowering the back knee toward the ground. Builds athletic coordination and leg endurance.", demo_ids: ['v-wt-lower-walking-lunges'], video_url: 'https://www.youtube.com/watch?v=mAgbXQdd4LM' },
+    { id: "wt-lower-front-squats-dumbbell-or-kettlebell", name: "Front Squats (Dumbbell or Kettlebell)", note: "Hold weights at the shoulders and squat. Forces an upright posture, naturally engaging the core and quads effectively.", demo_ids: ['v-wt-lower-front-squats-dumbbell-or-kettlebell'], video_url: 'https://www.youtube.com/watch?v=-86u3KDj1ck' },
+    { id: "wt-lower-sumo-deadlifts-kettlebell", name: "Sumo Deadlifts (Kettlebell)", note: "Take a wide stance and lift a heavy kettlebell from the floor. Strengthens the inner thighs, glutes, and hips while minimizing lower back strain.", demo_ids: ['v-wt-lower-sumo-deadlifts-kettlebell'], video_url: 'https://www.youtube.com/watch?v=odS65TnXgU0' },
+  ],
+};
+function normalizeWorkoutType(type) {
+  return WORKOUT_TYPE_IDS.indexOf(type) !== -1 ? type : 'knee_strengthening';
+}
+/* Routine entries for one type. Doses are blank because the source array
+ * has none. Each entry carries one verified demo from the video library. */
+function typeRoutine(type) {
+  const list = WORKOUT_TYPES[normalizeWorkoutType(type)] || [];
+  return list.map((entry, i) => ({
+    id: entry.id, section: 'routine', name: entry.name, note: entry.note,
+    dose: '', muscle_groups: [], demos: resolveDemoList(entry.demo_ids), video_url: entry.video_url || '', order: i,
+  }));
+}
+function routineIdsForState(state) {
+  return typeRoutine(normalizeWorkoutType(state && state.workoutType)).map(e => e.id);
+}
+/* The workout a session was started for. Falls back to the stored type,
+ * then to knees, so sessions saved before types existed still count. */
+function sessionWorkoutType(state) {
+  const s = state && state.session;
+  if (s && WORKOUT_TYPE_IDS.indexOf(s.type) !== -1) return s.type;
+  return normalizeWorkoutType(state && state.workoutType);
+}
+
 
 /* 3 phases x about 3 weeks each, 3 sessions per week (9 sessions per phase).
  * A phase entry can override the catalog dose, supply week doses (1, 2, 3),
@@ -515,6 +599,7 @@ function expireIfDue(state, now) {
     deadline: s.deadline,
     remainingMs: 0,
     day: s.day,
+    type: sessionWorkoutType(state),
   };
   return true;
 }
@@ -540,7 +625,7 @@ function toggleCheckState(state, id) {
   if (!isPlainObject(state.checks)) state.checks = {};
   if (state.checks[id]) delete state.checks[id];
   else state.checks[id] = true;
-  const allDone = programExerciseIds(state.phase).every(eid => !!state.checks[eid]);
+  const allDone = routineIdsForState(state).every(eid => !!state.checks[eid]);
   return { ok: true, allChecked: allDone };
 }
 /* Log the session day once. A session that already started keeps its own day,
@@ -556,7 +641,11 @@ function applyCompletion(state) {
   if (!isPlainObject(state.phaseSessions)) state.phaseSessions = { 1: 0, 2: 0, 3: 0 };
   const already = !!state.completions[day];
   state.completions[day] = true;
-  if (!already) state.phaseSessions[phase] = (Number(state.phaseSessions[phase]) || 0) + 1;
+  /* Phase sessions count knee workouts only. An upper-body or lower-body
+   * finish still logs the day, but it does not move a knee phase. */
+  if (!already && sessionWorkoutType(state) === 'knee_strengthening') {
+    state.phaseSessions[phase] = (Number(state.phaseSessions[phase]) || 0) + 1;
+  }
   state.session = null;
   state.checks = {};
   return { ok: true, already: already, day: day, phase: phase };
@@ -785,6 +874,7 @@ function defaultStore(now) {
     activeDay: dayKey(today),
     phase: 1,
     phaseSessions: { 1: 0, 2: 0, 3: 0 },
+    workoutType: 'knee_strengthening',
     checklist: {},
     unlockedPhase: 1,
     symptoms: {},
@@ -857,6 +947,11 @@ function sanitizeChecklist(raw, present) {
   });
   return { value: out, repaired: repaired };
 }
+function sanitizeWorkoutType(raw, present) {
+  if (!present) return { value: 'knee_strengthening', repaired: false };
+  if (WORKOUT_TYPE_IDS.indexOf(raw) !== -1) return { value: raw, repaired: false };
+  return { value: 'knee_strengthening', repaired: true };
+}
 function sanitizeActiveDay(raw, present, today) {
   if (!present) return { value: dayKey(today), repaired: false };
   if (!isDayKey(raw)) return { value: dayKey(today), repaired: true };
@@ -888,8 +983,9 @@ function sanitizeSession(raw, present) {
   const startedAt = (typeof raw.startedAt === 'number' && Number.isFinite(raw.startedAt))
     ? raw.startedAt
     : raw.deadline - SESSION_MS;
+  const type = WORKOUT_TYPE_IDS.indexOf(raw.type) !== -1 ? raw.type : 'knee_strengthening';
   return {
-    value: { state: state, startedAt: startedAt, deadline: raw.deadline, remainingMs: remaining, day: raw.day },
+    value: { state: state, startedAt: startedAt, deadline: raw.deadline, remainingMs: remaining, day: raw.day, type: type },
     repaired: repaired,
   };
 }
@@ -955,7 +1051,8 @@ function hasOwn(raw, key) {
  * and grandfathers unlockedPhase at the current phase. Session counts are
  * kept as stored, including totals above 9. An older third-day choice becomes
  * workoutDays. workoutDays and activeDay are kept for loading older saves
- * but no longer gate Start or the calendar. Clearance is dropped and does not block Start. Corrupt roots
+ * but no longer gate Start or the calendar. workoutType defaults to knee
+ * strengthening for older saves. Clearance is dropped and does not block Start. Corrupt roots
  * become a fresh store plus a one-time notice. */
 function migrate(raw, now) {
   const today = now instanceof Date ? now : new Date();
@@ -983,6 +1080,10 @@ function migrate(raw, now) {
   if (sessionsInfo.repaired) repaired = true;
   if (sessionsInfo.changed) changed = true;
 
+  const typeInfo = sanitizeWorkoutType(raw.workoutType, hasOwn(raw, 'workoutType'));
+  if (typeInfo.repaired) repaired = true;
+  if (!hasOwn(raw, 'workoutType') || typeInfo.repaired) changed = true;
+
   const checksInfo = sanitizeFlagMap(raw.checks, hasOwn(raw, 'checks'));
   const collapsedInfo = sanitizeFlagMap(raw.collapsed, hasOwn(raw, 'collapsed'));
   const completionsInfo = sanitizeCompletions(raw.completions, hasOwn(raw, 'completions'));
@@ -1000,6 +1101,7 @@ function migrate(raw, now) {
   if (hasOwn(raw, 'thirdDay') || hasOwn(raw, 'clearance')) changed = true;
   if (!hasOwn(raw, 'checks') || !hasOwn(raw, 'collapsed') || !hasOwn(raw, 'completions') ||
       !hasOwn(raw, 'checklist') || !hasOwn(raw, 'activeDay') || !hasOwn(raw, 'workoutDays') ||
+      !hasOwn(raw, 'workoutType') ||
       !hasOwn(raw, 'session') || !hasOwn(raw, 'symptoms') || !hasOwn(raw, 'history')) {
     changed = true;
   }
@@ -1016,6 +1118,7 @@ function migrate(raw, now) {
       activeDay: dayInfo.value,
       phase: phase,
       phaseSessions: sessionsInfo.value,
+      workoutType: typeInfo.value,
       checklist: checklistInfo.value,
       unlockedPhase: unlocked,
       symptoms: symptomsInfo.value,
@@ -1143,9 +1246,11 @@ function fmtTime(ms) {
 function currentPhaseId() {
   return normalizePhase(store.phase);
 }
+function currentWorkoutType() {
+  return normalizeWorkoutType(store.workoutType);
+}
 function currentProgram() {
-  const phase = currentPhaseId();
-  return resolvePhase(phase, programWeek(store, phase)).exercises;
+  return typeRoutine(currentWorkoutType());
 }
 function checkedCount() {
   return currentProgram().filter(e => store.checks[e.id]).length;
@@ -1175,6 +1280,7 @@ function startSession() {
     deadline: now + SESSION_MS,
     remainingMs: null,
     day: dayKey(new Date()),
+    type: currentWorkoutType(),
   };
   save();
   renderAll();
@@ -1439,6 +1545,31 @@ function syncPanelButtons() {
 /* ---------------- Rendering ---------------- */
 const demoIdx = {};
 
+/* Workout type pills. Disabled while a session exists, so the workout a
+ * session started with cannot change under it. */
+function renderTypePicker() {
+  const locked = sessionIsActive(store.session);
+  const current = currentWorkoutType();
+  document.querySelectorAll('#typePicker .type-btn').forEach(b => {
+    const type = b.getAttribute('data-type');
+    b.classList.toggle('active', type === current);
+    b.disabled = locked;
+    b.setAttribute('aria-disabled', locked ? 'true' : 'false');
+  });
+}
+function selectWorkoutType(type) {
+  if (WORKOUT_TYPE_IDS.indexOf(type) === -1) return;
+  if (sessionIsActive(store.session)) {
+    showMessage('Finish or clear the current session before switching workouts.');
+    renderTypePicker();
+    return;
+  }
+  if (type === currentWorkoutType()) return;
+  store.workoutType = type;
+  save();
+  renderAll();
+}
+
 function renderStatus() {
   const bar = $('statusBar'), s = store.session;
   bar.classList.toggle('active', !!(s && s.state === 'running'));
@@ -1605,15 +1736,14 @@ function renderInfo() {
   const note = $('blockNote');
   if (!note) return;
   note.textContent =
-    'The routine is split into a fixed foundation block (warm-up, stability, cool-down) and an ' +
-    'accessory block (strength). Future upper-body, back, and arm exercises will slot into ' +
-    'the accessory block as the program grows.';
+    'Pick a workout above: knee strengthening, upper body, or lower body. ' +
+    'Knee workouts use phases; upper-body and lower-body workouts are flat lists.';
 }
 
 function renderDemoDirectory() {
   const list = $('demoVideoList');
   if (!list) return;
-  list.innerHTML = EXERCISES.map(function (ex) {
+  list.innerHTML = typeRoutine(currentWorkoutType()).map(function (ex) {
     return '<li class="demo-row"><span class="demo-name">' + esc(ex.name) + '</span>' + videoEmbedHtml(ex) + '</li>';
   }).join('');
 }
@@ -1688,7 +1818,10 @@ function renderPhase() {
 }
 
 function renderAll() {
+  renderTypePicker();
   renderPhase();
+  const phaseCard = $('phaseCard');
+  if (phaseCard) phaseCard.hidden = currentWorkoutType() !== 'knee_strengthening';
   renderStatus();
   renderTimer();
   renderProgress();
@@ -1745,6 +1878,11 @@ function onClick(ev) {
       const box = $('demo-' + id);
       if (box) box.outerHTML = demoHtml(ex);
     }
+    return;
+  }
+  const typeBtn = ev.target.closest('[data-type]');
+  if (typeBtn) {
+    selectWorkoutType(typeBtn.getAttribute('data-type'));
     return;
   }
   const phaseBtn = ev.target.closest('[data-phase]');
@@ -1861,6 +1999,12 @@ if (typeof module !== 'undefined') {
     BACKUP_NOTICE: BACKUP_NOTICE,
     resolvePhase: resolvePhase,
     resolveDemoList: resolveDemoList,
+    WORKOUT_TYPE_IDS: WORKOUT_TYPE_IDS,
+    normalizeWorkoutType: normalizeWorkoutType,
+    typeRoutine: typeRoutine,
+    currentWorkoutType: currentWorkoutType,
+    routineIdsForState: routineIdsForState,
+    sessionWorkoutType: sessionWorkoutType,
     remainingMs: remainingMs,
     migrate: migrate,
     loadStoreFromRaw: loadStoreFromRaw,
