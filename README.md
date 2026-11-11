@@ -2,9 +2,11 @@
 
 [Open the app](https://jhanisusM.github.io/adaptive-workout-coach/)
 
-**A guided 30-minute workout app anyone can follow, even with no routine,
-no plan, and no experience.** Pure HTML, CSS, and JavaScript. No build step,
-no server, no accounts, no tracking. Open the URL and work out.
+**A guided 35-minute strength workout with dumbbells and resistance bands,
+one move at a time.** Press Start once and follow along: the app shows each
+move, counts down timed ones, runs the rests, and moves on by itself. Pure
+HTML, CSS, and JavaScript. No build step, no server, no accounts, no
+tracking.
 
 ## Disclaimer
 
@@ -33,72 +35,43 @@ If something is wrong, stop and contact your clinician before you train again.
 
 ## The program
 
-A 3-phase program, about 3 weeks per phase. The default week is Tuesday and
-Thursday, and you can choose other workout days in Settings. It follows a
-stability, then supported single-leg, then loaded single-leg progression
-for someone coming back after a long time off their feet. It is a workout
-companion, not a personal prescription.
+One 35-minute session (`SESSION_MINUTES` in `docs/program.js`), from Ask
+AI's program synthesis. Each session draws new moves from the 51 in the
+exercise list.
 
-- **Phase 1 "Stability & Tissue Tolerance"** (14 exercises): low-load
-  holds, glute activation, and balance. Holds are a starting point, not a
-  treatment for pain. No deep, loaded knee bending. Includes a Spanish squat
-  hold around 30 to 45 degrees, band terminal knee extension, clamshells,
-  side-lying hip abduction, calf raises, and a high-box sit-to-stand.
-- **Phase 2 "Supported Unilateral"** (13 exercises): supported split squat,
-  low step-up, kickstand-stance single-leg RDL, single-leg bridge, band side-step, and a
-  supported single-leg calf raise. Reduce hand support before adding load.
-  Do not add range and load in the same week.
-- **Phase 3 "Complex Unilateral Loading"** (15 exercises): a placeholder
-  until the full program is confirmed. The Bulgarian split squat starts here
-  at bodyweight, low rear foot, 3 x 6 each side. Week-3 dumbbells on that
-  exercise are a placeholder too. Lateral step-downs, reverse lunges, and
-  single-leg calf raises are in this phase.
+- **Warm-up, about 5 minutes:** a pulse raiser, a hip hinge, a shoulder
+  move, a glute move, and a squat pattern.
+- **Main, about 25 minutes:** 8 moves, 2 per focus area, in this order:
+  lower body, upper body, knee strength and stability, arms. Lower-body
+  moves are 3 straight sets (2 when the session would run past 36
+  minutes), the others 2. Rest is 45 seconds after lower-body sets and 30
+  seconds after the rest. Every session uses both dumbbells and bands.
+- **Knee group:** no jumping, no running, no deep or loaded knee bends, and
+  no dumbbells. Wall sits stay shallow. Every knee screen says "Stop if you
+  feel sharp pain."
+- **Cool-down, about 5 minutes:** an easy walk and four stretches.
 
-Sets, reps, holds, week doses, and the 2/10 and 30 percent figures are
-placeholder rules of thumb pending professional confirmation.
+Doses are starting points from the synthesis, not a personal prescription.
 
-Weeks inside a phase are minimums. The checklist decides when you move on.
-Moving up happens only through Advance, after 9 logged sessions and every
-checklist item. Moving back is always available. A phase you have not
-unlocked stays locked. There is no button to skip ahead.
+## How a session runs
 
-Each phase has its own week 1, week 2, and week 3 doses. One thing changes
-at a time (reps, then hold time or load). A flagged session does not move
-you to the next week's dose.
+- The start screen shows the length, the number of exercises, and the
+  warm-up / main / cool-down breakdown. The move list stays folded.
+- Rep moves wait for **Done**. Timed moves count down and move on at zero;
+  Done ends them early. Rests start by themselves and show what is up next,
+  with **Skip rest**.
+- **Pause / Resume**, **Skip exercise**, and **End** (with a confirm) are
+  always on screen. The main button is large and above the fold on phones.
+- Reloading the page resumes the same move and time. Finishing shows
+  "Workout complete" with exercises done and total time, and marks the day
+  on the weekly calendar.
+- One demo video at a time, never autoplaying, from YouTube's
+  privacy-enhanced domain. Later sets show no video.
+- The screen stays awake during a session where the browser supports it.
 
-No running or plyometrics until you are cleared for them separately.
-
-## Key features
-
-- **30-minute timer with a single stored deadline.** Closing and reopening
-  the browser resumes with the correct time left; it can never double-subtract.
-- **Full session lifecycle**: start, pause, resume, clear (with confirmation),
-  finish, timer expiry. Finish asks for pain during the session before the
-  day is logged. The next visit asks about morning swelling and pain.
-- **Per-exercise checklists**, accordion sections, progress bar, sticky status
-  bar, big legible dose labels.
-- **Weekly calendar.** The full week is shown. Choose which weekdays are
-  workout days in Settings (the menu in the header). The default is Tuesday
-  and Thursday. A day that is off is a rest day and is not logged. Each
-  chosen day counts once.
-- **How it's organized.** The foundation and accessory note lives in the
-  info panel in the header, not in the main flow.
-- **Demo videos.** A section on the page lists every exercise with one
-  YouTube demo. The same player sits next to that exercise in the routine.
-  Players use the privacy-enhanced YouTube domain.
-- **Symptom flags.** Pain at or below 2/10 that settles to 2/10 or less
-  within 24 hours is an acceptable rule of thumb. Pain above that, or
-  next-morning swelling, is a flag. Swelling advice says to cut volume by
-  about 30%. Two flagged sessions in a row turn Advance off until a later
-  session is clean. The app does not tick the checklist for you and does
-  not rewrite doses.
-- **In-session demos from a topic-organized video library**
-  (`docs/video-library.js`). To swap an exercise's in-session videos, edit
-  only that file or that exercise's `demo_ids`. The separate `video_url`
-  field is the one YouTube link shown in Demo videos and beside the
-  exercise. URLs are only added when verified; they are never invented.
-- **Privacy by design.** Progress lives in the browser's localStorage under
-  `awc-demo-v1`. Nothing leaves the device.
+Saves from the earlier phase and workout-type versions load quietly: the
+trained days are kept, and the phase, type, checklist, and check-in data
+are dropped.
 
 ## Run it
 
@@ -117,39 +90,55 @@ then open http://localhost:8000.
 ## Tests
 
 ```bash
-npm test
+npm ci && npm test
 ```
 
-That runs `node --test` on `test/`. jsdom is a dev dependency. Nothing from
-`node_modules` is copied into `docs/`. GitHub Actions runs `npm ci` and
-`npm test` on pull requests (`.github/workflows/test.yml`).
+That runs `node --test` on `test/`: the shared session engine, the session
+builder, the store migration, and a jsdom page test that clicks through a
+whole session. jsdom is a dev dependency. Nothing from `node_modules` is
+copied into `docs/`. GitHub Actions runs the same on pull requests
+(`.github/workflows/test.yml`).
+
+`docs/session-engine.js`, `docs/session-screens.js`, `docs/session.css`, and
+`test/session-engine.test.js` are shared with the kids workout app and must
+stay identical; `test/shared-files.test.js` checks them against
+`shared-files.sha256`.
 
 ## Project structure
 
 ```
 adaptive-workout-coach/
 ├── docs/
-│   ├── index.html         # App shell
-│   ├── styles.css         # Styles, native CSS, light/dark aware
-│   ├── app.js             # All app logic: phases, timer, calendar, checklist
-│   └── video-library.js   # Topic-organized demo video library (edit this to swap videos)
-├── test/                  # node:test suites (not served)
-├── FEATURES.md            # Feature list and where each one lives
-├── llms.txt               # Plain-language summary for AI crawlers/bots
+│   ├── index.html          # Page shell, CSP
+│   ├── session-engine.js   # Guided session state machine (shared)
+│   ├── session-screens.js  # Start, exercise, rest, finish screens (shared)
+│   ├── session.css         # Layout and session styles (shared)
+│   ├── program.js          # The 51 moves and the 35-minute session builder
+│   ├── app.js              # Calendar store, old-save migration, page wiring
+│   ├── styles.css          # Colors, light/dark aware
+│   └── specs/guided-session.md
+├── test/                   # node:test suites and fixtures (not served)
+├── shared-files.sha256     # Hashes of the files shared with the kids app
+├── FEATURES.md             # Feature list, status, and web test reference
+├── llms.txt                # Plain-language summary for AI crawlers/bots
 └── README.md
 ```
 
 ## Safety note
 
 This is a workout companion, not medical advice. Train within a comfortable
-range. Sharp pain is a stop sign: skip the move. If you train around an
+range. Sharp pain is a stop sign: skip the move. Bands: check for nicks and
+anchor them on something stable. Dumbbells: clear the floor and control the
+lowering. If you train around an
 injury or medical condition, follow your clinician's guidance; the app
 supplements it, never replaces it.
 
 ## Privacy
 
 No accounts, no analytics, no tracking, no personal data. Everything stays in
-your browser. If a save cannot be read, the previous text is copied to a
+your browser: trained days under `awc-demo-v1`, and an active session under
+`awc-guided-session-v1` until it ends. If the browser refuses to save, the
+page says so and the workout still runs. If a save cannot be read, the previous text is copied to a
 `awc-demo-v1.bak-<timestamp>` key in this browser and the page says so. Only
 the latest few backups are kept.
 

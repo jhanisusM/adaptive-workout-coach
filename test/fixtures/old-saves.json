@@ -1,0 +1,172 @@
+{
+ "adaptive-79f06e7": {
+  "version": 3,
+  "session": {
+   "state": "paused",
+   "startedAt": 1794246600000,
+   "deadline": 1794248400000,
+   "remainingMs": 1200000,
+   "day": "2026-11-09",
+   "type": "upper_body"
+  },
+  "checks": {
+   "x": true
+  },
+  "collapsed": {},
+  "workoutDays": [
+   2,
+   4
+  ],
+  "completions": {
+   "2026-10-27": true,
+   "2026-10-29": true
+  },
+  "activeDay": "2026-11-09",
+  "phase": 2,
+  "phaseSessions": {
+   "1": 9,
+   "2": 2,
+   "3": 0
+  },
+  "workoutType": "upper_body",
+  "checklist": {
+   "1": {
+    "a": true
+   }
+  },
+  "unlockedPhase": 2,
+  "symptoms": {
+   "2026-10-29": {
+    "painDuring": 1,
+    "painNext": 0,
+    "swellingNext": false,
+    "phase": 2
+   }
+  },
+  "history": [
+   {
+    "type": "advance",
+    "from": 1,
+    "to": 2,
+    "at": "2026-10-20T18:00:00.000Z"
+   }
+  ]
+ },
+ "adaptive-4af1f87": {
+  "version": 3,
+  "session": {
+   "state": "paused",
+   "startedAt": 1794246600000,
+   "deadline": 1794248400000,
+   "remainingMs": 1200000,
+   "day": "2026-11-09"
+  },
+  "checks": {
+   "x": true
+  },
+  "collapsed": {},
+  "workoutDays": [
+   2,
+   4
+  ],
+  "completions": {
+   "2026-10-27": true,
+   "2026-10-29": true
+  },
+  "activeDay": "2026-11-09",
+  "phase": 2,
+  "phaseSessions": {
+   "1": 9,
+   "2": 2,
+   "3": 0
+  },
+  "checklist": {
+   "1": {
+    "a": true
+   }
+  },
+  "unlockedPhase": 2,
+  "symptoms": {
+   "2026-10-29": {
+    "painDuring": 1,
+    "painNext": 0,
+    "swellingNext": false,
+    "phase": 2
+   }
+  },
+  "history": [
+   {
+    "type": "advance",
+    "from": 1,
+    "to": 2,
+    "at": "2026-10-20T18:00:00.000Z"
+   }
+  ]
+ },
+ "adaptive-71f7685": {
+  "version": 3,
+  "session": {
+   "state": "paused",
+   "startedAt": 1794246600000,
+   "deadline": 1794248400000,
+   "remainingMs": 1200000,
+   "day": "2026-11-09"
+  },
+  "checks": {
+   "x": true
+  },
+  "collapsed": {},
+  "workoutDays": [
+   2,
+   4
+  ],
+  "completions": {
+   "2026-10-27": true,
+   "2026-10-29": true
+  },
+  "activeDay": "2026-11-09",
+  "phase": 2,
+  "phaseSessions": {
+   "1": 9,
+   "2": 2,
+   "3": 0
+  },
+  "checklist": {
+   "1": {
+    "a": true
+   }
+  },
+  "unlockedPhase": 2,
+  "symptoms": {
+   "2026-10-29": {
+    "painDuring": 1,
+    "painNext": 0,
+    "swellingNext": false,
+    "phase": 2
+   }
+  },
+  "history": [
+   {
+    "type": "advance",
+    "from": 1,
+    "to": 2,
+    "at": "2026-10-20T18:00:00.000Z"
+   }
+  ]
+ },
+ "adaptive-v1-hand": {
+  "phase": 1,
+  "phaseSessions": {
+   "1": 3
+  },
+  "completions": {
+   "2026-09-02": true
+  },
+  "session": null,
+  "thirdDay": false,
+  "clearance": true,
+  "checks": {
+   "a": true
+  }
+ }
+}
