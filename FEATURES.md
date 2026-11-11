@@ -1,11 +1,13 @@
 # Features
 
-What the app in `docs/` does today: one guided 35-minute strength session,
-one move at a time. Press Start once and the app runs warm-up, the main
-block (lower body, upper body, knee strength, arms), then a cool-down,
-hands-free. The page is static HTML, CSS, and JavaScript with no build step.
-Progress is stored in this browser under `awc-demo-v1` (schema version 4);
-an active session is stored under `awc-guided-session-v1`.
+What the app in `docs/` does today: a guided strength session, one move at
+a time. Pick what to work on (Mix, Upper body, Lower body, Arms, or Knee
+recovery), press Start, and the app runs a warm-up, the main block, then a
+cool-down, hands-free. Mix is the 35-minute session of all four. A single
+focus can run shorter, about 20 to 30 minutes. The page is static HTML,
+CSS, and JavaScript with no build step. Progress is stored in this browser
+under `awc-demo-v1` (schema version 5); an active session is stored under
+`awc-guided-session-v1`.
 
 Status is one of: done, removed.
 
@@ -15,12 +17,12 @@ GitHub Actions.
 
 ## Where things live
 
-- `docs/index.html`: page shell, CSP, referrer policy, calendar card, disclaimer footer.
+- `docs/index.html`: page shell, CSP, referrer policy, focus picker, calendar card, disclaimer footer.
 - `docs/session-engine.js`, `docs/session-screens.js`, `docs/session.css`: shared guided session (hash-checked).
-- `docs/program.js`: the 51 moves from exercises-adult.json, doses, rest, and the session builder. `SESSION_MINUTES = 35`.
-- `docs/app.js`: calendar store, migration of old saves, page wiring.
-- `docs/styles.css`: colors. `docs/favicon.svg`: icon.
-- `docs/specs/guided-session.md`: the guided session spec.
+- `docs/program.js`: the 51 moves from exercises-adult.json, doses, rest, and the session builder. `SESSION_MINUTES = 35` for Mix.
+- `docs/app.js`: calendar store, last focus, focus log, migration of old saves, page wiring.
+- `docs/styles.css`: colors and the focus select. `docs/favicon.svg`: icon.
+- `docs/specs/guided-session.md`: the shared session spec. `docs/specs/pick-focus.md`: the focus picker spec.
 - `test/`: `session-engine.test.js` and `shared-files.test.js` (shared), `program.test.js`, `store.test.js`, `page.test.js` (jsdom, drives the real page), fixtures.
 
 How to test in a browser: serve `docs/` (`cd docs && python3 -m http.server 8000`)
@@ -57,20 +59,18 @@ repos, and update both manifests (the command is in the test file header).
 | Mobile first, controls above the fold | done | `session.css` | At 390x844 the primary button is in the first screen on every screen. The disclaimer footer is in the normal flow at 860 px and below, so it never covers controls. |
 | Network | done | CSP in `index.html` | Only this site's files plus youtube-nocookie iframes, one at a time. `connect-src 'none'`, `img-src 'self'`. |
 
-## The 35-minute session
+## Focus picker and the session
 
 | Feature | Status | Location | Web test reference |
 | --- | --- | --- | --- |
-| One constant for length | done | `program.js` `SESSION_MINUTES` | `time-estimate` reads about 33 to 37 minutes. |
-| Session shape | done | `buildSession` | Breakdown: Warm-up 5, Main 16 to 24 (8 moves as sets), Cool-down 5. |
-| Warm-up, about 5 minutes | done | `pickWarmup` | Pulse, hinge, shoulder, glute, squat pattern. 10 s rest between. |
-| Main: 8 moves, 2 per focus | done | `pickMain` | `phase-label` reads "Main · Lower body", then Upper body, Knee strength, Arms, in that order. Lower moves are 3 sets (2 when the session would pass 36 minutes), others 2. `exercise-dose` starts "Set n of N". Demo on set 1 only. |
+| Focus select | done | `focus-select`, `program.js` `buildSession({ focus })` | On the start screen, before Start, a native select labeled "What do you want to work on?" offers Mix (upper, lower, arms, and knee recovery), Upper body, Lower body, Arms, and Knee recovery. Default is Mix. Changing it rebuilds `session-title`, `time-estimate`, `exercise-count`, `phase-breakdown`, and `plan-list` at once. `btn-start` and the select are visible without scrolling at 390x844. Hidden during a session. |
+| Mix, 35 minutes | done | `SESSION_MINUTES` | Mix title is "Today's 35-minute session". The displayed `time-estimate` is the rounded value and reads about 33 to 37 minutes (raw clock about 32.8 to 36.8). Main moves: 2 Lower, 2 Upper, 2 Knee, 2 Arms. Lower moves are 3 sets (2 when the session would pass 36 minutes), others 2. Every Mix session uses dumbbells and bands. |
+| Single-focus sessions | done | `buildFocus` | Picking Upper, Lower, Arms, or Knee recovery builds a shorter session of about 20 to 30 minutes. Main moves belong only to that group and cover both patterns in the group. Warm-up (5) and cool-down (5) stay in place. Sets are 2 or 3. The title names the focus. Dumbbells-and-bands is not required outside Mix. |
 | Rest | done | `LOWER_REST_SEC`, `MAIN_REST_SEC` | 45 s after lower-body sets, 30 s after other main sets, 10 s in warm-up and cool-down. |
-| Equipment | done | `equipment` | `exercise-equipment` lists bodyweight, dumbbells, or bands. Every session uses dumbbells and bands. |
-| Knee group rules | done | focus `Knee` | No jumping, no deep or loaded knee bends, no dumbbells. `exercise-caution` reads "Stop if you feel sharp pain." on every knee screen. |
-| Cool-down, about 5 minutes | done | `pickCooldown` | Easy walk, calf or hamstring stretch, chest or shoulder stretch, hip or quad stretch, one more. |
-| Calendar | done | `week-grid`, `cal-progress` | Finishing with at least one exercise done marks today. Ending early logs nothing. Hidden during a session. |
-| Old saves | done | `migrate` | Phase-era and workout-type-era saves keep their trained days with no notice; phase, type, checklist, symptoms, workout days, and the old timer are dropped. Broken saves reset with `app-notice` and a backup key. |
+| Equipment | done | `equipment` | `exercise-equipment` lists bodyweight, dumbbells, or bands. |
+| Knee group rules | done | focus `Knee` | No jumping, no deep or loaded knee bends, no dumbbells. `exercise-caution` reads "Stop if you feel sharp pain." on every knee main screen, including a Knee recovery session. |
+| Last focus and day log | done | `lastFocus`, `focusLog`, `week-grid` | The last pick is stored and restored on load. Finishing with at least one exercise done marks today and records the focus on that day. Ending early logs nothing. Hidden during a session. |
+| Old saves | done | `migrate` | Phase-era, workout-type-era, and guided v4 saves keep their trained days with no notice, default to Mix, and start with an empty focus log. Phase, type, checklist, symptoms, workout days, and the old timer are dropped. Broken saves reset with `app-notice` and a backup key. |
 | Disclaimer footer | done | `disclaimer-footer` | Links to the README Disclaimer. Fixed on desktop, in the page flow on phones. |
 
 ## Removed
@@ -78,7 +78,7 @@ repos, and update both manifests (the command is in the test file header).
 | Feature | Status | Notes |
 | --- | --- | --- |
 | Three-phase knee program, phase picker, Advance, 9-session gate, checklist | removed | synthesis.md has one 35-minute program. |
-| Workout type pills (knee, upper, lower) | removed | synthesis.md describes no workout types, so there is no picker. |
+| Workout type pills (knee, upper, lower) | removed | Replaced by the start-screen focus select (Mix plus four single-focus options). |
 | Checklist screen, accordions, single 30-minute session timer, status bar | removed | Replaced by the guided session. |
 | Pain and swelling check-in, symptom history, week doses | removed | The session shows a stop-for-sharp-pain note instead. |
 | Workout-day settings panel and info panel | removed | The calendar shows trained days only. |

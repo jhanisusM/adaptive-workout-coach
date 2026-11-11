@@ -3,21 +3,26 @@
 Adaptive Workout Coach is a lightweight guided workout app: pure HTML, CSS,
 and JavaScript, no build step, no server, no accounts. It runs as a static
 site (GitHub Pages serves the docs/ folder). Open the URL, press Start once,
-and follow a 35-minute strength session one move at a time with dumbbells,
-resistance bands, and bodyweight.
+and follow a strength session one move at a time with dumbbells,
+resistance bands, and bodyweight. A focus menu on the start screen offers
+Mix (the 35-minute session of upper body, lower body, arms, and knee
+recovery) plus shorter single-focus sessions of about 20 to 30 minutes.
 
 ## The program
 
-One 35-minute session (SESSION_MINUTES in docs/program.js) built from Ask
-AI's program synthesis and a list of 51 moves, each with one verified
-YouTube demo URL. Each session draws new moves:
+The program is built from Ask AI's synthesis and a list of 51 moves, each
+with one verified YouTube demo URL. Mix uses SESSION_MINUTES = 35. A
+single-focus session uses only that group's main moves.
 
 - Warm-up, about 5 minutes: pulse raiser, hip hinge, shoulder, glute, and
   squat pattern, with 10 seconds between.
-- Main, about 25 minutes: 8 moves, 2 per focus area in this order: lower
-  body, upper body, knee strength and stability, arms. Lower-body moves are
-  3 straight sets (2 if the session would pass 36 minutes), the others 2.
+- Mix main, about 25 minutes: 8 moves, 2 per focus area in this order:
+  lower body, upper body, knee recovery, arms. Lower-body moves are 3
+  straight sets (2 if the session would pass 36 minutes), the others 2.
   Rest is 45 seconds after lower-body sets and 30 seconds after the others.
+  Every Mix session uses dumbbells and bands.
+- Single-focus main: only that group, both patterns, 2 or 3 sets, about
+  20 to 30 minutes for the whole session.
 - Knee group: no jumping, no running, no deep or loaded knee bends, no
   dumbbells. Every knee screen says "Stop if you feel sharp pain."
 - Cool-down, about 5 minutes: easy walk and four stretches.
@@ -41,21 +46,24 @@ consult a clinician before starting.
   sandboxed, rel=0. Later sets show no video. URLs are never invented.
 - Screen Wake Lock where supported, polite live announcements, reduced
   motion respected, mobile first.
-- A Sun-Sat calendar of trained days under awc-demo-v1. Older phase-era
-  and workout-type-era saves load quietly and keep their trained days.
+- A Sun-Sat calendar of trained days under awc-demo-v1 (schema version 5),
+  including the last focus and a log of which focus was done. Older
+  phase-era, workout-type-era, and guided v4 saves load quietly and keep
+  their trained days, defaulting to Mix.
 - No accounts, no analytics, no tracking, no personal data.
 
 ## Project layout
 
-- docs/index.html: page shell. A Content-Security-Policy meta tag limits the
+- docs/index.html: page shell and focus select. A Content-Security-Policy meta tag limits the
   page to its own files (img-src 'self', connect-src 'none') and allows demo
   frames from https://www.youtube-nocookie.com only.
 - docs/session-engine.js, docs/session-screens.js, docs/session.css: the
   guided session, shared byte-for-byte with the kids workout app.
-- docs/program.js: the 51 moves and the session builder.
-- docs/app.js: calendar store, migration, page wiring.
+- docs/program.js: the 51 moves and the focus-aware session builder.
+- docs/app.js: calendar store, last focus, focus log, migration, page wiring.
 - docs/styles.css: colors, light/dark aware.
-- docs/specs/guided-session.md: the session spec.
+- docs/specs/guided-session.md: the session spec. docs/specs/pick-focus.md:
+  the focus picker spec.
 - test/: node:test suites. Run with npm test. Not served from docs/.
 - README.md, FEATURES.md, llms.txt.
 

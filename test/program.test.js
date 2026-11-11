@@ -11,8 +11,9 @@ const SOURCE = require(path.join(__dirname, 'fixtures', 'exercises-adult.json'))
 const SEEDS = 1000;
 const baseId = slot => slot.id.replace(/-set\d$/, '');
 const moveOf = slot => AP.byId(baseId(slot));
-function each(fn) {
-  for (let seed = 0; seed < SEEDS; seed++) fn(AP.buildSession({ rand: AP.seeded(seed * 104729 + 1) }), seed);
+function each(fn, focus) {
+  const f = focus || 'mix';
+  for (let seed = 0; seed < SEEDS; seed++) fn(AP.buildSession({ focus: f, rand: AP.seeded(seed * 104729 + 1) }), seed, f);
 }
 /* Main-block moves in order, one entry per move (not per set). */
 function mainMoves(plan) {
@@ -121,4 +122,76 @@ test('every generated session lands between 32 and 37 minutes', () => {
     assert.ok(min >= 32 && min <= 37, min.toFixed(2));
   });
   assert.ok(Math.abs((lo + hi) / 2 - AP.SESSION_MINUTES) < 1.5, 'centred on 35: ' + lo.toFixed(1) + '..' + hi.toFixed(1));
+});
+
+const FOCUS_SEEDS = 5000;
+const SINGLE = ['Upper', 'Lower', 'Arms', 'Knee'];
+const PAIRS_EXPECT = { Lower: ['squat', 'hinge'], Upper: ['push', 'pull'], Knee: ['quad', 'stabilizer'], Arms: ['biceps', 'triceps'] };
+function eachFocus(focus, n, fn) {
+  for (let seed = 0; seed < n; seed++) fn(AP.buildSession({ focus: focus, rand: AP.seeded(seed * 104729 + 17) }), seed);
+}
+
+test('the focus list is Mix plus the four single-focus options', () => {
+  assert.deepStrictEqual(AP.FOCUS_OPTIONS.map(o => o.id), ['mix', 'Upper', 'Lower', 'Arms', 'Knee']);
+  assert.strictEqual(AP.normalizeFocus(undefined), 'mix');
+  assert.strictEqual(AP.normalizeFocus('nope'), 'mix');
+  assert.strictEqual(AP.normalizeFocus('Knee'), 'Knee');
+});
+
+test('picking a single focus builds a session whose main moves are only that group', () => {
+  SINGLE.forEach(focus => {
+    eachFocus(focus, 400, plan => {
+      assert.strictEqual(plan.focus, focus);
+      assert.match(plan.title, new RegExp(AP.FOCUS_LABEL[focus], 'i'));
+      const main = mainMoves(plan);
+      assert.ok(main.length >= 4, focus + ' ' + main.length);
+      main.forEach(m => {
+        assert.strictEqual(m.move.focus, focus, m.id);
+        assert.strictEqual(m.sets, main[0].sets);
+        assert.ok(m.sets === 2 || m.sets === 3);
+      });
+      const roles = main.map(m => m.move.role);
+      PAIRS_EXPECT[focus].forEach(role => assert.ok(roles.indexOf(role) !== -1, focus + ' missing ' + role));
+      assert.strictEqual(SE.phaseCounts(plan.slots).warmup, 5);
+      assert.strictEqual(SE.phaseCounts(plan.slots).cooldown, 5);
+    });
+  });
+});
+
+test('Mix sessions still include all four focus groups; a focus change changes the plan', () => {
+  const mix = AP.buildSession({ focus: 'mix', rand: AP.seeded(42) });
+  assert.deepStrictEqual(mainMoves(mix).map(m => m.move.focus), ['Lower', 'Lower', 'Upper', 'Upper', 'Knee', 'Knee', 'Arms', 'Arms']);
+  SINGLE.forEach(focus => {
+    const plan = AP.buildSession({ focus: focus, rand: AP.seeded(42) });
+    assert.notDeepStrictEqual(mainMoves(plan).map(m => m.id), mainMoves(mix).map(m => m.id));
+    assert.ok(mainMoves(plan).every(m => m.move.focus === focus));
+  });
+});
+
+test('knee recovery sessions keep the stop-for-sharp-pain note and the knee rules', () => {
+  eachFocus('Knee', 400, plan => {
+    plan.slots.filter(s => s.phase === 'main').forEach(s => {
+      assert.strictEqual(s.caution, 'Stop if you feel sharp pain.');
+      assert.strictEqual(moveOf(s).equipment.indexOf('dumbbells'), -1, s.id);
+    });
+  });
+});
+
+test('session length stays honest: Mix about 33 to 37 minutes, each single focus about 20 to 30, over 5000 seeds', () => {
+  ['mix'].concat(SINGLE).forEach(focus => {
+    let lo = Infinity;
+    let hi = 0;
+    eachFocus(focus, FOCUS_SEEDS, plan => {
+      const min = SE.estimateSeconds(plan) / 60;
+      lo = Math.min(lo, min);
+      hi = Math.max(hi, min);
+      if (focus === 'mix') assert.ok(min >= 32 && min <= 37, min.toFixed(2));
+      else assert.ok(min >= 20 && min <= 30, focus + ' ' + min.toFixed(2));
+    });
+    if (focus === 'mix') assert.ok(lo >= 32 && hi <= 37, focus + ' ' + lo + '..' + hi);
+    else {
+      assert.ok(lo >= 20 && hi <= 30, focus + ' ' + lo + '..' + hi);
+      assert.ok(hi - lo < 10, focus + ' ' + lo + '..' + hi);
+    }
+  });
 });

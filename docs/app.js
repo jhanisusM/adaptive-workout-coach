@@ -10,7 +10,7 @@
 
   const LS_KEY = 'awc-demo-v1';
   const SESSION_KEY = 'awc-guided-session-v1';
-  const STORE_VERSION = 4;
+  const STORE_VERSION = 5;
   const BACKUP_KEEP = 3;
   const NOTICE_CORRUPT = 'Saved data could not be read, so the calendar was reset to a fresh start.';
   const NOTICE_PARTIAL = 'Some saved days could not be read and were dropped. The rest of your calendar was kept.';
@@ -43,28 +43,54 @@
   }
 
   /* ---------- store ---------- */
-  function defaultStore() { return { version: STORE_VERSION, completions: {} }; }
+  function defaultStore() { return { version: STORE_VERSION, lastFocus: 'mix', completions: {}, focusLog: {} }; }
 
-  /* Loads any earlier save (phase era, workout-type era, or v4). Only the
-   * trained days carry over. Phase, unlocked phase, phase sessions,
-   * workout type, checklist, checks, symptoms, workout days, and the old
-   * timer session are dropped quietly: they described screens that no
-   * longer exist. Only malformed trained days trigger the partial notice. */
-  function migrate(raw) {
-    if (!isPlainObject(raw)) return { state: defaultStore(), changed: true, notice: NOTICE_CORRUPT };
+  function sanitizeFocus(value) { return AP.normalizeFocus(value); }
+
+  function sanitizeCompletions(raw, present) {
+    if (!present) return { value: {}, repaired: false };
+    if (!isPlainObject(raw)) return { value: {}, repaired: true };
     const out = {};
     let repaired = false;
-    if (Object.prototype.hasOwnProperty.call(raw, 'completions')) {
-      if (!isPlainObject(raw.completions)) repaired = true;
-      else {
-        Object.keys(raw.completions).forEach(key => {
-          if (!raw.completions[key]) return;
-          if (!isDayKey(key)) { repaired = true; return; }
-          out[key] = true;
-        });
-      }
-    }
-    const state = { version: STORE_VERSION, completions: out };
+    Object.keys(raw).forEach(key => {
+      if (!raw[key]) return;
+      if (!isDayKey(key)) { repaired = true; return; }
+      out[key] = true;
+    });
+    return { value: out, repaired: repaired };
+  }
+
+  function sanitizeFocusLog(raw, present) {
+    if (!present) return { value: {}, repaired: false };
+    if (!isPlainObject(raw)) return { value: {}, repaired: true };
+    const out = {};
+    let repaired = false;
+    Object.keys(raw).forEach(key => {
+      if (!isDayKey(key)) { repaired = true; return; }
+      const list = Array.isArray(raw[key]) ? raw[key] : [raw[key]];
+      const kept = [];
+      list.forEach(item => {
+        if (item === 'mix' || item === 'Upper' || item === 'Lower' || item === 'Arms' || item === 'Knee') kept.push(item);
+        else repaired = true;
+      });
+      if (kept.length) out[key] = kept;
+    });
+    return { value: out, repaired: repaired };
+  }
+
+  /* Loads any earlier save (phase era, workout-type era, guided v4, or
+   * v5). Trained days carry over. A missing last focus becomes Mix, with
+   * no notice. Phase, unlocked phase, phase sessions, workout type,
+   * checklist, checks, symptoms, workout days, and the old timer session
+   * are dropped quietly. Only malformed trained days or a broken focus
+   * log trigger the partial notice. */
+  function migrate(raw) {
+    if (!isPlainObject(raw)) return { state: defaultStore(), changed: true, notice: NOTICE_CORRUPT };
+    const completions = sanitizeCompletions(raw.completions, Object.prototype.hasOwnProperty.call(raw, 'completions'));
+    const focusLog = sanitizeFocusLog(raw.focusLog, Object.prototype.hasOwnProperty.call(raw, 'focusLog'));
+    const lastFocus = sanitizeFocus(raw.lastFocus);
+    const state = { version: STORE_VERSION, lastFocus: lastFocus, completions: completions.value, focusLog: focusLog.value };
+    const repaired = completions.repaired || focusLog.repaired;
     return { state: state, changed: JSON.stringify(state) !== JSON.stringify(raw), notice: repaired ? NOTICE_PARTIAL : null };
   }
 
@@ -91,14 +117,41 @@
     backupKeys(storage).slice(BACKUP_KEEP).forEach(k => storage.removeItem(k));
   }
 
-  /* A finished session logs the day. A session where every exercise was
-   * skipped is not logged. */
-  function logFinished(state, summary, today) {
+  /* A finished session logs the day and the focus that was done. A
+   * session where every exercise was skipped is not logged. */
+  function logFinished(state, summary, today, focus) {
     if (!summary || summary.completed < 1) return { logged: false };
     const day = dayKey(today);
     const already = !!state.completions[day];
     state.completions[day] = true;
-    return { logged: true, already: already, day: day };
+    const done = sanitizeFocus(focus);
+    if (!state.focusLog[day]) state.focusLog[day] = [];
+    state.focusLog[day].push(done);
+    return { logged: true, already: already, day: day, focus: done };
+  }
+
+  /* Prefer the plan id (adult-Focus-...), then the unique main-slot focus
+   * label. Mix is the fallback. */
+  function focusFromEngine(engine) {
+    const state = engine.getState();
+    const match = /^adult-(mix|Upper|Lower|Arms|Knee)-/.exec(state.planId || '');
+    if (match) return match[1];
+    const labels = [];
+    (state.slots || []).forEach(s => {
+      if (s.phase === 'main' && s.focus && labels.indexOf(s.focus) === -1) labels.push(s.focus);
+    });
+    if (labels.length === 1) {
+      const hit = AP.FOCUS.find(id => AP.FOCUS_LABEL[id] === labels[0]);
+      if (hit) return hit;
+    }
+    return 'mix';
+  }
+
+  function focusMark(day, current) {
+    const list = current.focusLog[day] || [];
+    if (!list.length) return 'done';
+    const id = list[list.length - 1];
+    return id === 'mix' ? 'Mix' : (AP.FOCUS_LABEL[id] || id);
   }
 
   /* ---------- page ---------- */
@@ -147,7 +200,7 @@
         const cell = doc.createElement('div');
         cell.className = 'day' + (key === today ? ' today' : '') + (done ? ' done' : '');
         cell.setAttribute('data-testid', 'calendar-day');
-        [['dow', WEEKDAY_NAMES[i]], ['dnum', String(d.getDate())], ['dmark', done ? '\u2713 done' : '']].forEach(part => {
+        [['dow', WEEKDAY_NAMES[i]], ['dnum', String(d.getDate())], ['dmark', done ? '\u2713 ' + focusMark(key, store) : '']].forEach(part => {
           const span = doc.createElement('span');
           span.className = part[0];
           span.textContent = part[1];
@@ -163,14 +216,25 @@
       storage: storage,
       storageKey: SESSION_KEY,
       allowNewMix: true,
-      getPlan: () => AP.buildSession({}),
+      getPlan: () => AP.buildSession({ focus: store.lastFocus }),
       onStatus: group => { doc.body.setAttribute('data-session', group); },
       onFinish: summary => {
-        if (logFinished(store, summary, new Date()).logged) save();
+        if (logFinished(store, summary, new Date(), focusFromEngine(screens.engine())).logged) save();
         renderCalendar();
       },
     });
 
+    function renderFocus() {
+      $('focusSelect').value = store.lastFocus;
+    }
+    $('focusSelect').addEventListener('change', () => {
+      store.lastFocus = sanitizeFocus($('focusSelect').value);
+      $('focusSelect').value = store.lastFocus;
+      save();
+      screens.refreshPlan();
+    });
+
+    renderFocus();
     renderCalendar();
     return { store: store, screens: screens };
   }
@@ -186,6 +250,7 @@
     loadStoreFromRaw: loadStoreFromRaw,
     backupRaw: backupRaw,
     logFinished: logFinished,
+    focusFromEngine: focusFromEngine,
     boot: boot,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = AdultApp;

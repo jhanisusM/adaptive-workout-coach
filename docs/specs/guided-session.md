@@ -89,39 +89,50 @@ engine sees them. Slot ids are unique within a plan.
 
 ## Kids program (kids-workout-coach)
 
-- 4 warm-up moves (pulse raiser, one extra, Arm Circles, coordination), then
-  6 main moves x 2 rounds (3 thigh, 2 posture, 1 play), then the fixed
-  cool-down: Slow March, Wall Stand, Wall Angels, Flamingo Balance.
+- Kids pick a story theme on the start screen (see `pick-focus.md`). The
+  default is Animal Parade. The last theme is remembered.
+- 4 warm-up moves and 4 standing cool-down moves, chosen to fit the theme,
+  then 6 main moves x 2 rounds, drawn mostly from the theme's body focus.
+  Animal Parade keeps 3 thigh, 2 posture, and 1 play. Each move shows a
+  themed name next to the real exercise name, plus a themed one-liner.
 - Rest: 25 / 20 / 15 s in the main block by level, 10 s in warm-up and
   cool-down, plus a 30 s water break after round 1.
 - Levels: no jumps at Starter, Frog Jumps from Stronger, Star Jumps at
-  Superhero only, Wall Sit 10 / 20 / 30 s. Starter uses Sit-to-Stand.
-- Picks are random. If a session would pass 20.5 minutes, round 2 drops its
-  play move.
-- Labels per level cover the real minimum and maximum: Starter 16 to 18,
-  Stronger 17 to 21, Superhero 19 to 24 minutes.
-- Progress store `kids-coach-v1` v4: level, unlocked level, sessions per
-  level, trained days, advance history. Saves from main, PR #2, and PR #3
-  load with no notice.
+  Superhero only, Wall Sit 10 / 20 / 30 s when it appears. Starter uses
+  Sit-to-Stand. Level-up stays after 6 logged sessions.
+- If a session would pass 20.5 minutes, round 2 drops its last move.
+- Labels per level cover the real minimum and maximum, for every theme:
+  Starter 16 to 18, Stronger 17 to 21, Superhero 19 to 24 minutes.
+- Progress store `kids-coach-v1` v5: level, unlocked level, sessions per
+  level, trained days, advance history, last theme. Saves from main, PR
+  #2, PR #3, and guided v4 load with no notice and default to Animal Parade.
 
 ## Adult program (adaptive-workout-coach)
 
-- `SESSION_MINUTES = 35`, one constant.
+- A focus select on the start screen offers Mix, Upper body, Lower body,
+  Arms, and Knee recovery (see `pick-focus.md`). Mix is the default. The
+  last focus is remembered, and the day log records which focus was done.
+- `SESSION_MINUTES = 35` for Mix, one constant. Single-focus sessions can
+  run shorter, about 20 to 30 minutes, with an honest estimate on the
+  start screen.
 - Warm-up: 5 moves (pulse, hinge, shoulder, glute, squat pattern), 10 s rest.
-- Main: 8 moves, 2 per focus in the order Lower, Upper, Knee, Arms. Lower
-  moves are 3 straight sets, the rest 2; each set is its own screen. Rest
-  45 s after lower-body sets, 30 s after the rest. Past 36 minutes, the
-  lower pair drops its third set. Every session uses dumbbells and bands.
+- Mix main: 8 moves, 2 per focus in the order Lower, Upper, Knee, Arms.
+  Lower moves are 3 straight sets, the rest 2; each set is its own screen.
+  Past 36 minutes, the lower pair drops its third set. Every Mix session
+  uses dumbbells and bands.
+- Single-focus main: only that group's moves, covering both patterns, with
+  2 or 3 sets.
+- Rest 45 s after lower-body sets, 30 s after the rest.
 - Knee group: no jumping, no deep or loaded knee bends, no dumbbells, and
   "Stop if you feel sharp pain." on every knee screen.
 - Cool-down: 5 moves (easy walk, calf or hamstring, chest or shoulder, hip
   or quad, one more), 10 s rest.
-- Sessions land between about 33 and 37 minutes.
-- Store `awc-demo-v1` v4 keeps only trained days. Phase-era and
-  workout-type-era saves load quietly; their phase, type, checklist,
-  symptoms, and timer fields are dropped.
+- Mix sessions land between about 33 and 37 minutes.
+- Store `awc-demo-v1` v5 keeps trained days, last focus, and a focus log.
+  Phase-era, workout-type-era, and guided v4 saves load quietly; their
+  phase, type, checklist, symptoms, and timer fields are dropped, and the
+  last focus defaults to Mix.
 
 ## Out of scope
 
-Audio cues, workout types (synthesis.md describes one adult program),
-accounts, analytics, and a service worker.
+Audio cues, accounts, analytics, and a service worker.

@@ -67,10 +67,58 @@ test('the start screen shows the plan summary and Start, not the whole catalog',
   p.close();
 });
 
-test('the page has no type picker, phase card, check-in, or checklist', () => {
+test('the start screen has a focus select, defaulting to Mix', () => {
   const p = openPage();
+  const sel = p.q('focus-select');
+  assert.ok(p.visible('focus-select'));
+  assert.strictEqual(sel.value, 'mix');
+  assert.deepStrictEqual(Array.from(sel.options).map(o => o.value), ['mix', 'Upper', 'Lower', 'Arms', 'Knee']);
+  assert.match(p.doc.getElementById('focusHeading').textContent, /What do you want to work on/);
+  assert.match(p.text('session-title'), /35-minute/);
   ['#typePicker', '#phaseCard', '#phasePicker', '.checklist', '#checkinModal', '[data-type]', '[data-phase-btn]']
     .forEach(sel => assert.strictEqual(p.doc.querySelector(sel), null, sel));
+  p.close();
+});
+
+test('picking a focus rebuilds the preview and Start runs only that group', () => {
+  const p = openPage();
+  const sel = p.q('focus-select');
+  const beforeTitle = p.text('session-title');
+  const beforeEstimate = p.text('time-estimate');
+  sel.value = 'Upper';
+  sel.dispatchEvent(new p.win.Event('change', { bubbles: true }));
+  assert.strictEqual(sel.value, 'Upper');
+  assert.match(p.text('session-title'), /upper body/i);
+  assert.notStrictEqual(p.text('session-title'), beforeTitle);
+  assert.match(p.text('time-estimate'), /^About (2[0-9]|30) minutes\.$/);
+  p.q('plan-list').closest('details').open = true;
+  const names = Array.from(p.q('plan-list').querySelectorAll('ol')[1].querySelectorAll('li')).map(li => li.textContent);
+  assert.ok(names.length >= 4);
+  const upper = ['Incline or Knee Push-Up', 'Knee Push-Up', 'Dumbbell Floor Press', 'Dumbbell Overhead Press', 'One-Arm Dumbbell Row', 'Band Row', 'Band Face Pull'];
+  names.forEach(n => assert.ok(upper.some(u => n.indexOf(u) === 0), n));
+  assert.strictEqual(JSON.parse(p.storage()['awc-demo-v1']).lastFocus, 'Upper');
+  p.click('btn-start');
+  assert.strictEqual(p.status(), 'exercise');
+  /* Skip through to a main move and confirm the focus label. */
+  let steps = 0;
+  while (p.text('phase-label').indexOf('Main') !== 0 && steps++ < 20) {
+    if (p.status() === 'rest') p.click('btn-skip-rest');
+    else p.click('btn-done');
+  }
+  assert.match(p.text('phase-label'), /Main · Upper body/);
+  p.close();
+});
+
+test('the last picked focus comes back after a reload', () => {
+  const first = openPage();
+  const sel = first.q('focus-select');
+  sel.value = 'Knee';
+  sel.dispatchEvent(new first.win.Event('change', { bubbles: true }));
+  const saved = first.storage();
+  first.close();
+  const p = openPage({ saved: saved });
+  assert.strictEqual(p.q('focus-select').value, 'Knee');
+  assert.match(p.text('session-title'), /knee recovery/i);
   p.close();
 });
 
@@ -175,7 +223,10 @@ test('a full session: timed countdowns, rests with Up next, skip, pause, reload,
   assert.match(page.text('finish-time'), /^Total time: \d+ min/);
   const stored = page.storage();
   assert.strictEqual(stored[SESSION_KEY], undefined, 'finishing clears the session');
-  assert.strictEqual(Object.keys(JSON.parse(stored['awc-demo-v1']).completions).length, 1);
+  const savedProgress = JSON.parse(stored['awc-demo-v1']);
+  assert.strictEqual(Object.keys(savedProgress.completions).length, 1);
+  assert.strictEqual(savedProgress.lastFocus, 'mix');
+  assert.strictEqual(Object.values(savedProgress.focusLog)[0][0], 'mix');
   assert.match(page.text('cal-progress'), /^1 day trained this week$/);
   page.click('btn-finish-done');
   assert.strictEqual(page.status(), 'idle');
@@ -215,7 +266,7 @@ test('phase-era and type-era saves load quietly: no notice, days kept, old timer
     assert.strictEqual(p.q('app-notice').hidden, true, name);
     assert.strictEqual(p.status(), 'idle', name);
     const store = JSON.parse(p.storage()['awc-demo-v1']);
-    assert.deepStrictEqual(store, { version: 4, completions: OLD[name].completions }, name);
+    assert.deepStrictEqual(store, { version: 5, lastFocus: 'mix', completions: OLD[name].completions, focusLog: {} }, name);
     p.close();
   });
 });
