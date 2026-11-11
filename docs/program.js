@@ -24,7 +24,18 @@
   const MAIN_REST_SEC = 30;
   const KNEE_CAUTION = 'Stop if you feel sharp pain.';
   const FOCUS = ['Lower', 'Upper', 'Knee', 'Arms'];
-  const FOCUS_LABEL = { Lower: 'Lower body', Upper: 'Upper body', Knee: 'Knee strength', Arms: 'Arms' };
+  const FOCUS_LABEL = { Lower: 'Lower body', Upper: 'Upper body', Knee: 'Knee recovery', Arms: 'Arms' };
+  const FOCUS_OPTIONS = [
+    { id: 'mix', name: 'Mix (upper, lower, arms, and knee recovery)' },
+    { id: 'Upper', name: 'Upper body' },
+    { id: 'Lower', name: 'Lower body' },
+    { id: 'Arms', name: 'Arms' },
+    { id: 'Knee', name: 'Knee recovery' },
+  ];
+  /* Single-focus sessions aim for this window. Mix stays at SESSION_MINUTES. */
+  const FOCUS_MIN_SEC = 20 * 60;
+  const FOCUS_MAX_SEC = 30 * 60;
+  const FOCUS_MIN_MOVES = 4;
   const SETS = { Lower: 3, Upper: 2, Knee: 2, Arms: 2 };
 
   const t = (seconds, label) => ({ kind: 'time', seconds: seconds, label: label || seconds + ' sec' });
@@ -286,6 +297,21 @@
     Arms: ['biceps', 'triceps'],
   };
 
+  function normalizeFocus(focus) {
+    return FOCUS.indexOf(focus) !== -1 ? focus : 'mix';
+  }
+
+  function shuffle(list, rand) {
+    const a = list.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(rand() * (i + 1));
+      const t = a[i];
+      a[i] = a[j];
+      a[j] = t;
+    }
+    return a;
+  }
+
   /* Two moves per focus area. The session must include at least one
    * dumbbell move and one band move; otherwise it is drawn again. */
   function pickMain(rand) {
@@ -298,13 +324,47 @@
     throw new Error('could not draw a main block with dumbbells and bands');
   }
 
-  function pickWarmup(rand) {
-    return ['warm-pulse', 'warm-hinge', 'warm-shoulder', 'warm-glute', 'warm-squat'].map(role => pick(byRole(role), rand));
+  /* All unique main moves in one focus, alternating the two patterns so
+   * both appear even if the list is later trimmed. */
+  function pickFocusMoves(focus, rand) {
+    const pools = PAIRS[focus].map(role => shuffle(byRole(role), rand));
+    const out = [];
+    const used = new Set();
+    const max = Math.max(pools[0].length, pools[1].length);
+    for (let i = 0; i < max; i++) {
+      pools.forEach(pool => {
+        const m = pool[i];
+        if (m && !used.has(m.id)) {
+          out.push(m);
+          used.add(m.id);
+        }
+      });
+    }
+    return out;
   }
 
-  function pickCooldown(rand) {
+  function pickWarmup(rand, focus) {
+    return ['warm-pulse', 'warm-hinge', 'warm-shoulder', 'warm-glute', 'warm-squat'].map(role => {
+      let pool = byRole(role);
+      if (focus === 'Knee' && role === 'warm-squat') {
+        const preferred = pool.filter(m => m.id === 'sit-to-stand');
+        if (preferred.length) pool = preferred;
+      }
+      return pick(pool, rand);
+    });
+  }
+
+  function pickCooldown(rand, focus) {
     const out = ['walk', 'calf-ham', 'chest-shoulder', 'hip-quad'].map(role => pick(byRole(role), rand));
-    const rest = MOVES.filter(m => m.phase === 'cooldown' && m.role !== 'walk' && out.indexOf(m) === -1);
+    let rest = MOVES.filter(m => m.phase === 'cooldown' && m.role !== 'walk' && out.indexOf(m) === -1);
+    if (focus === 'Arms' || focus === 'Upper') {
+      const liked = rest.filter(m => m.id === 'overhead-triceps-stretch' || m.id === 'standing-upper-back-reach' || m.role === 'chest-shoulder');
+      if (liked.length) rest = liked;
+    }
+    if (focus === 'Lower' || focus === 'Knee') {
+      const liked = rest.filter(m => m.role === 'calf-ham' || m.role === 'hip-quad');
+      if (liked.length) rest = liked;
+    }
     out.push(pick(rest, rand));
     return out;
   }
@@ -340,27 +400,71 @@
     return out;
   }
 
+  function titleFor(focus) {
+    if (focus === 'mix') return "Today's " + SESSION_MINUTES + '-minute session';
+    return "Today's " + FOCUS_LABEL[focus].toLowerCase() + ' session';
+  }
+
+  function makePlan(focus, warm, mainMoves, cool, setsFor, rand) {
+    const slots = warm.concat(
+      mainMoves.reduce((acc, m) => acc.concat(setSlots(m, typeof setsFor === 'function' ? setsFor(m) : setsFor)), []),
+      cool);
+    const plan = {
+      id: 'adult-' + focus + '-' + Math.floor(rand() * 1e9).toString(36),
+      title: titleFor(focus),
+      targetMinutes: SESSION_MINUTES,
+      focus: focus,
+      transitionSec: TRANSITION_SEC,
+      notes: SAFETY_NOTES,
+      slots: slots,
+    };
+    if (focus !== 'mix') plan.targetMinutes = Math.max(1, Math.round(SE.estimateSeconds(plan) / 60));
+    return plan;
+  }
+
   /* Warm-up (5 moves), main (8 moves: 2 Lower, 2 Upper, 2 Knee, 2 Arms, in
    * that order, as straight sets), cool-down (5 moves). Past 36 minutes,
    * the lower pair drops its third set. */
+  function buildMix(rand) {
+    const warm = pickWarmup(rand, 'mix').map(m => slotFor(m, { restSec: WARMUP_REST_SEC }));
+    const main = pickMain(rand);
+    const cool = pickCooldown(rand, 'mix').map(m => slotFor(m, { restSec: COOLDOWN_REST_SEC }));
+    const plan = lowerSets => makePlan('mix', warm, main, cool, m => (m.focus === 'Lower' ? lowerSets : SETS[m.focus]), rand);
+    const full = plan(SETS.Lower);
+    return SE.estimateSeconds(full) > DROP_SET3_OVER_SEC ? plan(SETS.Lower - 1) : full;
+  }
+
+  /* A single-focus main block uses only that group's moves, covers both
+   * patterns, and trims sets or moves so the estimate is about 20 to 30
+   * minutes. */
+  function buildFocus(focus, rand) {
+    const warm = pickWarmup(rand, focus).map(m => slotFor(m, { restSec: WARMUP_REST_SEC }));
+    const cool = pickCooldown(rand, focus).map(m => slotFor(m, { restSec: COOLDOWN_REST_SEC }));
+    const moves = pickFocusMoves(focus, rand);
+    const minMoves = Math.min(FOCUS_MIN_MOVES, moves.length);
+    let best = null;
+    let bestDist = Infinity;
+    for (let n = moves.length; n >= minMoves; n--) {
+      for (let s = 0; s < 2; s++) {
+        const sets = [3, 2][s];
+        const candidate = makePlan(focus, warm, moves.slice(0, n), cool, sets, rand);
+        const sec = SE.estimateSeconds(candidate);
+        const dist = sec < FOCUS_MIN_SEC ? FOCUS_MIN_SEC - sec : (sec > FOCUS_MAX_SEC ? sec - FOCUS_MAX_SEC : 0);
+        if (dist === 0) return candidate;
+        if (dist < bestDist) {
+          best = candidate;
+          bestDist = dist;
+        }
+      }
+    }
+    return best;
+  }
+
   function buildSession(options) {
     const opts = options || {};
     const rand = typeof opts.rand === 'function' ? opts.rand : Math.random;
-    const warm = pickWarmup(rand).map(m => slotFor(m, { restSec: WARMUP_REST_SEC }));
-    const main = pickMain(rand);
-    const cool = pickCooldown(rand).map(m => slotFor(m, { restSec: COOLDOWN_REST_SEC }));
-    const plan = lowerSets => ({
-      id: 'adult-' + Math.floor(rand() * 1e9).toString(36),
-      title: "Today's " + SESSION_MINUTES + '-minute session',
-      targetMinutes: SESSION_MINUTES,
-      transitionSec: TRANSITION_SEC,
-      notes: SAFETY_NOTES,
-      slots: warm.concat(
-        main.reduce((acc, m) => acc.concat(setSlots(m, m.focus === 'Lower' ? lowerSets : SETS[m.focus])), []),
-        cool),
-    });
-    const full = plan(SETS.Lower);
-    return SE.estimateSeconds(full) > DROP_SET3_OVER_SEC ? plan(SETS.Lower - 1) : full;
+    const focus = normalizeFocus(opts.focus);
+    return focus === 'mix' ? buildMix(rand) : buildFocus(focus, rand);
   }
 
   function seeded(seed) {
@@ -379,10 +483,15 @@
     LOWER_REST_SEC: LOWER_REST_SEC,
     MAIN_REST_SEC: MAIN_REST_SEC,
     KNEE_CAUTION: KNEE_CAUTION,
+    FOCUS: FOCUS,
     FOCUS_LABEL: FOCUS_LABEL,
+    FOCUS_OPTIONS: FOCUS_OPTIONS,
+    FOCUS_MIN_SEC: FOCUS_MIN_SEC,
+    FOCUS_MAX_SEC: FOCUS_MAX_SEC,
     MOVES: MOVES,
     SAFETY_NOTES: SAFETY_NOTES,
     byId: id => BY_ID.get(id) || null,
+    normalizeFocus: normalizeFocus,
     buildSession: buildSession,
     seeded: seeded,
   };

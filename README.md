@@ -2,11 +2,11 @@
 
 [Open the app](https://jhanisusM.github.io/adaptive-workout-coach/)
 
-**A guided 35-minute strength workout with dumbbells and resistance bands,
-one move at a time.** Press Start once and follow along: the app shows each
-move, counts down timed ones, runs the rests, and moves on by itself. Pure
-HTML, CSS, and JavaScript. No build step, no server, no accounts, no
-tracking.
+**A guided strength workout with dumbbells and resistance bands, one move
+at a time.** Pick what you want to work on, press Start, and follow along:
+the app shows each move, counts down timed ones, runs the rests, and moves
+on by itself. Pure HTML, CSS, and JavaScript. No build step, no server, no
+accounts, no tracking.
 
 ## Disclaimer
 
@@ -35,28 +35,36 @@ If something is wrong, stop and contact your clinician before you train again.
 
 ## The program
 
-One 35-minute session (`SESSION_MINUTES` in `docs/program.js`), from Ask
-AI's program synthesis. Each session draws new moves from the 51 in the
-exercise list.
+Pick what you want to work on before you press Start: **Mix** (the current
+35-minute session, `SESSION_MINUTES` in `docs/program.js`), **Upper body**,
+**Lower body**, **Arms**, or **Knee recovery**. Mix is the default. A
+single-focus session can run shorter, about 20 to 30 minutes, and the
+start screen shows the honest estimate. Moves come from Ask AI's program
+synthesis and the 51 in the exercise list.
 
 - **Warm-up, about 5 minutes:** a pulse raiser, a hip hinge, a shoulder
   move, a glute move, and a squat pattern.
-- **Main, about 25 minutes:** 8 moves, 2 per focus area, in this order:
-  lower body, upper body, knee strength and stability, arms. Lower-body
-  moves are 3 straight sets (2 when the session would run past 36
-  minutes), the others 2. Rest is 45 seconds after lower-body sets and 30
-  seconds after the rest. Every session uses both dumbbells and bands.
-- **Knee group:** no jumping, no running, no deep or loaded knee bends, and
-  no dumbbells. Wall sits stay shallow. Every knee screen says "Stop if you
-  feel sharp pain."
+- **Mix main, about 25 minutes:** 8 moves, 2 per focus area, in this
+  order: lower body, upper body, knee recovery, arms. Lower-body moves
+  are 3 straight sets (2 when the session would run past 36 minutes), the
+  others 2. Every Mix session uses both dumbbells and bands.
+- **Single-focus main:** only that group's moves, covering both patterns
+  in the group, with 2 or 3 sets so the whole session lands around 20 to
+  30 minutes.
+- **Rest:** 45 seconds after lower-body sets and 30 seconds after the
+  rest.
+- **Knee group:** no jumping, no running, no deep or loaded knee bends,
+  and no dumbbells. Wall sits stay shallow. Every knee screen says "Stop
+  if you feel sharp pain."
 - **Cool-down, about 5 minutes:** an easy walk and four stretches.
 
 Doses are starting points from the synthesis, not a personal prescription.
 
 ## How a session runs
 
-- The start screen shows the length, the number of exercises, and the
-  warm-up / main / cool-down breakdown. The move list stays folded.
+- The start screen has a "What do you want to work on?" menu, then the
+  length, the number of exercises, and the warm-up / main / cool-down
+  breakdown. The move list stays folded. The last focus is remembered.
 - Rep moves wait for **Done**. Timed moves count down and move on at zero;
   Done ends them early. Rests start by themselves and show what is up next,
   with **Skip rest**.
@@ -64,14 +72,14 @@ Doses are starting points from the synthesis, not a personal prescription.
   always on screen. The main button is large and above the fold on phones.
 - Reloading the page resumes the same move and time. Finishing shows
   "Workout complete" with exercises done and total time, and marks the day
-  on the weekly calendar.
+  and the focus that was done on the weekly calendar.
 - One demo video at a time, never autoplaying, from YouTube's
   privacy-enhanced domain. Later sets show no video.
 - The screen stays awake during a session where the browser supports it.
 
-Saves from the earlier phase and workout-type versions load quietly: the
-trained days are kept, and the phase, type, checklist, and check-in data
-are dropped.
+Saves from the earlier phase, workout-type, and first guided versions load
+quietly: the trained days are kept, the last focus defaults to Mix, and
+the phase, type, checklist, and check-in data are dropped.
 
 ## Run it
 

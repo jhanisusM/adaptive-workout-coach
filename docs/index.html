@@ -6,8 +6,8 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'none'; frame-src https://www.youtube-nocookie.com; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
-<title>Adaptive Workout Coach: a guided 35-minute workout</title>
-<meta name="description" content="Adaptive Workout Coach: a guided 35-minute strength workout with dumbbells and bands. Warm-up, lower body, upper body, knee strength and arms, then a cool-down, one move at a time.">
+<title>Adaptive Workout Coach: a guided strength workout</title>
+<meta name="description" content="Adaptive Workout Coach: a guided strength workout with dumbbells and bands. Pick a focus, then warm-up, main moves, and a cool-down, one move at a time.">
 <link rel="stylesheet" href="session.css">
 <link rel="stylesheet" href="styles.css">
 </head>
@@ -15,10 +15,21 @@
 <main class="page">
   <header class="intro">
     <h1 class="app-title">Adaptive Workout Coach</h1>
-    <p class="lede hide-unless-idle">Warm-up, then lower body, upper body, knee strength and arms with dumbbells and bands, then a cool-down. Press Start once and follow along.</p>
+    <p class="lede hide-unless-idle">Pick what you want to work on, press Start, and follow along. Mix is a 35-minute session of upper body, lower body, arms, and knee recovery. A single focus can run shorter.</p>
   </header>
 
   <p class="app-notice" id="appNotice" role="status" data-testid="app-notice" hidden></p>
+
+  <div class="hide-unless-idle focus-picker">
+    <label class="panel-label" for="focusSelect" id="focusHeading">What do you want to work on?</label>
+    <select id="focusSelect" data-testid="focus-select" aria-labelledby="focusHeading">
+      <option value="mix">Mix (upper, lower, arms, and knee recovery)</option>
+      <option value="Upper">Upper body</option>
+      <option value="Lower">Lower body</option>
+      <option value="Arms">Arms</option>
+      <option value="Knee">Knee recovery</option>
+    </select>
+  </div>
 
   <div id="session" data-testid="session-root"></div>
 
