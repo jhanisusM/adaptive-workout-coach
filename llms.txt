@@ -2,87 +2,62 @@
 
 Adaptive Workout Coach is a lightweight guided workout app: pure HTML, CSS,
 and JavaScript, no build step, no server, no accounts. It runs as a static
-site (GitHub Pages serves the docs/ folder). Open the URL and follow the
-30-minute session, three times per week, even with no routine, no plan, and
-no experience. Every exercise tells the user exactly what to do, in what
-order, with big legible dose labels (sets x reps), muscle-group tags, and
-demo video links where verified demos exist. No expertise required.
+site (GitHub Pages serves the docs/ folder). Open the URL, press Start once,
+and follow a 35-minute strength session one move at a time with dumbbells,
+resistance bands, and bodyweight.
 
 ## The program
 
-A 3-phase program, about 3 weeks per phase. The default week is Tuesday and
-Thursday, and the user can choose other workout days. It is a workout
-companion for someone returning after a long time off their feet, not a
-personal prescription and not medical advice. It is provided as-is with no
-warranty. Use it at your own risk and consult a clinician before starting.
+One 35-minute session (SESSION_MINUTES in docs/program.js) built from Ask
+AI's program synthesis and a list of 51 moves, each with one verified
+YouTube demo URL. Each session draws new moves:
 
-Phase 1 "Stability & Tissue Tolerance" (14 exercises): low-load holds, glute
-activation, balance, and a high-box sit-to-stand. Holds are a starting
-point, not a treatment for pain. No deep loaded knee bending. The Spanish
-squat hold stays around 30 to 45 degrees, and side-lying hip abduction
-follows the clamshell. Phase 2 "Supported Unilateral" (13 exercises):
-supported split squat, low step-up, kickstand-stance single-leg RDL, single-leg bridge, band
-side-step, and a supported single-leg calf raise. Reduce support before
-load, and do not add range and load in the same week. Phase 3 "Complex
-Unilateral Loading" (15 exercises) is a placeholder until the full program
-is confirmed. It includes a bodyweight Bulgarian split squat that starts at
-3 x 6 each side, plus lateral step-downs, reverse lunges, and single-leg
-calf raises. Week-3 dumbbells on the split squat are a placeholder too.
-Sets, reps, holds, week doses, and the pain and swelling figures are
-placeholder rules of thumb pending professional confirmation.
+- Warm-up, about 5 minutes: pulse raiser, hip hinge, shoulder, glute, and
+  squat pattern, with 10 seconds between.
+- Main, about 25 minutes: 8 moves, 2 per focus area in this order: lower
+  body, upper body, knee strength and stability, arms. Lower-body moves are
+  3 straight sets (2 if the session would pass 36 minutes), the others 2.
+  Rest is 45 seconds after lower-body sets and 30 seconds after the others.
+- Knee group: no jumping, no running, no deep or loaded knee bends, no
+  dumbbells. Every knee screen says "Stop if you feel sharp pain."
+- Cool-down, about 5 minutes: easy walk and four stretches.
 
-Moving up a phase uses Advance only, after 9 logged sessions and every
-checklist item for that phase. Moving back is always allowed. Weeks are
-minimums. Week 1, 2, and 3 doses sit inside each phase. Pain at or below
-2/10 that settles to 2/10 or less within 24 hours is an acceptable rule of
-thumb. Pain above that, or next-morning swelling, does not move the week
-and, twice in a row, turns Advance off. Swelling advice says to cut volume
-by about 30%. The app
-never ticks the checklist from those scores and never rewrites the dose text.
-No running or plyometrics until separately cleared.
+It is a workout companion, not a personal prescription and not medical
+advice. It is provided as-is with no warranty. Use it at your own risk and
+consult a clinician before starting.
 
 ## What the app does
 
-- Runs a guided 30-minute workout with a single stored timer deadline, so
-  closing and reopening the browser resumes with the correct time left.
-- Full session lifecycle: start, pause, resume, clear (with confirmation),
-  finish (pain check-in, then log), and timer expiry. Start does not wait
-  on a clearance pop-up. A rest day is not logged.
-- Per-exercise checklists, accordion sections, progress bar, sticky status
-  bar, big dose labels.
-- A Sun-Sat calendar. Workout days are chosen in the header settings panel
-  and saved in this browser. The default is Tuesday and Thursday. The
-  calendar, the selected day, rest days, and once-per-day logging follow
-  that choice.
-- "How it's organized" is in a header info panel, not in the main flow.
-- A Demo videos section lists every exercise, and the same clip sits next
-  to that exercise in the routine. Each exercise has one video_url. Players
-  use the privacy-enhanced domain youtube-nocookie.com. Watch demo opens
-  https://www.youtube.com/watch?v= for that clip. Only YouTube hosts are
-  accepted as video ids. In-session
-  library clips still come from docs/video-library.js through demo_ids.
-  URLs are only added when verified, never invented.
-- All progress is stored in the browser's localStorage under awc-demo-v1.
-  No accounts, no analytics, no tracking, no personal data. Unreadable saves
-  are backed up in the browser, the user is told, and only the latest few
-  backups are kept.
+- Guided session screens: start (length, count, phase breakdown, Start),
+  exercise (name, dose, demo, phase, "Exercise N of M", progress bar),
+  rest (countdown, Up next, Skip rest), and finish (Workout complete,
+  exercises done, total time).
+- Rep moves wait for Done. Timed moves count down and advance by
+  themselves; Done ends them early. Pause/Resume, Skip exercise, and End
+  with a confirm.
+- One state object in localStorage (awc-guided-session-v1) so a reload
+  resumes the same move and time. Cleared on finish or End.
+- One demo video at a time from youtube-nocookie.com, never autoplay,
+  sandboxed, rel=0. Later sets show no video. URLs are never invented.
+- Screen Wake Lock where supported, polite live announcements, reduced
+  motion respected, mobile first.
+- A Sun-Sat calendar of trained days under awc-demo-v1. Older phase-era
+  and workout-type-era saves load quietly and keep their trained days.
+- No accounts, no analytics, no tracking, no personal data.
 
 ## Project layout
 
-- docs/index.html: app shell (status bar, timer, routine, calendar,
-  phase picker, checklist, settings, info panel, demo videos). A
-  Content-Security-Policy meta tag limits the page to its own files and
-  allows demo frames from https://www.youtube-nocookie.com.
-- docs/styles.css: styles, native CSS, light/dark aware.
-- docs/app.js: all app logic: phases, timer, calendar, checklist,
-  progression, symptoms. Progress persists in localStorage.
-- docs/video-library.js: topic-organized demo video library. This is the
-  file to edit when swapping videos.
+- docs/index.html: page shell. A Content-Security-Policy meta tag limits the
+  page to its own files (img-src 'self', connect-src 'none') and allows demo
+  frames from https://www.youtube-nocookie.com only.
+- docs/session-engine.js, docs/session-screens.js, docs/session.css: the
+  guided session, shared byte-for-byte with the kids workout app.
+- docs/program.js: the 51 moves and the session builder.
+- docs/app.js: calendar store, migration, page wiring.
+- docs/styles.css: colors, light/dark aware.
+- docs/specs/guided-session.md: the session spec.
 - test/: node:test suites. Run with npm test. Not served from docs/.
-- .github/workflows/test.yml: npm ci and npm test on pull requests.
-- README.md: full documentation.
-- FEATURES.md: feature list with status and location.
-- llms.txt: this file.
+- README.md, FEATURES.md, llms.txt.
 
 ## How to run it
 
@@ -92,13 +67,11 @@ deploys from docs/ on every push to main).
 Locally: serve the docs/ folder with any static file server, e.g.
 `cd docs && python3 -m http.server 8000`, then open http://localhost:8000.
 
-Tests: `npm test` from the repository root.
+Tests: `npm ci && npm test` from the repository root.
 
 ## Safety
 
-This is a workout companion, not medical advice. The app tells users to train
-within a comfortable range, that sharp pain is a stop sign, and to follow
-their clinician's guidance when training around an injury or condition.
+This is a workout companion, not medical advice. Sharp pain is a stop sign.
 A fixed footer line reads "Personal research project. Not medical advice; use
 at your own risk." That line links to the README Disclaimer on GitHub. The
 source is public on GitHub. All rights reserved.
