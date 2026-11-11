@@ -1,829 +1,229 @@
 'use strict';
-
+/* Page tests: load docs/index.html with its real scripts in jsdom and use
+ * it through the buttons, the way a person would. A fake clock drives the
+ * countdowns; the page's own 250 ms ticker applies them. */
 const test = require('node:test');
-const assert = require('node:assert/strict');
-const fs = require('fs');
-const path = require('path');
-const { JSDOM, VirtualConsole } = require('jsdom');
-const app = require('../docs/app.js');
+const assert = require('node:assert');
+const fs = require('node:fs');
+const path = require('node:path');
+const { JSDOM } = require('jsdom');
 
-const docs = path.join(__dirname, '..', 'docs');
+const DOCS = path.join(__dirname, '..', 'docs');
+const HTML = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+const SCRIPTS = Array.from(HTML.matchAll(/<script src="([^"]+)"><\/script>/g)).map(m => m[1]);
+const OLD = require(path.join(__dirname, 'fixtures', 'old-saves.json'));
+const SESSION_KEY = 'awc-guided-session-v1';
+const OPEN = new Set();
+test.afterEach(() => { OPEN.forEach(w => w.close()); OPEN.clear(); });
 
-function pageHtml() {
-  const html = fs.readFileSync(path.join(docs, 'index.html'), 'utf8');
-  const video = fs.readFileSync(path.join(docs, 'video-library.js'), 'utf8');
-  const source = fs.readFileSync(path.join(docs, 'app.js'), 'utf8');
-  return html
-    .replace('<script src="video-library.js"></script>', '<script>\n' + video + '\n</script>')
-    .replace('<script src="app.js"></script>', '<script>\n' + source + '\n</script>');
-}
-
-function boot(storageValue) {
-  const errors = [];
-  const virtualConsole = new VirtualConsole();
-  virtualConsole.on('jsdomError', (err) => errors.push(err));
-  const dom = new JSDOM(pageHtml(), {
-    url: 'http://localhost/',
-    runScripts: 'dangerously',
-    pretendToBeVisual: true,
-    virtualConsole,
-    beforeParse(window) {
-      if (storageValue !== undefined) {
-        const raw = typeof storageValue === 'string' ? storageValue : JSON.stringify(storageValue);
-        window.localStorage.setItem(app.LS_KEY, raw);
-      }
-    },
+/* Opens the page. `saved` seeds localStorage (a reload passes the previous
+ * page's storage). `breakSetItem` makes every write throw. */
+function openPage(options) {
+  const opts = options || {};
+  const dom = new JSDOM(HTML.replace(/<script src="[^"]+"><\/script>/g, ''), {
+    url: 'https://example.test/', runScripts: 'outside-only', pretendToBeVisual: true,
   });
-  return { dom, window: dom.window, errors };
-}
-
-function readStore(window) {
-  return JSON.parse(window.localStorage.getItem(app.LS_KEY));
-}
-
-function backupValues(window) {
-  const values = [];
-  for (let i = 0; i < window.localStorage.length; i++) {
-    const key = window.localStorage.key(i);
-    if (key && key.indexOf(app.LS_KEY + '.bak-') === 0) values.push(window.localStorage.getItem(key));
+  const win = dom.window;
+  OPEN.add(win);
+  const clock = opts.clock || { now: 1800000000000 };
+  win.Date.now = () => clock.now;
+  Object.entries(opts.saved || {}).forEach(([k, v]) => win.localStorage.setItem(k, v));
+  if (opts.breakSetItem) {
+    win.Storage.prototype.setItem = function () { throw new win.DOMException('full', 'QuotaExceededError'); };
   }
-  return values;
-}
-
-function click(window, el) {
-  el.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
-}
-
-function startSession(window) {
-  click(window, window.document.getElementById('btnStart'));
-  const stored = readStore(window);
-  return stored.session && stored.session.day;
-}
-
-function checkAll(window) {
-  for (let i = 0; i < 30; i++) {
-    const box = window.document.querySelector('input[data-check]:not(:checked)');
-    if (!box) return;
-    box.checked = true;
-    box.dispatchEvent(new window.Event('change', { bubbles: true }));
-  }
-  throw new Error('could not check every exercise');
-}
-
-function acceptClearance() {
-  /* Clearance is no longer part of the page. Call sites stay so start flows read the same. */
-}
-
-function saveCheckin(window, pain) {
-  const doc = window.document;
-  const select = doc.getElementById('painDuring');
-  select.value = String(pain);
-  click(window, doc.getElementById('btnCheckinSave'));
-}
-
-function thisTuesday() {
-  const today = new Date();
-  const mon = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  mon.setDate(mon.getDate() - ((mon.getDay() + 6) % 7));
-  const tue = new Date(mon.getFullYear(), mon.getMonth(), mon.getDate() + 1);
-  return app.dayKey(tue);
-}
-
-test('the demo list renders and boxes cannot log a workout before Start', () => {
-  const { dom, window, errors } = boot();
-  try {
-    assert.deepEqual(errors, []);
-    const demos = window.document.querySelectorAll('#demoVideoList .demo-row');
-    assert.equal(demos.length, 15);
-    assert.equal(window.document.querySelectorAll('#demoVideoList iframe').length, 15);
-    assert.equal(window.document.querySelectorAll('#demoVideoList .demo-missing').length, 0);
-    assert.match(window.document.querySelector('#demoVideoList iframe').getAttribute('src'), /youtube-nocookie\.com\/embed\//);
-    assert.match(window.document.getElementById('blockNote').textContent, /Pick a workout above/);
-    assert.equal(window.document.getElementById('infoPanel').hidden, true);
-    assert.equal(window.document.getElementById('settingsPanel'), null);
-    assert.equal(window.document.getElementById('btnMenu'), null);
-    assert.ok(window.document.querySelector('input[data-check]').disabled);
-
-    const box = window.document.querySelector('input[data-check]');
-    box.checked = true;
-    box.dispatchEvent(new window.Event('change', { bubbles: true }));
-    const stored = readStore(window);
-    assert.equal(Boolean(stored && stored.checks && stored.checks['wt-knee-quad-sets']), false);
-    assert.equal(window.document.querySelector('input[data-check="wt-knee-quad-sets"]').checked, false);
-    assert.match(window.document.getElementById('sessionMessage').textContent, /Start a session/);
-    assert.equal(window.document.getElementById('btnFinish').hidden, true);
-    assert.equal(window.document.querySelectorAll('.exercise').length, 15);
-    assert.equal(window.document.querySelectorAll('#routine .demo-missing').length, 0);
-    assert.equal(window.document.querySelectorAll('#routine iframe').length, 15);
-    assert.doesNotMatch(window.document.getElementById('routine').textContent, /18 min/);
-    assert.equal(window.document.querySelector('[data-phase="2"]').classList.contains('locked'), true);
-    assert.equal(window.document.querySelector('[data-phase="3"]').classList.contains('locked'), true);
-    assert.equal(window.document.getElementById('btnStart').disabled, false);
-    assert.equal(window.document.getElementById('redFlags'), null);
-    assert.equal(window.document.getElementById('clearanceModal'), null);
-  } finally {
-    dom.window.close();
-  }
-});
-
-test('each exercise embeds one nocookie demo beside its description', () => {
-  const ids = [
-    'XULOKw4E4P4', 'TVlWwUn_ZXw', '385OLFbpe6I', 'O2KPabIoPPk', 'wPM8icPu6H8',
-    'NATjG5HjtMw', 'XkESHgkTdFw', 'suCQoA3cdWg', 'l5IuYBdz114', 'lTktLtISKek',
-    'fambZbEUVoo', 'q98y9DmhqzA', 'tw3dUcw0xaU', 'o40Zd3WRbxg', 't88jlMKKvrU',
-  ];
-  const { dom, window, errors } = boot();
-  try {
-    assert.deepEqual(errors, []);
-    const srcs = [...window.document.querySelectorAll('#demoVideoList iframe')].map(frame => frame.getAttribute('src'));
-    assert.equal(srcs.length, 15);
-    assert.equal(new Set(srcs).size, 15);
-    ids.forEach(id => {
-      assert.ok(srcs.includes('https://www.youtube-nocookie.com/embed/' + id), id);
-    });
-    assert.equal(window.document.querySelectorAll('#demoVideoList .demo-watch').length, 15);
-    const quad = window.document.querySelector('[data-check="wt-knee-quad-sets"]').closest('.exercise');
-    assert.ok(quad.querySelector('.exercise-note'));
-    assert.equal(quad.querySelector('.exercise-name').textContent, 'Quad Sets');
-    assert.equal(quad.querySelector('.exercise-video iframe').getAttribute('src'), 'https://www.youtube-nocookie.com/embed/TVlWwUn_ZXw');
-    assert.equal(window.document.querySelector('#demoVideoList .demo-watch').getAttribute('href'), 'https://www.youtube.com/watch?v=XULOKw4E4P4');
-    assert.equal(window.document.querySelectorAll('.exercise .exercise-video iframe').length, 15);
-  } finally {
-    dom.window.close();
-  }
-});
-
-test('the disclaimer footer renders and links to the README', () => {
-  const { dom, window, errors } = boot();
-  try {
-    assert.deepEqual(errors, []);
-    const footer = window.document.getElementById('disclaimerFooter');
-    assert.ok(footer);
-    assert.equal(footer.hidden, false);
-    assert.equal(footer.classList.contains('disclaimer-footer'), true);
-    assert.equal(footer.textContent.trim(), 'Personal research project. Not medical advice; use at your own risk.');
-    const link = footer.querySelector('a');
-    assert.equal(link.textContent, 'Personal research project. Not medical advice; use at your own risk.');
-    assert.equal(link.getAttribute('href'), 'https://github.com/jhanisusM/adaptive-workout-coach#disclaimer');
-    assert.equal(window.document.getElementById('redFlags'), null);
-    assert.equal(window.document.getElementById('clearanceModal'), null);
-    const css = fs.readFileSync(path.join(docs, 'styles.css'), 'utf8');
-    assert.match(css, /\.disclaimer-footer \{[^}]*position: fixed/);
-  } finally {
-    dom.window.close();
-  }
-});
-
-test('Finish logs a day once, and ticking every box does not', async () => {
-  const { dom, window, errors } = boot();
-  try {
-    assert.deepEqual(errors, []);
-    acceptClearance(window);
-    const day = startSession(window);
-    checkAll(window);
-    let stored = readStore(window);
-    assert.equal(stored.phaseSessions['1'], 0);
-    assert.equal(stored.completions[day], undefined);
-    assert.ok(window.document.getElementById('finishConfirm').classList.contains('show'));
-
-    click(window, window.document.getElementById('btnFinishNow'));
-    assert.equal(window.document.getElementById('checkinModal').hidden, false);
-    assert.equal(readStore(window).phaseSessions['1'], 0);
-    saveCheckin(window, 1);
-    stored = readStore(window);
-    assert.equal(stored.phaseSessions['1'], 1);
-    assert.equal(stored.completions[day], true);
-    assert.equal(stored.symptoms[day].painDuring, 1);
-    assert.equal(stored.session, null);
-    assert.deepEqual(stored.checks, {});
-    assert.deepEqual(stored.checklist, {});
-
-    startSession(window);
-    click(window, window.document.getElementById('btnFinish'));
-    stored = readStore(window);
-    assert.equal(stored.phaseSessions['1'], 1);
-    assert.equal(stored.completions[day], true);
-  } finally {
-    dom.window.close();
-  }
-});
-
-test('an expired session reopens with demos, kept checks, and a log or discard choice', () => {
-  const day = thisTuesday();
-  const seed = {
-    phase: 1,
-    phaseSessions: { 1: 1, 2: 0, 3: 0 },
-    checks: { 'wt-knee-quad-sets': true },
-    collapsed: {},
-    thirdDay: 'none',
-    completions: {},
-    activeDay: day,
-    checklist: {},
-    session: {
-      state: 'running',
-      startedAt: 10,
-      deadline: Date.now() - 60_000,
-      remainingMs: null,
-      day: day,
-    },
+  SCRIPTS.forEach(src => win.eval(fs.readFileSync(path.join(DOCS, src), 'utf8')));
+  const doc = win.document;
+  const q = id => doc.querySelector('[data-testid="' + id + '"]');
+  const page = {
+    win, doc, clock, q,
+    click: id => { const b = q(id); assert.ok(b && !b.hidden && !b.disabled, id + ' is not clickable'); b.click(); },
+    visible: id => { const n = q(id); if (!n) return false; for (let e = n; e && e.nodeType === 1; e = e.parentElement) { if (e.hidden) return false; } return true; },
+    text: id => q(id).textContent.trim(),
+    status: () => q('session-screen').getAttribute('data-status'),
+    storage: () => { const out = {}; for (let i = 0; i < win.localStorage.length; i++) { const k = win.localStorage.key(i); out[k] = win.localStorage.getItem(k); } return out; },
+    wait: ms => new Promise(r => setTimeout(r, ms)),
+    close: () => win.close(),
   };
-  const first = boot(seed);
-  try {
-    assert.deepEqual(first.errors, []);
-    const doc = first.window.document;
-    assert.equal(doc.querySelectorAll('#demoVideoList .demo-row').length, 15);
-    assert.match(doc.getElementById('blockNote').textContent, /flat lists/);
-    assert.ok(doc.getElementById('expiryConfirm').classList.contains('show'));
-    assert.equal(doc.querySelector('input[data-check="wt-knee-quad-sets"]').checked, true);
-    assert.equal(doc.getElementById('timer').textContent, '00:00');
-    assert.equal(readStore(first.window).checks['wt-knee-quad-sets'], true);
-    assert.equal(readStore(first.window).phaseSessions['1'], 1);
+  return page;
+}
+async function advance(page, seconds) {
+  page.clock.now += seconds * 1000;
+  await page.wait(300);
+}
 
-    click(first.window, doc.getElementById('btnExpireLog'));
-    assert.equal(doc.getElementById('checkinModal').hidden, false);
-    assert.equal(readStore(first.window).phaseSessions['1'], 1);
-    saveCheckin(first.window, 0);
-    const logged = readStore(first.window);
-    assert.equal(logged.phaseSessions['1'], 2);
-    assert.equal(logged.completions[day], true);
-    assert.equal(logged.session, null);
-  } finally {
-    first.dom.window.close();
-  }
-
-  const discardSeed = JSON.parse(JSON.stringify(seed));
-  const second = boot(discardSeed);
-  try {
-    assert.equal(second.window.document.querySelectorAll('#demoVideoList .demo-row').length, 15);
-    click(second.window, second.window.document.getElementById('btnExpireDiscard'));
-    const stored = readStore(second.window);
-    assert.equal(stored.session, null);
-    assert.deepEqual(stored.checks, {});
-    assert.equal(stored.phaseSessions['1'], 1);
-    assert.equal(stored.completions[day], undefined);
-    assert.equal(second.window.document.querySelectorAll('#demoVideoList .demo-row').length, 15);
-  } finally {
-    second.dom.window.close();
-  }
+test('the start screen shows the plan summary and Start, not the whole catalog', async () => {
+  const p = openPage();
+  assert.strictEqual(p.status(), 'idle');
+  assert.match(p.text('session-title'), /35-minute/);
+  assert.match(p.text('time-estimate'), /^About \d+ minutes\.$/);
+  assert.match(p.text('exercise-count'), /^\d+ exercises/);
+  const phases = Array.from(p.q('phase-breakdown').children).map(li => li.getAttribute('data-phase'));
+  assert.deepStrictEqual(phases, ['warmup', 'main', 'cooldown']);
+  assert.ok(p.visible('btn-start'));
+  assert.strictEqual(p.q('plan-list').closest('details').open, false, 'the move list stays folded until asked for');
+  assert.strictEqual(p.doc.querySelectorAll('iframe').length, 0, 'no video loads before Start');
+  assert.strictEqual(p.doc.body.getAttribute('data-session'), 'idle');
+  assert.ok(p.text('safety-notes').length > 0);
+  p.close();
 });
 
-test('the current phase does nothing and a locked phase cannot be opened', () => {
-  const { dom, window, errors } = boot();
-  try {
-    assert.deepEqual(errors, []);
-    acceptClearance(window);
-    startSession(window);
-    const before = readStore(window);
-    click(window, window.document.querySelector('[data-phase="1"]'));
-    const afterSame = readStore(window);
-    assert.equal(afterSame.phase, 1);
-    assert.equal(afterSame.session.state, 'running');
-    assert.equal(afterSame.session.deadline, before.session.deadline);
-    assert.equal(window.document.getElementById('phaseConfirm').classList.contains('show'), false);
-
-    click(window, window.document.querySelector('[data-phase="3"]'));
-    assert.equal(window.document.getElementById('phaseConfirm').classList.contains('show'), false);
-    assert.equal(readStore(window).phase, 1);
-    assert.equal(readStore(window).session.state, 'running');
-    assert.equal(readStore(window).unlockedPhase, 1);
-    assert.match(window.document.getElementById('sessionMessage').textContent, /9/);
-    assert.equal(window.document.querySelectorAll('.exercise').length, 15);
-  } finally {
-    dom.window.close();
-  }
+test('the page has no type picker, phase card, check-in, or checklist', () => {
+  const p = openPage();
+  ['#typePicker', '#phaseCard', '#phasePicker', '.checklist', '#checkinModal', '[data-type]', '[data-phase-btn]']
+    .forEach(sel => assert.strictEqual(p.doc.querySelector(sel), null, sel));
+  p.close();
 });
 
-test('moving back from an unlocked phase still asks before ending a session', () => {
-  const day = thisTuesday();
-  const { dom, window, errors } = boot({
-    version: 2,
-    phase: 2,
-    unlockedPhase: 2,
-    phaseSessions: { 1: 9, 2: 1, 3: 0 },
-    checks: {},
-    collapsed: {},
-    thirdDay: 'none',
-    completions: {},
-    activeDay: day,
-    checklist: { 1: { 'no-swelling': true, 'pain-ok': true, 'good-control': true } },
-    session: {
-      state: 'running',
-      startedAt: Date.now(),
-      deadline: Date.now() + 10 * 60 * 1000,
-      remainingMs: null,
-      day: day,
-    },
-    symptoms: {},
-    clearance: { accepted: true, date: '2026-10-01' },
-    history: [{ type: 'advance', from: 1, to: 2, at: '2026-10-01T00:00:00.000Z' }],
-  });
-  try {
-    assert.deepEqual(errors, []);
-    assert.equal(window.document.getElementById('clearanceModal'), null);
-    assert.match(window.document.getElementById('phaseTitle').textContent, /Phase 2/);
-    assert.equal(window.document.querySelector('[data-phase="1"]').classList.contains('locked'), false);
-    assert.equal(window.document.querySelector('[data-phase="3"]').classList.contains('locked'), true);
-    click(window, window.document.querySelector('[data-phase="1"]'));
-    assert.ok(window.document.getElementById('phaseConfirm').classList.contains('show'));
-    assert.equal(readStore(window).phase, 2);
-    assert.equal(readStore(window).session.state, 'running');
-    click(window, window.document.getElementById('btnPhaseYes'));
-    const changed = readStore(window);
-    assert.equal(changed.phase, 1);
-    assert.equal(changed.unlockedPhase, 2);
-    assert.equal(changed.session, null);
-    assert.equal(changed.checklist['1']['good-control'], true);
-    assert.equal(changed.history.length, 1);
-    click(window, window.document.querySelector('[data-phase="2"]'));
-    assert.equal(readStore(window).phase, 2);
-    assert.equal(window.document.querySelectorAll('.exercise').length, 15);
-  } finally {
-    dom.window.close();
-  }
+test('the old video library is gone and every script on the page exists', () => {
+  assert.ok(!fs.existsSync(path.join(DOCS, 'video-library.js')));
+  assert.deepStrictEqual(SCRIPTS, ['session-engine.js', 'session-screens.js', 'program.js', 'app.js']);
+  SCRIPTS.forEach(src => assert.ok(fs.existsSync(path.join(DOCS, src)), src));
 });
 
-test('a stale stored day does not break load, and the calendar follows a new date', async () => {
-  const { dom, window, errors } = boot({
-    version: 2,
-    phase: 1,
-    phaseSessions: { 1: 2, 2: 0, 3: 0 },
-    checks: {},
-    collapsed: {},
-    thirdDay: 'none',
-    completions: { '2020-01-07': true },
-    activeDay: '2020-01-01',
-    checklist: {},
-    session: null,
-    unlockedPhase: 1,
-    symptoms: {},
-    clearance: null,
-    history: [],
-  });
-  try {
-    assert.deepEqual(errors, []);
-    const stored = readStore(window);
-    assert.equal(stored.phaseSessions['1'], 2);
-    assert.equal(stored.completions['2020-01-07'], true);
-    assert.equal(stored.version, 3);
-    assert.deepEqual(stored.workoutDays, [2, 4]);
-    assert.equal(Object.prototype.hasOwnProperty.call(stored, 'clearance'), false);
-    assert.equal(Object.prototype.hasOwnProperty.call(stored, 'thirdDay'), false);
-    assert.equal(stored.activeDay, '2020-01-01');
-    const before = window.document.getElementById('weekGrid').textContent;
-    const RealDate = window.Date;
-    const future = new RealDate(Date.now() + 8 * 24 * 60 * 60 * 1000);
-    function MockDate(...args) {
-      if (!(this instanceof MockDate)) return new RealDate(...(args.length ? args : [future])).toString();
-      if (args.length === 0) return new RealDate(future.getTime());
-      return new RealDate(...args);
+test('the security headers match the kids app', () => {
+  const csp = new JSDOM(HTML).window.document.querySelector('meta[http-equiv="Content-Security-Policy"]').getAttribute('content');
+  assert.strictEqual(csp, "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'none'; frame-src https://www.youtube-nocookie.com; object-src 'none'; base-uri 'none'; form-action 'none'");
+  assert.match(HTML, /<meta name="referrer" content="strict-origin-when-cross-origin">/);
+  assert.doesNotMatch(HTML, /<script>(?!<)/, 'no inline script');
+});
+
+test('Start runs the warm-up hands-free: exercise screen, one demo, controls', () => {
+  const p = openPage();
+  p.click('btn-start');
+  assert.strictEqual(p.status(), 'exercise');
+  assert.strictEqual(p.doc.body.getAttribute('data-session'), 'active');
+  assert.strictEqual(p.text('phase-label'), 'Warm-up');
+  assert.match(p.text('exercise-position'), /^Exercise 1 of \d+$/);
+  ['exercise-name', 'exercise-dose', 'progress-bar', 'btn-done', 'btn-pause', 'btn-skip', 'btn-end'].forEach(id => assert.ok(p.visible(id), id));
+  const frames = p.doc.querySelectorAll('iframe');
+  assert.ok(frames.length <= 1);
+  if (frames.length) {
+    const f = frames[0];
+    assert.match(f.src, /^https:\/\/www\.youtube-nocookie\.com\/embed\/[\w-]{11}\?rel=0$/);
+    assert.doesNotMatch(f.src, /autoplay/);
+    assert.strictEqual(f.getAttribute('sandbox'), 'allow-scripts allow-same-origin allow-presentation');
+    assert.strictEqual(f.getAttribute('referrerpolicy'), 'strict-origin-when-cross-origin');
+    assert.strictEqual(p.q('demo-watch').getAttribute('rel'), 'noopener noreferrer');
+  }
+  p.close();
+});
+
+test('a full session: timed countdowns, rests with Up next, skip, pause, reload, finish', async () => {
+  const p = openPage();
+  p.click('btn-start');
+  let steps = 0;
+  let sawRest = false;
+  let sawKneeCaution = false;
+  let didPause = false;
+  let didSkip = false;
+  let page = p;
+  let reloaded = false;
+  while (page.status() !== 'finished' && steps++ < 200) {
+    const status = page.status();
+    if (status === 'rest') {
+      sawRest = true;
+      assert.ok(page.visible('up-next'));
+      assert.match(page.text('up-next'), /^Up next: /);
+      assert.ok(page.doc.querySelectorAll('iframe').length <= 1);
+      page.click('btn-skip-rest');
+      continue;
     }
-    MockDate.prototype = RealDate.prototype;
-    MockDate.now = () => future.getTime();
-    MockDate.parse = RealDate.parse;
-    MockDate.UTC = RealDate.UTC;
-    window.Date = MockDate;
-    await new Promise(resolve => setTimeout(resolve, 600));
-    const after = window.document.getElementById('weekGrid').textContent;
-    assert.notEqual(after, before);
-  } finally {
-    dom.window.close();
+    assert.strictEqual(status, 'exercise');
+    if (/Knee/i.test(page.q('session-screen').textContent) && page.visible('exercise-caution')) {
+      sawKneeCaution = sawKneeCaution || /Stop if you feel sharp pain\./.test(page.text('exercise-caution'));
+    }
+    const timed = page.visible('countdown') && page.text('countdown') !== '';
+    if (!didPause && timed) {
+      const before = page.text('countdown');
+      page.click('btn-pause');
+      assert.strictEqual(page.status(), 'paused');
+      await advance(page, 60);
+      assert.strictEqual(page.text('countdown'), before, 'pause freezes the countdown');
+      page.click('btn-resume');
+      didPause = true;
+    }
+    if (!didSkip && page.text('phase-label').indexOf('Main') === 0) {
+      page.click('btn-skip');
+      didSkip = true;
+      continue;
+    }
+    if (!reloaded && page.text('phase-label').indexOf('Main') === 0) {
+      const name = page.text('exercise-name');
+      const pos = page.text('exercise-position');
+      const saved = page.storage();
+      assert.ok(saved[SESSION_KEY], 'the session is saved while running');
+      page.close();
+      page = openPage({ saved: saved, clock: p.clock });
+      assert.strictEqual(page.status(), 'exercise', 'a reload resumes');
+      assert.strictEqual(page.text('exercise-name'), name);
+      assert.strictEqual(page.text('exercise-position'), pos);
+      reloaded = true;
+    }
+    if (timed && steps % 2 === 0) {
+      await advance(page, 400);
+      assert.notStrictEqual(page.status(), 'paused');
+    } else {
+      page.click('btn-done');
+    }
   }
+  assert.strictEqual(page.status(), 'finished');
+  assert.deepStrictEqual({ sawRest, didPause, didSkip, reloaded }, { sawRest: true, didPause: true, didSkip: true, reloaded: true });
+  assert.ok(sawKneeCaution, 'knee moves carry the sharp-pain stop note');
+  assert.strictEqual(page.text('finish-title'), 'Workout complete');
+  assert.match(page.text('finish-completed'), /^Exercises completed: \d+ of \d+$/);
+  assert.strictEqual(page.text('finish-skipped'), 'Skipped: 1');
+  assert.match(page.text('finish-time'), /^Total time: \d+ min/);
+  const stored = page.storage();
+  assert.strictEqual(stored[SESSION_KEY], undefined, 'finishing clears the session');
+  assert.strictEqual(Object.keys(JSON.parse(stored['awc-demo-v1']).completions).length, 1);
+  assert.match(page.text('cal-progress'), /^1 day trained this week$/);
+  page.click('btn-finish-done');
+  assert.strictEqual(page.status(), 'idle');
+  page.close();
 });
 
-test('corrupt storage still renders, and a saved session deadline is kept', () => {
-  const corrupt = boot('{"checks":null,"phase":2,"phaseSessions":null,"completions":{"2026-10-06":true}}');
-  try {
-    assert.deepEqual(corrupt.errors, []);
-    const doc = corrupt.window.document;
-    assert.match(doc.getElementById('phaseTitle').textContent, /Phase 2/);
-    assert.ok(doc.querySelectorAll('.exercise').length >= 8);
-    assert.match(doc.getElementById('sessionMessage').textContent, /unreadable/);
-    assert.match(doc.getElementById('sessionMessage').textContent, /backup of your previous save/);
-    const stored = readStore(corrupt.window);
-    assert.equal(stored.version, 3);
-    assert.equal(stored.phase, 2);
-    assert.equal(stored.completions['2026-10-06'], true);
-    assert.deepEqual(stored.checks, {});
-    assert.deepEqual(backupValues(corrupt.window), [
-      '{"checks":null,"phase":2,"phaseSessions":null,"completions":{"2026-10-06":true}}',
-    ]);
-  } finally {
-    corrupt.dom.window.close();
-  }
+test('End asks to confirm; Keep going continues; Yes returns to Start and clears the session', () => {
+  const p = openPage();
+  p.click('btn-start');
+  p.click('btn-done');
+  p.click('btn-end');
+  assert.strictEqual(p.status(), 'confirmEnd');
+  assert.ok(p.visible('end-confirm'));
+  p.click('btn-end-no');
+  assert.strictEqual(p.status(), 'rest', 'back to the warm-up rest it came from');
+  p.click('btn-end');
+  p.click('btn-end-yes');
+  assert.strictEqual(p.status(), 'idle');
+  assert.strictEqual(p.storage()[SESSION_KEY], undefined);
+  assert.strictEqual(p.doc.body.getAttribute('data-session'), 'idle');
+  p.close();
+});
 
-  const garbage = boot('{');
-  try {
-    assert.deepEqual(garbage.errors, []);
-    assert.match(garbage.window.document.getElementById('phaseTitle').textContent, /Phase 1/);
-    assert.ok(garbage.window.document.querySelectorAll('.exercise').length >= 8);
-    assert.match(garbage.window.document.getElementById('sessionMessage').textContent, /fresh start/);
-    assert.match(garbage.window.document.getElementById('sessionMessage').textContent, /backup of your previous save/);
-    assert.deepEqual(backupValues(garbage.window), ['{']);
-  } finally {
-    garbage.dom.window.close();
-  }
+test('when the browser refuses to save, a notice shows and the workout still runs', () => {
+  const p = openPage({ breakSetItem: true });
+  p.click('btn-start');
+  assert.ok(p.visible('storage-notice'));
+  assert.match(p.text('storage-notice'), /could not save/i);
+  p.click('btn-done');
+  assert.notStrictEqual(p.status(), 'idle');
+  p.close();
+});
 
-  const notObject = boot('[]');
-  try {
-    assert.deepEqual(notObject.errors, []);
-    assert.match(notObject.window.document.getElementById('phaseTitle').textContent, /Phase 1/);
-    assert.deepEqual(backupValues(notObject.window), ['[]']);
-  } finally {
-    notObject.dom.window.close();
-  }
-
-  const deadline = Date.now() + 10 * 60 * 1000;
-  const day = thisTuesday();
-  const kept = boot({
-    phase: 2,
-    phaseSessions: { 1: 9, 2: 4, 3: 0 },
-    checks: { 'quad-sets': true },
-    collapsed: {},
-    thirdDay: 'none',
-    completions: { '2026-10-01': true },
-    activeDay: day,
-    checklist: { 1: { 'no-swelling': true } },
-    session: { state: 'running', startedAt: deadline - app.SESSION_MS, deadline: deadline, remainingMs: null, day: day },
+test('phase-era and type-era saves load quietly: no notice, days kept, old timer ignored', () => {
+  Object.keys(OLD).forEach(name => {
+    const p = openPage({ saved: { 'awc-demo-v1': JSON.stringify(OLD[name]) } });
+    assert.strictEqual(p.q('app-notice').hidden, true, name);
+    assert.strictEqual(p.status(), 'idle', name);
+    const store = JSON.parse(p.storage()['awc-demo-v1']);
+    assert.deepStrictEqual(store, { version: 4, completions: OLD[name].completions }, name);
+    p.close();
   });
-  try {
-    assert.deepEqual(kept.errors, []);
-    const stored = readStore(kept.window);
-    assert.equal(stored.phase, 2);
-    assert.equal(stored.unlockedPhase, 2);
-    assert.equal(stored.phaseSessions['2'], 4);
-    assert.equal(stored.session.deadline, deadline);
-    assert.equal(stored.checklist['1']['no-swelling'], true);
-    assert.equal(stored.completions['2026-10-01'], true);
-    assert.notEqual(kept.window.document.getElementById('timer').textContent, '30:00');
-    assert.equal(kept.window.document.getElementById('btnPause').hidden, false);
-    assert.deepEqual(backupValues(kept.window), []);
-  } finally {
-    kept.dom.window.close();
-  }
 });
 
-function phase1Checklist() {
-  const bucket = {};
-  app.checklistForPhase(1).forEach(item => { bucket[item.id] = true; });
-  return { 1: bucket };
-}
-
-function baseStore(extra) {
-  return Object.assign({
-    version: 2,
-    phase: 1,
-    unlockedPhase: 1,
-    phaseSessions: { 1: 0, 2: 0, 3: 0 },
-    checks: {},
-    collapsed: {},
-    thirdDay: 'none',
-    completions: {},
-    activeDay: thisTuesday(),
-    checklist: {},
-    session: null,
-    symptoms: {},
-    clearance: { accepted: true, date: '2026-10-01' },
-    history: [],
-  }, extra || {});
-}
-
-test('Advance opens the next phase only after 9 sessions and the checklist', () => {
-  const { dom, window, errors } = boot(baseStore({
-    phaseSessions: { 1: 9, 2: 0, 3: 0 },
-    checklist: phase1Checklist(),
-  }));
-  try {
-    assert.deepEqual(errors, []);
-    assert.equal(window.document.getElementById('clearanceModal'), null);
-    assert.equal(window.document.getElementById('btnStart').disabled, false);
-    assert.equal(window.document.getElementById('advanceBtn').disabled, false);
-    click(window, window.document.getElementById('advanceBtn'));
-    const stored = readStore(window);
-    assert.equal(stored.phase, 2);
-    assert.equal(stored.unlockedPhase, 2);
-    assert.equal(stored.history.length, 1);
-    assert.equal(stored.history[0].to, 2);
-    assert.equal(window.document.querySelector('[data-phase="3"]').classList.contains('locked'), true);
-    assert.match(window.document.getElementById('phaseTitle').textContent, /Phase 2/);
-  } finally {
-    dom.window.close();
-  }
-});
-
-function runningSession(day) {
-  return {
-    state: 'running',
-    startedAt: Date.now(),
-    deadline: Date.now() + 10 * 60 * 1000,
-    remainingMs: null,
-    day: day,
-  };
-}
-
-test('confirming an advance checks the gate again', () => {
-  const day = thisTuesday();
-  const unticked = boot(baseStore({
-    phaseSessions: { 1: 9, 2: 0, 3: 0 },
-    checklist: phase1Checklist(),
-    activeDay: day,
-    session: runningSession(day),
-  }));
-  try {
-    const doc = unticked.window.document;
-    click(unticked.window, doc.getElementById('advanceBtn'));
-    assert.ok(doc.getElementById('phaseConfirm').classList.contains('show'));
-    assert.equal(readStore(unticked.window).phase, 1);
-    const box = doc.querySelector('[data-checklist-item="sit-to-stand"]');
-    box.checked = false;
-    box.dispatchEvent(new unticked.window.Event('change', { bubbles: true }));
-    click(unticked.window, doc.getElementById('btnPhaseYes'));
-    const stored = readStore(unticked.window);
-    assert.equal(stored.phase, 1);
-    assert.equal(stored.unlockedPhase, 1);
-    assert.deepEqual(stored.history, []);
-    assert.equal(stored.session.state, 'running');
-    assert.equal(doc.getElementById('phaseConfirm').classList.contains('show'), false);
-    assert.match(doc.getElementById('sessionMessage').textContent, /checklist/i);
-  } finally {
-    unticked.dom.window.close();
-  }
-
-  const flagged = boot(baseStore({
-    phaseSessions: { 1: 9, 2: 0, 3: 0 },
-    checklist: phase1Checklist(),
-    activeDay: day,
-    session: runningSession(day),
-    symptoms: {
-      '2020-01-07': { painDuring: 5, painNext: 0, swellingNext: false, phase: 1 },
-    },
-  }));
-  try {
-    const doc = flagged.window.document;
-    assert.equal(doc.getElementById('advanceBtn').disabled, false);
-    click(flagged.window, doc.getElementById('advanceBtn'));
-    assert.ok(doc.getElementById('phaseConfirm').classList.contains('show'));
-    click(flagged.window, doc.getElementById('btnFinish'));
-    saveCheckin(flagged.window, 6);
-    assert.equal(readStore(flagged.window).phaseSessions['1'], 10);
-    assert.ok(doc.getElementById('phaseConfirm').classList.contains('show'));
-    click(flagged.window, doc.getElementById('btnPhaseYes'));
-    const stored = readStore(flagged.window);
-    assert.equal(stored.phase, 1);
-    assert.equal(stored.unlockedPhase, 1);
-    assert.deepEqual(stored.history, []);
-    assert.equal(doc.getElementById('phaseConfirm').classList.contains('show'), false);
-    assert.match(doc.getElementById('sessionMessage').textContent, /two flagged sessions/i);
-  } finally {
-    flagged.dom.window.close();
-  }
-});
-
-test('a flagged check-in repeats the week and two flags lock Advance', () => {
-  const flagged = boot(baseStore());
-  try {
-    acceptClearance(flagged.window, '2026-10-01');
-    startSession(flagged.window);
-    click(flagged.window, flagged.window.document.getElementById('btnFinish'));
-    const doseBefore = flagged.window.document.querySelector('.dose').textContent;
-    saveCheckin(flagged.window, 6);
-    const doc = flagged.window.document;
-    assert.match(doc.getElementById('symptomAdvice').textContent, /Repeat this week or reduce your sets/);
-    assert.equal(doc.getElementById('symptomAdvice').hidden, false);
-    assert.match(doc.getElementById('weekNote').textContent, /Week 1/);
-    assert.equal(doc.querySelector('[data-check="wt-knee-quad-sets"]').parentElement.querySelector('.dose').textContent, '');
-    assert.equal(doc.querySelector('.dose').textContent, doseBefore);
-    const stored = readStore(flagged.window);
-    assert.deepEqual(stored.checklist, {});
-    assert.equal(stored.phaseSessions['1'], 1);
-  } finally {
-    flagged.dom.window.close();
-  }
-
-  const locked = boot(baseStore({
-    phaseSessions: { 1: 9, 2: 0, 3: 0 },
-    checklist: phase1Checklist(),
-    symptoms: {
-      '2026-10-01': { painDuring: 5, painNext: 0, swellingNext: false, phase: 1 },
-      '2026-10-03': { painDuring: 1, painNext: 0, swellingNext: true, phase: 1 },
-    },
-  }));
-  try {
-    const doc = locked.window.document;
-    assert.equal(doc.getElementById('advanceBtn').disabled, true);
-    assert.match(doc.getElementById('advanceNote').textContent, /two flagged sessions/i);
-    assert.match(doc.getElementById('symptomAdvice').textContent, /Doses are not changed for you/);
-    click(locked.window, doc.getElementById('advanceBtn'));
-    assert.equal(readStore(locked.window).phase, 1);
-  } finally {
-    locked.dom.window.close();
-  }
-});
-
-test('draft labels stay on the phase card and phase 3', () => {
-  const { dom, window, errors } = boot();
-  try {
-    assert.deepEqual(errors, []);
-    const doc = window.document;
-    const dose = doc.getElementById('doseDraftNote');
-    assert.ok(dose);
-    assert.equal(dose.hidden, false);
-    assert.equal(dose.textContent, 'Draft: doses not confirmed by a clinician');
-    assert.ok(doc.querySelector('.phase-card').contains(dose));
-    const badge = doc.querySelector('[data-phase="3"] .phase-draft');
-    assert.ok(badge);
-    assert.equal(badge.textContent, 'Draft');
-    assert.equal(doc.querySelector('[data-phase="1"] .phase-draft'), null);
-    assert.equal(doc.querySelector('[data-phase="2"] .phase-draft'), null);
-    assert.equal(doc.getElementById('redFlags'), null);
-    assert.equal(doc.getElementById('redFlagNote'), null);
-  } finally {
-    dom.window.close();
-  }
-});
-
-test('there is no settings modal, and the info panel still works', () => {
-  const { dom, window, errors } = boot();
-  try {
-    assert.deepEqual(errors, []);
-    const doc = window.document;
-    assert.equal(doc.getElementById('btnStart').disabled, false);
-    assert.equal(doc.getElementById('btnMenu'), null);
-    assert.equal(doc.getElementById('settingsPanel'), null);
-    assert.equal(doc.querySelectorAll('.day').length, 7);
-    assert.equal(doc.querySelectorAll('.day.gym').length, 0);
-    assert.equal(doc.querySelectorAll('[data-day]').length, 0);
-    assert.equal(doc.querySelectorAll('[data-workout-day]').length, 0);
-
-    click(window, doc.getElementById('btnInfo'));
-    assert.equal(doc.getElementById('infoPanel').hidden, false);
-    assert.equal(doc.getElementById('btnInfo').getAttribute('aria-expanded'), 'true');
-    assert.match(doc.getElementById('blockNote').textContent, /Pick a workout above/);
-    assert.match(doc.getElementById('blockNote').textContent, /flat lists/);
-
-    doc.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-    assert.equal(doc.getElementById('infoPanel').hidden, true);
-
-    const day = startSession(window);
-    click(window, doc.getElementById('btnFinish'));
-    saveCheckin(window, 1);
-    assert.equal(readStore(window).completions[day], true);
-    assert.equal(readStore(window).phaseSessions['1'], 1);
-    assert.equal(doc.getElementById('calProgress').textContent, '1');
-  } finally {
-    dom.window.close();
-  }
-});
-
-test('a running session logs its own day, and any day can start', () => {
-  const { dom, window, errors } = boot();
-  try {
-    assert.deepEqual(errors, []);
-    const doc = window.document;
-    const day = startSession(window);
-    assert.equal(readStore(window).session.state, 'running');
-    click(window, doc.getElementById('btnFinish'));
-    assert.equal(doc.getElementById('checkinModal').hidden, false);
-    saveCheckin(window, 1);
-    const logged = readStore(window);
-    assert.equal(logged.completions[day], true);
-    assert.equal(logged.phaseSessions['1'], 1);
-    assert.equal(logged.session, null);
-  } finally {
-    dom.window.close();
-  }
-
-  const stored = boot({
-    version: 3,
-    phase: 1,
-    unlockedPhase: 1,
-    phaseSessions: { 1: 0, 2: 0, 3: 0 },
-    checks: {},
-    collapsed: {},
-    workoutDays: [2, 4],
-    completions: {},
-    activeDay: '2026-10-07',
-    checklist: {},
-    session: null,
-    symptoms: {},
-    history: [],
-  });
-  try {
-    const day = startSession(stored.window);
-    assert.equal(readStore(stored.window).session.state, 'running');
-    assert.equal(day, app.dayKey(new Date()));
-  } finally {
-    stored.dom.window.close();
-  }
-});
-
-test('workout type pills switch the routine and hide the phase card for upper and lower', () => {
-  const { dom, window, errors } = boot();
-  try {
-    assert.deepEqual(errors, []);
-    const doc = window.document;
-    const names = () => [...doc.querySelectorAll('.exercise-name')].map(el => el.textContent);
-    assert.equal(doc.querySelectorAll('.exercise').length, 15);
-    assert.equal(names()[0], 'Isometric Wall Sits');
-    assert.equal(doc.querySelector('[data-type="knee_strengthening"]').classList.contains('active'), true);
-    assert.equal(doc.querySelector('[data-type="knee_strengthening"]').disabled, false);
-    assert.equal(doc.getElementById('phaseCard').hidden, false);
-    assert.equal(doc.querySelector('#typePicker').getAttribute('aria-label'), 'Choose your workout');
-
-    click(window, doc.querySelector('[data-type="upper_body"]'));
-    assert.equal(doc.querySelectorAll('.exercise').length, 15);
-    assert.equal(names()[0], 'Dumbbell Bench Press');
-    assert.equal(names()[14], 'Bench Dips');
-    assert.equal(doc.querySelector('[data-type="upper_body"]').classList.contains('active'), true);
-    assert.equal(doc.getElementById('phaseCard').hidden, true);
-    assert.equal(readStore(window).workoutType, 'upper_body');
-
-    click(window, doc.querySelector('[data-type="lower_body"]'));
-    assert.equal(names()[0], 'Goblet Squats');
-    assert.equal(names()[14], 'Sumo Deadlifts (Kettlebell)');
-    assert.equal(doc.getElementById('phaseCard').hidden, true);
-    assert.equal(readStore(window).workoutType, 'lower_body');
-
-    click(window, doc.querySelector('[data-type="knee_strengthening"]'));
-    assert.equal(names()[0], 'Isometric Wall Sits');
-    assert.equal(names()[14], 'Reverse Lunges');
-    assert.equal(doc.getElementById('phaseCard').hidden, false);
-    assert.equal(readStore(window).workoutType, 'knee_strengthening');
-    assert.equal(doc.querySelectorAll('#routine .demo-missing').length, 0);
-    assert.equal(doc.querySelectorAll('#routine iframe').length, 15);
-  } finally {
-    dom.window.close();
-  }
-});
-
-test('pills lock during a session and unlock on finish or clear', () => {
-  const { dom, window, errors } = boot();
-  try {
-    assert.deepEqual(errors, []);
-    const doc = window.document;
-    startSession(window);
-    assert.equal(doc.querySelector('[data-type="upper_body"]').disabled, true);
-    assert.equal(doc.querySelector('[data-type="lower_body"]').disabled, true);
-    assert.equal(doc.querySelector('[data-type="knee_strengthening"]').disabled, true);
-    click(window, doc.querySelector('[data-type="upper_body"]'));
-    assert.equal(readStore(window).workoutType, 'knee_strengthening');
-    assert.equal(doc.querySelector('.exercise-name').textContent, 'Isometric Wall Sits');
-
-    click(window, doc.getElementById('btnFinish'));
-    saveCheckin(window, 1);
-    assert.equal(readStore(window).session, null);
-    assert.equal(doc.querySelector('[data-type="upper_body"]').disabled, false);
-
-    startSession(window);
-    assert.equal(doc.querySelector('[data-type="lower_body"]').disabled, true);
-    click(window, doc.getElementById('btnClear'));
-    click(window, doc.getElementById('btnClearYes'));
-    assert.equal(readStore(window).session, null);
-    assert.equal(doc.querySelector('[data-type="lower_body"]').disabled, false);
-    click(window, doc.querySelector('[data-type="lower_body"]'));
-    assert.equal(readStore(window).workoutType, 'lower_body');
-    assert.equal(doc.querySelector('.exercise-name').textContent, 'Goblet Squats');
-  } finally {
-    dom.window.close();
-  }
-});
-
-test('an upper-body finish logs the day but not a phase session; a knee finish on phase 2 counts there', () => {
-  const upper = boot(baseStore({ workoutType: 'upper_body' }));
-  try {
-    assert.deepEqual(upper.errors, []);
-    const doc = upper.window.document;
-    assert.equal(doc.getElementById('phaseCard').hidden, true);
-    const day = startSession(upper.window);
-    click(upper.window, doc.getElementById('btnFinish'));
-    saveCheckin(upper.window, 1);
-    const stored = readStore(upper.window);
-    assert.equal(stored.completions[day], true);
-    assert.equal(stored.phaseSessions['1'], 0);
-    assert.equal(stored.phaseSessions['2'], 0);
-    assert.equal(stored.session, null);
-  } finally {
-    upper.dom.window.close();
-  }
-
-  const knee = boot(baseStore({
-    phase: 2,
-    unlockedPhase: 2,
-    phaseSessions: { 1: 9, 2: 3, 3: 0 },
-  }));
-  try {
-    assert.deepEqual(knee.errors, []);
-    const doc = knee.window.document;
-    assert.equal(doc.getElementById('phaseCard').hidden, false);
-    assert.match(doc.getElementById('phaseTitle').textContent, /Phase 2/);
-    const day = startSession(knee.window);
-    click(knee.window, doc.getElementById('btnFinish'));
-    saveCheckin(knee.window, 1);
-    const stored = readStore(knee.window);
-    assert.equal(stored.completions[day], true);
-    assert.equal(stored.phaseSessions['2'], 4);
-    assert.equal(stored.phaseSessions['1'], 9);
-    assert.equal(stored.session, null);
-  } finally {
-    knee.dom.window.close();
-  }
+test('a broken save shows the reset notice and keeps a backup', () => {
+  const p = openPage({ saved: { 'awc-demo-v1': '{oops' } });
+  assert.strictEqual(p.q('app-notice').hidden, false);
+  assert.match(p.text('app-notice'), /could not be read/);
+  assert.ok(Object.keys(p.storage()).some(k => k.indexOf('awc-demo-v1.bak-') === 0));
+  p.close();
 });
